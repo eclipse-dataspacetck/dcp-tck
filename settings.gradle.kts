@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2023 Bayerische Motoren Werke Aktiengesellschaft (BMW AG)
+ *  Copyright (c) 2023 Metaform Systems, Inc.
  *
  *  This program and the accompanying materials are made available under the
  *  terms of the Apache License, Version 2.0 which is available at
@@ -8,12 +8,12 @@
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Contributors:
- *       Bayerische Motoren Werke Aktiengesellschaft (BMW AG) - initial API and implementation
+ *       Metaform Systems, Inc. - initial API and implementation
  *
  *
  */
 
-rootProject.name = "dsp-tck"
+rootProject.name = "dcp-tck"
 
 // this is needed to have access to snapshot builds of plugins
 pluginManagement {
@@ -37,3 +37,7 @@ dependencyResolutionManagement {
     }
 }
 
+include("dcp-api")
+include("dcp-system")
+include("dcp-tck")
+include("dcp-credential-service")

@@ -4,6 +4,7 @@ format.version = "1.1"
 [versions]
 assertj = "3.26.3"
 awaitility = "4.2.0"
+dsp-tck = "0.1.0"
 junit = "1.10.3"
 jackson = "2.18.2"
 jsonapi = "2.0.0"
@@ -17,7 +18,8 @@ titanium = "1.4.1"
 
 # modules from tck-common
 tck-common-api = { module = "org.eclipse.dataspacetck.common:core-api", version.ref = "tck" }
-
+tck-dsp-core = {module ="org.eclipse.dataspacetck.dsp:core", version.ref = "dsp-tck" }
+tck-dsp-tck-runtime = {module ="org.eclipse.dataspacetck.dsp:tck-runtime", version.ref = "dsp-tck" }
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
