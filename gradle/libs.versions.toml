@@ -1,0 +1,39 @@
+[metadata]
+format.version = "1.1"
+
+[versions]
+assertj = "3.26.3"
+awaitility = "4.2.0"
+junit = "1.10.3"
+jackson = "2.18.2"
+jsonapi = "2.0.0"
+jupiter = "5.10.3"
+okhttp = "4.12.0"
+mockito = "5.13.0"
+tck = "0.1.0"
+titanium = "1.4.1"
+
+[libraries]
+
+# modules from tck-common
+tck-common-api = { module = "org.eclipse.dataspacetck.common:core-api", version.ref = "tck" }
+
+assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-jsonp = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jakarta-jsonp", version.ref = "jackson" }
+json-api = { module = "org.glassfish:jakarta.json", version.ref = "jsonapi" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "jupiter" }
+junit-platform-engine = { module = "org.junit.platform:junit-platform-suite-engine", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+titanium = { module = "com.apicatalog:titanium-json-ld", version.ref = "titanium" }
+
+
+[plugins]
+docker = { id = "com.bmuschko.docker-remote-api", version = "9.4.0" }
+shadow = { id = "com.gradleup.shadow", version = "8.3.5" }
+nexuspublishing = { id = "io.github.gradle-nexus.publish-plugin", version = "2.0.0" }
+tck-build = { id = "org.eclipse.dataspacetck.build.tck-build", version.ref = "tck" }
+tck-generator = { id = "org.eclipse.dataspacetck.build.tck-build", version.ref = "tck" }
