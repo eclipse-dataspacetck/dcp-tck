@@ -15,4 +15,7 @@
 
 dependencies {
     implementation(rootProject.libs.tck.dsp.core)
+    implementation(rootProject.libs.nimbus.jwt)
+
+    api(project(":dcp-api"))
 }

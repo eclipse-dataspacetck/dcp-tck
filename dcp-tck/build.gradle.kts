@@ -35,7 +35,7 @@ dependencies {
 
     implementation(project(":dcp-api"))
     implementation(project(":dcp-system"))
-    implementation(project(":dcp-credential-service"))
+    implementation(project(":dcp-testcases"))
 }
 
 

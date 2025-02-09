@@ -4,13 +4,14 @@ format.version = "1.1"
 [versions]
 assertj = "3.26.3"
 awaitility = "4.2.0"
-dsp-tck = "0.1.0"
+dsp-tck = "0.1.1-SNAPSHOT"
 junit = "1.10.3"
 jackson = "2.18.2"
 jsonapi = "2.0.0"
 jupiter = "5.10.3"
 okhttp = "4.12.0"
 mockito = "5.13.0"
+nimbus = "10.0.1"
 tck = "0.1.0"
 titanium = "1.4.1"
 
@@ -30,6 +31,7 @@ junit-platform-engine = { module = "org.junit.platform:junit-platform-suite-engi
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+nimbus-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
 titanium = { module = "com.apicatalog:titanium-json-ld", version.ref = "titanium" }
 
 

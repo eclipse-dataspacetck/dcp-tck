@@ -20,9 +20,14 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.tck.common.api)
     implementation(rootProject.libs.tck.dsp.core)
+    implementation(rootProject.libs.okhttp)
+    implementation(rootProject.libs.nimbus.jwt)
+    implementation(rootProject.libs.assertj)
+    implementation(rootProject.libs.tck.common.api)
+
     implementation(project(":dcp-api"))
+
     testImplementation(project(":dcp-system"))
 }
 

@@ -40,4 +40,4 @@ dependencyResolutionManagement {
 include("dcp-api")
 include("dcp-system")
 include("dcp-tck")
-include("dcp-credential-service")
+include("dcp-testcases")
