@@ -37,6 +37,8 @@ public interface DcpConstants {
 
     String SCOPE = "scope";
 
+    String SCOPE_TYPE = "org.eclipse.dspace.dcp.vc.type:";
+
     String PRESENTATION_DEFINITION = "presentationDefinition";
 
     String SCOPE_TYPE_ALIAS = "org.eclipse.dspace.dcp.vc.type:";

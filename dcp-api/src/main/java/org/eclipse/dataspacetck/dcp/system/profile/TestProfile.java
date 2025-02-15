@@ -14,12 +14,12 @@
 
 package org.eclipse.dataspacetck.dcp.system.profile;
 
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE_TYPE;
+
 /**
  * Defines the profile used for testing, including scopes and credential types.
  */
 public interface TestProfile {
-
-    String SCOPE_TYPE = "org.eclipse.dspace.dcp.vc.type:";
 
     String MEMBERSHIP_CREDENTIAL_TYPE = "MembershipCredential";
 
