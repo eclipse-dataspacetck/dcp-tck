@@ -19,9 +19,9 @@ package org.eclipse.dataspacetck.dcp.system.profile;
  */
 public interface TestProfile {
 
-    String MEMBERSHIP_CREDENTIAL_TYPE = "MembershipCredential";
-
     String SCOPE_TYPE = "org.eclipse.dspace.dcp.vc.type:";
+
+    String MEMBERSHIP_CREDENTIAL_TYPE = "MembershipCredential";
 
     String MEMBERSHIP_SCOPE = SCOPE_TYPE + MEMBERSHIP_CREDENTIAL_TYPE;
 
