@@ -117,6 +117,14 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
 
     @Disabled
     @MandatoryTest
+    @DisplayName("5.4.1.2 Verify Resolution API presentation definition less types than requested for a " + SENSITIVE_DATA_CREDENTIAL_TYPE)
+    @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
+    public void cs_05_04_01_02_lessTypesThanAuthorizedByTypeRequest(@AuthToken({ MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE }) String authToken) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Disabled
+    @MandatoryTest
     @DisplayName("5.4.1.1 Verify Resolution API presentation definition request for a " + MEMBERSHIP_CREDENTIAL_TYPE)
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
     public void cs_05_04_01_01_invalidPresentationEscalationRequest(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
@@ -134,6 +142,19 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
 
         var request = createPresentationRequest(authToken, message);
         executeRequest(request, response -> verifyCredentials(response, MEMBERSHIP_CREDENTIAL_TYPE));
+    }
+
+    @MandatoryTest
+    @DisplayName("5.4.1.2 Verify Resolution API with less scopes than requested for a " + SENSITIVE_DATA_CREDENTIAL_TYPE)
+    @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
+    public void cs_05_04_01_02_lessScopesThanAuthorizedByTypeRequest(@AuthToken({ MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE }) String authToken) {
+        var message = DcpMessageBuilder.newInstance()
+                .type(PRESENTATION_QUERY_MESSAGE)
+                .property(SCOPE, List.of(SENSITIVE_DATA_SCOPE))
+                .build();
+
+        var request = createPresentationRequest(authToken, message);
+        executeRequest(request, response -> verifyCredentials(response, SENSITIVE_DATA_CREDENTIAL_TYPE));
     }
 
     @MandatoryTest
