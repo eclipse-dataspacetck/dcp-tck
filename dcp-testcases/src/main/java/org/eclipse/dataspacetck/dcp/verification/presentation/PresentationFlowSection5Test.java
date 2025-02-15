@@ -81,7 +81,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     @MandatoryTest
     @DisplayName("5.4 Verify Resolution API invalid token not authorized")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_05_04_notAuthorized() {
+    public void cs_05_04_invalidTokenNotAuthorized() {
         var message = DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
                 .property(SCOPE, List.of(MEMBERSHIP_SCOPE))
