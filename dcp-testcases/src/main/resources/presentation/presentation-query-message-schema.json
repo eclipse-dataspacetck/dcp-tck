@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "title": "PresentationQueryMessageSchema",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "#/definitions/PresentationQueryMessage"
+    }
+  ],
+  "$id": "https://w3id.org/dspace-dcp/v1.0/presentation/presentation-query-message-schema.json",
+  "definitions": {
+    "PresentationQueryMessage": {
+      "type": "object",
+      "properties": {
+        "@context": {
+          "$ref": "https://w3id.org/dspace-dcp/v1.0/common/context-schema.json"
+        },
+        "type": {
+          "type": "string",
+          "const": "PresentationQueryMessage"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "scope": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "scope"
+              ]
+            },
+            {
+              "properties": {
+                "presentationDefinition": {
+                  "type": "object",
+                  "$ref": "https://identity.foundation/presentation-exchange/schemas/presentation-definition.json"
+                }
+              },
+              "required": [
+                "presentationDefinition"
+              ]
+            }
+          ]
+        }
+      ],
+      "required": [
+        "@context",
+        "type"
+      ]
+    }
+  }
+}
