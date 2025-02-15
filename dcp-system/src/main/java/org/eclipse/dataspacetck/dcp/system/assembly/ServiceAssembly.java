@@ -24,11 +24,11 @@ import org.eclipse.dataspacetck.dcp.system.cs.SecureTokenServerImpl;
 import org.eclipse.dataspacetck.dcp.system.did.DidDocumentHandler;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtPresentationGenerator;
-import org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
 import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
 import org.eclipse.dataspacetck.dcp.system.sts.StsClient;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 import java.util.List;
@@ -36,8 +36,11 @@ import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
+import static org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat.VC1_0_JWT;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_SCOPE;
+import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_CREDENTIAL_TYPE;
+import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_SCOPE;
 
 /**
  * Assembles services that must reinitialized per test invocation.
@@ -79,22 +82,33 @@ public class ServiceAssembly {
     private void seedCredentials(BaseAssembly baseAssembly, SecureTokenServer secureTokenServer) {
         var issuerDid = baseAssembly.getIssuerDid();
         var credentialGenerator = new JwtCredentialGenerator(issuerDid, baseAssembly.getIssuerKeyService());
+
         var holderDid = baseAssembly.getHolderDid();
-        var credential = createCredential(issuerDid, holderDid);
-        var resut = credentialGenerator.generateCredential(credential);
-        var vcContainer = new VcContainer(resut.getContent(), credential, CredentialFormat.VC1_0_JWT);
+
+        var membershipContainer = createVcContainer(issuerDid, holderDid, credentialGenerator, MEMBERSHIP_CREDENTIAL_TYPE);
+        var sensitiveDataContainer = createVcContainer(issuerDid, holderDid, credentialGenerator, SENSITIVE_DATA_CREDENTIAL_TYPE);
+
         var correlation = randomUUID().toString();
-        secureTokenServer.authorizeWrite(issuerDid, correlation, List.of(MEMBERSHIP_SCOPE));
-        credentialService.writeCredentials(issuerDid, correlation, List.of(vcContainer));
+        secureTokenServer.authorizeWrite(issuerDid, correlation, List.of(MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE));
+        credentialService.writeCredentials(issuerDid, correlation, List.of(membershipContainer, sensitiveDataContainer));
     }
 
-    private VerifiableCredential createCredential(String issuerDid, String holderDid) {
+    @NotNull
+    private VcContainer createVcContainer(String issuerDid, String holderDid,
+                                          JwtCredentialGenerator credentialGenerator,
+                                          String credentialType) {
+        var credential = createCredential(issuerDid, holderDid,credentialType);
+        var result = credentialGenerator.generateCredential(credential);
+        return new VcContainer(result.getContent(), credential, VC1_0_JWT);
+    }
+
+    private VerifiableCredential createCredential(String issuerDid, String holderDid, String credentialType) {
         return VerifiableCredential.Builder.newInstance()
                 .credentialSubject(Map.of("id", holderDid))
                 .id(randomUUID().toString())
                 .issuanceDate(new Date().toString())
                 .issuer(issuerDid)
-                .type(List.of(MEMBERSHIP_CREDENTIAL_TYPE))
+                .type(List.of(credentialType))
                 .build();
 
     }

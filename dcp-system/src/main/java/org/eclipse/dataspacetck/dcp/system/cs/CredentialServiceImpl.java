@@ -87,7 +87,7 @@ public class CredentialServiceImpl implements CredentialService {
         var scopeTypes = new ArrayList<String>();
         for (var requestedScope : requestedScopes) {
             if (!requestedScope.startsWith(SCOPE_TYPE_ALIAS)) {
-                return Result.failure("Invalid scope type: " + requestedScope);
+                return failure("Invalid scope type: " + requestedScope);
             }
             scopeTypes.add(requestedScope.substring(SCOPE_TYPE_ALIAS.length()));
         }

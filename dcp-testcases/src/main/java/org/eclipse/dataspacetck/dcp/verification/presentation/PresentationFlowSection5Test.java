@@ -38,6 +38,8 @@ import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTAT
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_SCOPE;
+import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_CREDENTIAL_TYPE;
+import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_SCOPE;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.createPresentationDefinition;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
 
@@ -113,6 +115,14 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
+    @Disabled
+    @MandatoryTest
+    @DisplayName("5.4.1.1 Verify Resolution API presentation definition request for a " + MEMBERSHIP_CREDENTIAL_TYPE)
+    @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
+    public void cs_05_04_01_01_invalidPresentationEscalationRequest(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
     @MandatoryTest
     @DisplayName("5.4.1.2 Verify Resolution API scope request for a " + MEMBERSHIP_CREDENTIAL_TYPE)
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
@@ -124,6 +134,19 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
 
         var request = createPresentationRequest(authToken, message);
         executeRequest(request, response -> verifyCredentials(response, MEMBERSHIP_CREDENTIAL_TYPE));
+    }
+
+    @MandatoryTest
+    @DisplayName("5.4.1.2 Verify Resolution API invalid scope escalation request for a " + SENSITIVE_DATA_CREDENTIAL_TYPE)
+    @IssueCredentials({ MEMBERSHIP_CREDENTIAL_TYPE, SENSITIVE_DATA_CREDENTIAL_TYPE })
+    public void cs_05_04_01_02_invalidScopeEscalationRequest(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+        var message = DcpMessageBuilder.newInstance()
+                .type(PRESENTATION_QUERY_MESSAGE)
+                .property(SCOPE, List.of(MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE)) // request more credentials than the token allows
+                .build();
+
+        var request = createPresentationRequest(authToken, message);
+        executeRequest(request, TestFixtures::assert4XXXCode);
     }
 
 }
