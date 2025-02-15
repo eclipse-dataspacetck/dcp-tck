@@ -12,16 +12,12 @@
  *
  */
 
-package org.eclipse.dataspacetck.dcp.system.did;
-
-import org.eclipse.dataspacetck.dcp.system.model.did.DidDocument;
-import org.eclipse.dataspacetck.dcp.system.service.Result;
+package org.eclipse.dataspacetck.dcp.system.model.vc;
 
 /**
- * Manages the DID document for a holder or verifier.
+ * Constant values.
  */
-public interface DidService {
-
-    Result<DidDocument> resolveDidDocument();
-
+public interface CredentialConstants {
+    String CONTEXT_V1 = "https://www.w3.org/2018/credentials/v1";
+    String CONTEXT_V2 = "https://www.w3.org/ns/credentials/v2";
 }

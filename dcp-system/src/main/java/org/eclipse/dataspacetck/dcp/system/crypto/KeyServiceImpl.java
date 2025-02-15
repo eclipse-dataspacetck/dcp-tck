@@ -22,6 +22,8 @@ import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
+import java.util.Map;
+
 import static com.nimbusds.jose.JOSEObjectType.JWT;
 import static com.nimbusds.jose.JWSAlgorithm.ES256;
 
@@ -41,13 +43,20 @@ public class KeyServiceImpl implements KeyService {
     }
 
     @Override
-    public String sign(JWTClaimsSet claims) {
-        var header = new JWSHeader.Builder(ES256)
-                .type(JWT)
-                .keyID(key.getKeyID())
-                .build();
+    public String sign(Map<String, String> headers, JWTClaimsSet claims) {
+        var header = new JWSHeader.Builder(ES256).type(JWT);
+        if (!headers.containsKey("kid")) {
+            header.keyID(claims.getClaim("iss") + "#" + key.getKeyID());
+        }
+        headers.forEach((k, v) -> {
+            if ("kid".equals(k)) {
+                header.keyID(v);
+            } else {
+                header.customParam(k, v);
+            }
+        });
         try {
-            var signedJwt = new SignedJWT(header, claims);
+            var signedJwt = new SignedJWT(header.build(), claims);
             signedJwt.sign(new ECDSASigner(key.toECPrivateKey()));
             return signedJwt.serialize();
         } catch (JOSEException e) {

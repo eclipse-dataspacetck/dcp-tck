@@ -12,26 +12,29 @@
  *
  */
 
-package org.eclipse.dataspacetck.dcp.system.cs;
+package org.eclipse.dataspacetck.dcp.system.generation;
 
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * Credential service used for testing.
+ * Generates a verifiable presentation.
  */
-public interface CredentialService {
+public interface PresentationGenerator {
+    enum PresentationFormat {
+        JWT, LD
+    }
 
     /**
-     * Processes a presentation query message.
+     * Returns the VP format supported by this generator.
      */
-    Result<Map<String, Object>> presentationQueryMessage(String bearerDid, String accessToken, Map<String, Object> message);
+    PresentationFormat getFormat();
 
     /**
-     * Writes issued credentials.
+     * Generates a presentation containing the given credentials.
      */
-    Result<Void> writeCredentials(String bearerDid, String correlationId, List<VcContainer> containers);
+    Result<String> generatePresentation(String audience, String holderDid, List<VcContainer> credentials);
+
 }

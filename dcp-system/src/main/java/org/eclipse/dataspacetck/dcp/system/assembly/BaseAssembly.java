@@ -35,6 +35,9 @@ import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_DEFA
  */
 public class BaseAssembly {
     private String address;
+    private String issuerDid;
+    private KeyService issuerKeyService;
+    private DidService issuerDidService;
     private String holderDid;
     private KeyService holderKeyService;
     private DidService holderDidService;
@@ -42,7 +45,12 @@ public class BaseAssembly {
     private KeyService verifierKeyService;
     private DidService verifierDidService;
     private TokenValidationService verifierTokenService;
+    private TokenValidationService holderTokenService;
     private ObjectMapper mapper;
+
+    public ObjectMapper getMapper() {
+        return mapper;
+    }
 
     public String getAddress() {
         return address;
@@ -50,10 +58,6 @@ public class BaseAssembly {
 
     public String getVerifierDid() {
         return verifierDid;
-    }
-
-    public ObjectMapper getMapper() {
-        return mapper;
     }
 
     public TokenValidationService getVerifierTokenService() {
@@ -80,13 +84,33 @@ public class BaseAssembly {
         return holderDidService;
     }
 
+    public TokenValidationService getHolderTokenService() {
+        return holderTokenService;
+    }
+
+    public String getIssuerDid() {
+        return issuerDid;
+    }
+
+    public KeyService getIssuerKeyService() {
+        return issuerKeyService;
+    }
+
+    public DidService getIssuerDidService() {
+        return issuerDidService;
+    }
+
     public BaseAssembly(SystemConfiguration configuration) {
         mapper = new ObjectMapper();
         address = configuration.getPropertyAsString(TCK_CALLBACK_ADDRESS, TCK_DEFAULT_CALLBACK_ADDRESS);
         verifierDid = parseDid("verifier");
+        issuerDid = parseDid("issuer");
+        issuerKeyService = new KeyServiceImpl(Keys.generateEcKey());
+        issuerDidService = new DidServiceImpl(issuerDid, address, issuerKeyService);
         holderDid = parseDid("holder");
         holderKeyService = new KeyServiceImpl(Keys.generateEcKey());
         holderDidService = new DidServiceImpl(holderDid, address, holderKeyService);
+        holderTokenService = new TokenValidationServiceImpl(holderDid);
         verifierTokenService = new TokenValidationServiceImpl(verifierDid);
         verifierKeyService = new KeyServiceImpl(Keys.generateEcKey());
         verifierDidService = new DidServiceImpl(verifierDid, address, verifierKeyService);

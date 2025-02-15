@@ -17,6 +17,7 @@ package org.eclipse.dataspacetck.dcp.system.did;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import org.eclipse.dataspacetck.dcp.system.model.did.DidDocument;
 
 import java.io.IOException;
 import java.net.MalformedURLException;

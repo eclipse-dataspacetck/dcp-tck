@@ -25,6 +25,11 @@ dependencies {
     implementation(rootProject.libs.nimbus.jwt)
     implementation(rootProject.libs.assertj)
     implementation(rootProject.libs.tck.common.api)
+    implementation(rootProject.libs.schema.validator) {
+        exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml")
+    }
+
+    implementation(rootProject.libs.slf4j.nop)
 
     implementation(project(":dcp-api"))
 

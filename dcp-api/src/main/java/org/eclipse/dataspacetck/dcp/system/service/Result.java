@@ -18,15 +18,20 @@ package org.eclipse.dataspacetck.dcp.system.service;
  * Result of a service invocation.
  */
 public class Result<T> {
+    public enum ErrorType {
+        NOT_FOUND, UNAUTHORIZED, BAD_REQUEST, GENERAL_ERROR, NO_ERROR
+    }
+
     private final T content;
     private final String failure;
+    private final ErrorType errorType;
 
     public static Result<Void> success() {
-        return new Result<>(null, null);
+        return new Result<>(null, null, ErrorType.NO_ERROR);
     }
 
     public static <T> Result<T> success(T content) {
-        return new Result<>(content, null);
+        return new Result<>(content, null, ErrorType.NO_ERROR);
     }
 
     public boolean succeeded() {
@@ -45,8 +50,16 @@ public class Result<T> {
         return failure;
     }
 
+    public ErrorType getErrorType() {
+        return errorType;
+    }
+
     public static <T> Result<T> failure(String failure) {
-        return new Result<>(null, failure);
+        return new Result<>(null, failure, ErrorType.GENERAL_ERROR);
+    }
+
+    public static <T> Result<T> failure(String failure, ErrorType errorType) {
+        return new Result<>(null, failure, errorType);
     }
 
     public <R> R convert() {
@@ -54,8 +67,9 @@ public class Result<T> {
         return (R) this;
     }
 
-    private Result(T content, String failure) {
+    private Result(T content, String failure, ErrorType errorType) {
         this.content = content;
         this.failure = failure;
+        this.errorType = errorType;
     }
 }

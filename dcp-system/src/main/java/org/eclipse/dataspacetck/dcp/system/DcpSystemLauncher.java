@@ -18,7 +18,10 @@ import org.eclipse.dataspacetck.core.spi.system.ServiceConfiguration;
 import org.eclipse.dataspacetck.core.spi.system.ServiceResolver;
 import org.eclipse.dataspacetck.core.spi.system.SystemConfiguration;
 import org.eclipse.dataspacetck.core.spi.system.SystemLauncher;
+import org.eclipse.dataspacetck.dcp.system.annotation.AuthToken;
 import org.eclipse.dataspacetck.dcp.system.annotation.HolderDid;
+import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
+import org.eclipse.dataspacetck.dcp.system.annotation.IssuerDid;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
 import org.eclipse.dataspacetck.dcp.system.annotation.VerifierDid;
 import org.eclipse.dataspacetck.dcp.system.assembly.BaseAssembly;
@@ -29,6 +32,7 @@ import org.eclipse.dataspacetck.dcp.system.did.DidService;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -49,6 +53,7 @@ public class DcpSystemLauncher implements SystemLauncher {
     public <T> boolean providesService(Class<T> type) {
         return type.isAssignableFrom(CredentialService.class) ||
                type.isAssignableFrom(DidService.class) ||
+               type.isAssignableFrom(String.class) ||
                type.isAssignableFrom(KeyService.class);
     }
 
@@ -70,12 +75,40 @@ public class DcpSystemLauncher implements SystemLauncher {
                 return type.cast(baseAssembly.getVerifierDid());
             } else if (hasAnnotation(HolderDid.class, configuration)) {
                 return type.cast(baseAssembly.getHolderDid());
+            } else if (hasAnnotation(IssuerDid.class, configuration)) {
+                return type.cast(baseAssembly.getIssuerDid());
+            } else if (hasAnnotation(AuthToken.class, configuration)) {
+                return createAuthToken(type, configuration, assembly);
             }
         }
         return SystemLauncher.super.getService(type, configuration, resolver);
     }
 
+    @Override
+    public void beforeExecution(ServiceConfiguration configuration, ServiceResolver resolver) {
+        if (hasAnnotation(IssueCredentials.class, configuration)) {
+            // TODO implement credential issuance
+        }
+    }
+
+    private <T> T createAuthToken(Class<T> type, ServiceConfiguration configuration, ServiceAssembly assembly) {
+        var scopes = Arrays.asList(getAnnotation(AuthToken.class, configuration).value());
+        var tokenResult = assembly.getStsClient().obtainReadToken(baseAssembly.getVerifierDid(), scopes);
+        if (tokenResult.failed()) {
+            throw new AssertionError(tokenResult.getFailure());
+        }
+        return type.cast(tokenResult.getContent());
+    }
+
     private boolean hasAnnotation(Class<? extends Annotation> annotation, ServiceConfiguration configuration) {
         return configuration.getAnnotations().stream().anyMatch(a -> a.annotationType().equals(annotation));
+    }
+
+    @SuppressWarnings({ "unchecked", "SameParameterValue" })
+    private <A extends Annotation> A getAnnotation(Class<A> annotation, ServiceConfiguration configuration) {
+        return (A) configuration.getAnnotations().stream()
+                .filter(a -> a.annotationType().equals(annotation))
+                .findFirst()
+                .orElseThrow();
     }
 }

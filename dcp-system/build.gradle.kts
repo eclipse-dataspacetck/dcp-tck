@@ -16,6 +16,10 @@
 dependencies {
     implementation(rootProject.libs.tck.dsp.core)
     implementation(rootProject.libs.nimbus.jwt)
+    implementation(rootProject.libs.bouncyCastle.bcprovJdk18on)
+    implementation(rootProject.libs.schema.validator) {
+        exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml")
+    }
 
     api(project(":dcp-api"))
 }

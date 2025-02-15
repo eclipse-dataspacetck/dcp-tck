@@ -20,41 +20,83 @@ import org.eclipse.dataspacetck.core.spi.system.ServiceResolver;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.cs.PresentationHandler;
+import org.eclipse.dataspacetck.dcp.system.cs.SecureTokenServerImpl;
 import org.eclipse.dataspacetck.dcp.system.did.DidDocumentHandler;
-import org.eclipse.dataspacetck.dcp.system.did.DidService;
+import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
+import org.eclipse.dataspacetck.dcp.system.generation.JwtPresentationGenerator;
+import org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat;
+import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
+import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
+import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
+import org.eclipse.dataspacetck.dcp.system.sts.StsClient;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.UUID.randomUUID;
+import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
+import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_SCOPE;
 
 /**
  * Assembles services that must reinitialized per test invocation.
  */
 public class ServiceAssembly {
     private CredentialService credentialService;
-    private DidService didService;
+    private SecureTokenServerImpl secureTokenServer;
 
     public ServiceAssembly(BaseAssembly baseAssembly, ServiceResolver resolver, ServiceConfiguration configuration) {
-        credentialService = new CredentialServiceImpl(baseAssembly.getAddress(),
-                baseAssembly.getVerifierTokenService(),
-                baseAssembly.getVerifierDid(),
-                baseAssembly.getVerifierKeyService());
+        var generator = new JwtPresentationGenerator(baseAssembly.getHolderDid(), baseAssembly.getHolderKeyService());
+        secureTokenServer = new SecureTokenServerImpl();
+        credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer);
+
+        // FIXME: Seed test credentials until issuance is implemented
+        seedCredentials(baseAssembly, secureTokenServer);
 
         var endpoint = (CallbackEndpoint) requireNonNull(resolver.resolve(CallbackEndpoint.class, configuration));
         var monitor = configuration.getMonitor();
         var mapper = baseAssembly.getMapper();
 
         // register the handlers
-        var presentationHandler = new PresentationHandler(credentialService, mapper, monitor);
+        var tokenService = baseAssembly.getHolderTokenService();
+        var presentationHandler = new PresentationHandler(credentialService, tokenService, mapper, monitor);
         endpoint.registerProtocolHandler("/presentations/query", presentationHandler);
 
         endpoint.registerHandler("/holder/did.json", new DidDocumentHandler(baseAssembly.getHolderDidService(), mapper));
         endpoint.registerHandler("/verifier/did.json", new DidDocumentHandler(baseAssembly.getVerifierDidService(), mapper));
+        endpoint.registerHandler("/issuer/did.json", new DidDocumentHandler(baseAssembly.getIssuerDidService(), mapper));
     }
 
     public CredentialService getCredentialService() {
         return credentialService;
     }
 
-    public DidService getDidService() {
-        return didService;
+    public StsClient getStsClient() {
+        return secureTokenServer;
     }
+
+    private void seedCredentials(BaseAssembly baseAssembly, SecureTokenServer secureTokenServer) {
+        var issuerDid = baseAssembly.getIssuerDid();
+        var credentialGenerator = new JwtCredentialGenerator(issuerDid, baseAssembly.getIssuerKeyService());
+        var holderDid = baseAssembly.getHolderDid();
+        var credential = createCredential(issuerDid, holderDid);
+        var resut = credentialGenerator.generateCredential(credential);
+        var vcContainer = new VcContainer(resut.getContent(), credential, CredentialFormat.VC1_0_JWT);
+        var correlation = randomUUID().toString();
+        secureTokenServer.authorizeWrite(issuerDid, correlation, List.of(MEMBERSHIP_SCOPE));
+        credentialService.writeCredentials(issuerDid, correlation, List.of(vcContainer));
+    }
+
+    private VerifiableCredential createCredential(String issuerDid, String holderDid) {
+        return VerifiableCredential.Builder.newInstance()
+                .credentialSubject(Map.of("id", holderDid))
+                .id(randomUUID().toString())
+                .issuanceDate(new Date().toString())
+                .issuer(issuerDid)
+                .type(List.of(MEMBERSHIP_CREDENTIAL_TYPE))
+                .build();
+
+    }
+
 }

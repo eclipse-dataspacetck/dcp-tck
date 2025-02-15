@@ -11,41 +11,31 @@
  *       Metaform Systems, Inc. - initial API and implementation
  *
  */
-package org.eclipse.dataspacetck.dcp.system.did;
+package org.eclipse.dataspacetck.dcp.system.model.did;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import org.eclipse.dataspacetck.dcp.system.model.ExtensibleModel;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Models a DID document.
  */
 @JsonDeserialize(builder = DidDocument.Builder.class)
-public class DidDocument {
+public class DidDocument extends ExtensibleModel {
     private String id;
-
-    @JsonProperty("@context")
-    private List<String> context = new ArrayList<>();
 
     @JsonProperty("service")
     private List<ServiceEntry> services = new ArrayList<>();
 
     @JsonProperty("verificationMethod")
     private List<VerificationMethod> verificationMethods = new ArrayList<>();
-
-    private Map<String, Object> extensibleProperties = new LinkedHashMap<>();
-
-    public List<String> getContext() {
-        return context;
-    }
 
     public String getId() {
         return id;
@@ -57,11 +47,6 @@ public class DidDocument {
 
     public List<VerificationMethod> getVerificationMethods() {
         return verificationMethods;
-    }
-
-    @JsonAnyGetter
-    public Map<String, Object> getExtensibleProperties() {
-        return extensibleProperties;
     }
 
     public ServiceEntry getServiceEntry(String type) {
@@ -82,7 +67,7 @@ public class DidDocument {
     }
 
     @JsonPOJOBuilder(withPrefix = "")
-    public static class Builder {
+    public static class Builder extends ExtensibleModel.Builder<Builder> {
         private DidDocument document;
 
         @JsonCreator
@@ -92,11 +77,6 @@ public class DidDocument {
 
         public Builder id(String id) {
             document.id = id;
-            return this;
-        }
-
-        public Builder context(List<String> context) {
-            document.context.addAll(context);
             return this;
         }
 
@@ -110,17 +90,14 @@ public class DidDocument {
             return this;
         }
 
-        @JsonAnySetter
-        public void setExtensibleProperty(String key, Object value) {
-            this.document.extensibleProperties.put(key, value);
-        }
-
         public DidDocument build() {
+            requireNonNull(document.id, "id");
             return document;
         }
 
         private Builder() {
             document = new DidDocument();
+            setModel(document);
         }
     }
 }

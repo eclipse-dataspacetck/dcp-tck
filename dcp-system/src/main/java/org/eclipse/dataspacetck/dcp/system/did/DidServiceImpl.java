@@ -15,6 +15,9 @@
 package org.eclipse.dataspacetck.dcp.system.did;
 
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
+import org.eclipse.dataspacetck.dcp.system.model.did.DidDocument;
+import org.eclipse.dataspacetck.dcp.system.model.did.ServiceEntry;
+import org.eclipse.dataspacetck.dcp.system.model.did.VerificationMethod;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 
 import java.util.List;

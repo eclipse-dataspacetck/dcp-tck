@@ -12,16 +12,11 @@
  *
  */
 
-package org.eclipse.dataspacetck.dcp.system.did;
-
-import org.eclipse.dataspacetck.dcp.system.model.did.DidDocument;
-import org.eclipse.dataspacetck.dcp.system.service.Result;
+package org.eclipse.dataspacetck.dcp.system.model.vc;
 
 /**
- * Manages the DID document for a holder or verifier.
+ * Verifable credential formats.
  */
-public interface DidService {
-
-    Result<DidDocument> resolveDidDocument();
-
+public enum CredentialFormat {
+    VC1_0_JWT, VC2_0_JOSE
 }

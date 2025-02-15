@@ -17,6 +17,8 @@ package org.eclipse.dataspacetck.dcp.system.crypto;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jwt.JWTClaimsSet;
 
+import java.util.Map;
+
 /**
  * Manages cryptographic keys and performs signing for a holder or verifier.
  */
@@ -30,6 +32,6 @@ public interface KeyService {
     /**
      * Signs the JWT.
      */
-    String sign(JWTClaimsSet claims);
+    String sign(Map<String, String> headers, JWTClaimsSet claims);
 
 }

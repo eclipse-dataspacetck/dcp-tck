@@ -12,7 +12,7 @@
  *
  */
 
-package org.eclipse.dataspacetck.dcp.system.did;
+package org.eclipse.dataspacetck.dcp.system.model.did;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

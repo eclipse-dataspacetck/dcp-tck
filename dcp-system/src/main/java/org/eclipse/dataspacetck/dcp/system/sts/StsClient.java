@@ -12,16 +12,23 @@
  *
  */
 
-package org.eclipse.dataspacetck.dcp.system.did;
+package org.eclipse.dataspacetck.dcp.system.sts;
 
-import org.eclipse.dataspacetck.dcp.system.model.did.DidDocument;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 
-/**
- * Manages the DID document for a holder or verifier.
- */
-public interface DidService {
+import java.util.List;
 
-    Result<DidDocument> resolveDidDocument();
+/**
+ * Obtains an authz token from the holder's STS.
+ */
+public interface StsClient {
+
+    /**
+     * Obtains the token
+     *
+     * @param bearerDid the bearer's DID to bind the token
+     * @param scopes      requested scope
+     */
+    Result<String> obtainReadToken(String bearerDid, List<String> scopes);
 
 }

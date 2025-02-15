@@ -12,16 +12,15 @@
  *
  */
 
-package org.eclipse.dataspacetck.dcp.system.did;
-
-import org.eclipse.dataspacetck.dcp.system.model.did.DidDocument;
-import org.eclipse.dataspacetck.dcp.system.service.Result;
+package org.eclipse.dataspacetck.dcp.system.profile;
 
 /**
- * Manages the DID document for a holder or verifier.
+ * Defines the profile used for testing, including scopes and credential types.
  */
-public interface DidService {
+public interface TestProfile {
 
-    Result<DidDocument> resolveDidDocument();
+    String MEMBERSHIP_CREDENTIAL_TYPE = "MembershipCredential";
+
+    String MEMBERSHIP_SCOPE = "org.eclipse.dspace.dcp.vc.type:" + MEMBERSHIP_CREDENTIAL_TYPE;
 
 }

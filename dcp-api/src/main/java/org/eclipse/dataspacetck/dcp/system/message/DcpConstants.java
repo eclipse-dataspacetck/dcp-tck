@@ -19,15 +19,27 @@ package org.eclipse.dataspacetck.dcp.system.message;
  */
 public interface DcpConstants {
 
-    String DCP_NAMESPACE = "https://w3id.org/dspace-dcp/v1.0/";
+    String DCP_CONTEXT = "https://w3id.org/dspace-dcp/v1.0/dcp.jsonld";
+
+    String DCP_NAMESPACE = "https://w3id.org/dspace-dcp/v1.0";
 
     String CONTEXT = "@context";
 
+    String TOKEN = "token";
+
+    String ID = "id";
+
     String TYPE = "type";
+
+    String VC = "vc";
 
     String PRESENTATION = "presentation";
 
     String SCOPE = "scope";
+
+    String PRESENTATION_DEFINITION = "presentationDefinition";
+
+    String SCOPE_TYPE_ALIAS = "org.eclipse.dspace.dcp.vc.type:";
 
     String AUTHORIZATION = "Authorization";
 
@@ -36,5 +48,7 @@ public interface DcpConstants {
     String PRESENTATION_RESPONSE_MESSAGE = "PresentationResponseMessage";
 
     String CREDENTIAL_SERVICE_TYPE = "CredentialService";
+
+    String PRESENTATION_QUERY_PATH = "/presentations/query";
 
 }
