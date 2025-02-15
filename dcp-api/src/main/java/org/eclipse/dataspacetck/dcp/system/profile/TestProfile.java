@@ -21,6 +21,8 @@ public interface TestProfile {
 
     String MEMBERSHIP_CREDENTIAL_TYPE = "MembershipCredential";
 
-    String MEMBERSHIP_SCOPE = "org.eclipse.dspace.dcp.vc.type:" + MEMBERSHIP_CREDENTIAL_TYPE;
+    String SCOPE_TYPE = "org.eclipse.dspace.dcp.vc.type:";
+
+    String MEMBERSHIP_SCOPE = SCOPE_TYPE + MEMBERSHIP_CREDENTIAL_TYPE;
 
 }
