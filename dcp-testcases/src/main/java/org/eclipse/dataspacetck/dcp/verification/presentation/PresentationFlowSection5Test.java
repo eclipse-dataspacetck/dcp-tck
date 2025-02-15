@@ -57,7 +57,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     }
 
     @MandatoryTest
-    @DisplayName("5.3.1 Submitting an invalid access token header")
+    @DisplayName("5.3.1 Verify submitting an invalid access token header")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
     public void cs_05_03_01_accessTokenInvalidHeader(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
         var message = DcpMessageBuilder.newInstance()
