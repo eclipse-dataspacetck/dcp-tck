@@ -71,7 +71,7 @@ public class SecureTokenServerImpl implements SecureTokenServer {
 
     @NotNull
     private String transformScopes(List<String> scopes) {
-        return scopes.stream().map(scope->{
+        return scopes.stream().map(scope -> {
             if (!scope.startsWith(SCOPE_TYPE_ALIAS)) {
                 throw new IllegalArgumentException("Invalid scope: " + scope);
             }

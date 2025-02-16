@@ -97,7 +97,7 @@ public class ServiceAssembly {
     private VcContainer createVcContainer(String issuerDid, String holderDid,
                                           JwtCredentialGenerator credentialGenerator,
                                           String credentialType) {
-        var credential = createCredential(issuerDid, holderDid,credentialType);
+        var credential = createCredential(issuerDid, holderDid, credentialType);
         var result = credentialGenerator.generateCredential(credential);
         return new VcContainer(result.getContent(), credential, VC1_0_JWT);
     }

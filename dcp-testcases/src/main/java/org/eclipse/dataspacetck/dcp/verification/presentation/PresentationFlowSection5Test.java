@@ -71,7 +71,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                     .header(AUTHORIZATION, createIdToken(authToken))  // invalid auth header missing "Bearer" prefix
                     .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(JSON_CONTENT_TYPE)))
                     .build();
-            executeRequest(request, TestFixtures::assert4XXXCode);
+            executeRequest(request, TestFixtures::assert4xxxCode);
         } catch (JsonProcessingException e) {
             throw new AssertionError(e);
         }
@@ -87,7 +87,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                 .build();
 
         var request = createPresentationRequest("faketoken", message);
-        executeRequest(request, TestFixtures::assert4XXXCode);
+        executeRequest(request, TestFixtures::assert4xxxCode);
     }
 
     @MandatoryTest
@@ -164,7 +164,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                 .build();
 
         var request = createPresentationRequest(authToken, message);
-        executeRequest(request, TestFixtures::assert4XXXCode);
+        executeRequest(request, TestFixtures::assert4xxxCode);
     }
 
 }

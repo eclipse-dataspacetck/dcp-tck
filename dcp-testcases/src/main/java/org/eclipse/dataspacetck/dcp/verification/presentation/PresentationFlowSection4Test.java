@@ -62,7 +62,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4XXXCode);
+        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
     }
 
     @MandatoryTest
@@ -79,7 +79,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4XXXCode);
+        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
     }
 
     @MandatoryTest
@@ -96,7 +96,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4XXXCode);
+        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
     }
 
     @MandatoryTest
@@ -114,7 +114,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4XXXCode);
+        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
     }
 
 
@@ -132,7 +132,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4XXXCode);
+        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
     }
 
 
@@ -164,7 +164,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken2)
                 .build();
 
-        executeRequest(createRequest(claimSet2, createMessage()), TestFixtures::assert4XXXCode);
+        executeRequest(createRequest(claimSet2, createMessage()), TestFixtures::assert4xxxCode);
     }
 
     @NotNull

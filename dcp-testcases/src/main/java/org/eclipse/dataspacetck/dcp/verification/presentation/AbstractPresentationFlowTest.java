@@ -66,7 +66,7 @@ public class AbstractPresentationFlowTest {
     protected static final String PRESENTATION_EXCHANGE_PREFIX = "https://identity.foundation/";
     protected static final String CLASSPATH_SCHEMA = "classpath:/";
 
-    protected static JsonSchema RESPONSE_SCHEMA;
+    protected static JsonSchema responseSchema;
 
     @Inject
     @VerifierDid
@@ -90,7 +90,7 @@ public class AbstractPresentationFlowTest {
                                 .mapPrefix(PRESENTATION_EXCHANGE_PREFIX, CLASSPATH_SCHEMA))
         );
 
-        RESPONSE_SCHEMA = schemaFactory.getSchema(SchemaLocation.of(DCP_NAMESPACE + "/presentation/presentation-response-message-schema.json"));
+        responseSchema = schemaFactory.getSchema(SchemaLocation.of(DCP_NAMESPACE + "/presentation/presentation-response-message-schema.json"));
     }
 
     /**
@@ -142,8 +142,8 @@ public class AbstractPresentationFlowTest {
             assert response.body() != null;
             var responseMessage = mapper.readValue(response.body().bytes(), Map.class);
 
-            var schemaResult = RESPONSE_SCHEMA.validate(mapper.convertValue(responseMessage, JsonNode.class));
-            assertThat(schemaResult).withFailMessage(()-> "Schema validation failed: " + schemaResult.stream()
+            var schemaResult = responseSchema.validate(mapper.convertValue(responseMessage, JsonNode.class));
+            assertThat(schemaResult).withFailMessage(() -> "Schema validation failed: " + schemaResult.stream()
                     .map(ValidationMessage::getMessage).collect(Collectors.joining())).isEmpty();
 
             @SuppressWarnings("unchecked")
