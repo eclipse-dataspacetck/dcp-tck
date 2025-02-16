@@ -72,7 +72,7 @@ public class TestFixtures {
         return map;
     }
 
-    public static void assert4XXXCode(Response response) {
+    public static void assert4xxxCode(Response response) {
         assertThat(response.isSuccessful()).isFalse();
         assertThat(response.code() >= 400).isTrue();
         assertThat(response.code() <= 500).isTrue();

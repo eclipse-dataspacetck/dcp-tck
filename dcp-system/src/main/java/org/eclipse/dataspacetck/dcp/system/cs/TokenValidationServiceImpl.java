@@ -23,6 +23,8 @@ import org.eclipse.dataspacetck.dcp.system.model.did.VerificationMethod;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 
 import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.eclipse.dataspacetck.dcp.system.crypto.Keys.createVerifier;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.failure;
@@ -33,6 +35,7 @@ import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
  */
 public class TokenValidationServiceImpl implements TokenValidationService {
     private final String audience;
+    private Map<String, String> usedJts = new ConcurrentHashMap<>();
 
     public TokenValidationServiceImpl(String audience) {
         this.audience = audience;
@@ -55,9 +58,15 @@ public class TokenValidationServiceImpl implements TokenValidationService {
                 return failure("Issuer and subject do not match");
             }
 
-            if (claims.getJWTID() == null) {
+            var jti = claims.getJWTID();
+            if (jti == null) {
                 return failure("JTI not specified");
             }
+
+            if (usedJts.containsKey(jti)) {
+                return failure("JTI already used");
+            }
+            usedJts.put(jti, jti);
 
             if (claims.getExpirationTime() == null) {
                 return failure("Expiration not specified");

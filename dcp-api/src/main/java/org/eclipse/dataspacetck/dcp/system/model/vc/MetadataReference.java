@@ -48,7 +48,7 @@ public class MetadataReference {
         return extensibleProperties;
     }
 
-    public Map<String, Object> toMap(){
+    public Map<String, Object> toMap() {
         var map = new LinkedHashMap<String, Object>();
         map.put(ID, id);
         map.put(TYPE, List.of(type));

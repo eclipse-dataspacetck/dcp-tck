@@ -87,7 +87,7 @@ public class PresentationHandler extends AbstractProtocolHandler {
             if (!schemaResult.isEmpty()) {
                 var error = format("Schema validation failed: %s", schemaResult.stream().map(ValidationMessage::getMessage).collect(joining("\n")));
                 monitor.enableError().message(error).resetMode();
-               return new HandlerResponse(400, error);
+                return new HandlerResponse(400, error);
             }
 
             var issuer = jwt.getJWTClaimsSet().getIssuer();
