@@ -14,21 +14,24 @@
 
 package org.eclipse.dataspacetck.dcp.system.annotation;
 
-import org.eclipse.dataspacetck.core.api.system.Inject;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * For field injection, used in conjunction with {@link Inject} to specify the injection of the holder's did.
+ * Tests that verify the issuance flow for an Issuer Service implementation.
  */
 @Inherited
 @Retention(RUNTIME)
-@Target({ FIELD, PARAMETER })
-public @interface HolderDid {
+@Target({ METHOD, TYPE })
+@Test
+@Tag("IssuerService")
+public @interface IssuerService {
 }

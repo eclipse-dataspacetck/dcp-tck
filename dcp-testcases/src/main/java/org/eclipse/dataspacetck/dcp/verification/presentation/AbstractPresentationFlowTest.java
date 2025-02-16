@@ -28,9 +28,10 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.core.system.SystemBootstrapExtension;
-import org.eclipse.dataspacetck.dcp.system.annotation.HolderDid;
+import org.eclipse.dataspacetck.dcp.system.annotation.Did;
+import org.eclipse.dataspacetck.dcp.system.annotation.PresentationFlow;
+import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
-import org.eclipse.dataspacetck.dcp.system.annotation.VerifierDid;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,6 +48,9 @@ import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.HOLDER;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.THIRD_PARTY;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.VERIFIER;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.DCP_NAMESPACE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION;
@@ -57,6 +61,7 @@ import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.pa
 /**
  * Base test class.
  */
+@PresentationFlow
 @ExtendWith(SystemBootstrapExtension.class)
 public class AbstractPresentationFlowTest {
     protected static final String AUTHORIZATION = "Authorization";
@@ -64,19 +69,27 @@ public class AbstractPresentationFlowTest {
     protected static final String PRESENTATION_EXCHANGE_PREFIX = "https://identity.foundation/";
     protected static final String CLASSPATH_SCHEMA = "classpath:/";
 
-    protected static JsonSchema RESPONSE_SCHEMA;
+    protected static JsonSchema responseSchema;
 
     @Inject
-    @VerifierDid
+    @Did(VERIFIER)
     protected String verifierDid;
 
     @Inject
-    @HolderDid
+    @Did(HOLDER)
     protected String holderDid;
+
+    @Inject
+    @Did(THIRD_PARTY)
+    protected String thirdPartyDid;
 
     @Inject
     @Verifier
     protected KeyService verifierKeyService;
+
+    @Inject
+    @ThirdParty
+    protected KeyService thirdPartyKeyService;
 
     protected ObjectMapper mapper = new ObjectMapper();
 
@@ -88,7 +101,7 @@ public class AbstractPresentationFlowTest {
                                 .mapPrefix(PRESENTATION_EXCHANGE_PREFIX, CLASSPATH_SCHEMA))
         );
 
-        RESPONSE_SCHEMA = schemaFactory.getSchema(SchemaLocation.of(DCP_NAMESPACE + "/presentation/presentation-response-message-schema.json"));
+        responseSchema = schemaFactory.getSchema(SchemaLocation.of(DCP_NAMESPACE + "/presentation/presentation-response-message-schema.json"));
     }
 
     /**
@@ -140,8 +153,8 @@ public class AbstractPresentationFlowTest {
             assert response.body() != null;
             var responseMessage = mapper.readValue(response.body().bytes(), Map.class);
 
-            var schemaResult = RESPONSE_SCHEMA.validate(mapper.convertValue(responseMessage, JsonNode.class));
-            assertThat(schemaResult).withFailMessage(()-> "Schema validation failed: " + schemaResult.stream()
+            var schemaResult = responseSchema.validate(mapper.convertValue(responseMessage, JsonNode.class));
+            assertThat(schemaResult).withFailMessage(() -> "Schema validation failed: " + schemaResult.stream()
                     .map(ValidationMessage::getMessage).collect(Collectors.joining())).isEmpty();
 
             @SuppressWarnings("unchecked")

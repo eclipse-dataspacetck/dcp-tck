@@ -48,19 +48,19 @@ public class JwtCredentialGenerator implements CredentialGenerator {
     @Override
     public Result<String> generateCredential(VerifiableCredential credential) {
         var now = new Date();
-            if (!issuerDid.equals(credential.getIssuer())) {
-                throw new RuntimeException(format("Credential issuer '%s' not equal to issuer DID: %s", credential.getIssuer(), issuerDid));
-            }
-            var claims = new JWTClaimsSet.Builder()
-                    .issuer(issuerDid)
-                    .subject(credential.getId())
-                    .claim("jti", randomUUID())
-                    .notBeforeTime(now)
-                    .issueTime(now)
-                    .expirationTime(Date.from(now().plusSeconds(300)))
-                    .claim("vc", credential.toMap())
-                    .build();
-            var keyId = issuerDid + "#" + keyService.getPublicKey().getKeyID();
-            return Result.success(keyService.sign(Map.of("kid", keyId), claims));
+        if (!issuerDid.equals(credential.getIssuer())) {
+            throw new RuntimeException(format("Credential issuer '%s' not equal to issuer DID: %s", credential.getIssuer(), issuerDid));
+        }
+        var claims = new JWTClaimsSet.Builder()
+                .issuer(issuerDid)
+                .subject(credential.getId())
+                .claim("jti", randomUUID())
+                .notBeforeTime(now)
+                .issueTime(now)
+                .expirationTime(Date.from(now().plusSeconds(300)))
+                .claim("vc", credential.toMap())
+                .build();
+        var keyId = issuerDid + "#" + keyService.getPublicKey().getKeyID();
+        return Result.success(keyService.sign(Map.of("kid", keyId), claims));
     }
 }

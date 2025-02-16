@@ -18,7 +18,6 @@ import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.api.system.MandatoryTest;
-import org.eclipse.dataspacetck.core.system.SystemBootstrapExtension;
 import org.eclipse.dataspacetck.dcp.system.annotation.AuthToken;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
 import org.eclipse.dataspacetck.dcp.system.did.DidClient;
@@ -26,7 +25,6 @@ import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 
@@ -46,7 +44,6 @@ import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.ex
 /**
  * Presentation flow tests.
  */
-@ExtendWith(SystemBootstrapExtension.class)
 public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
 
     @MandatoryTest
@@ -74,7 +71,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                     .header(AUTHORIZATION, createIdToken(authToken))  // invalid auth header missing "Bearer" prefix
                     .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(JSON_CONTENT_TYPE)))
                     .build();
-            executeRequest(request, TestFixtures::assert4XXXCode);
+            executeRequest(request, TestFixtures::assert4xxxCode);
         } catch (JsonProcessingException e) {
             throw new AssertionError(e);
         }
@@ -90,7 +87,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                 .build();
 
         var request = createPresentationRequest("faketoken", message);
-        executeRequest(request, TestFixtures::assert4XXXCode);
+        executeRequest(request, TestFixtures::assert4xxxCode);
     }
 
     @MandatoryTest
@@ -167,7 +164,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                 .build();
 
         var request = createPresentationRequest(authToken, message);
-        executeRequest(request, TestFixtures::assert4XXXCode);
+        executeRequest(request, TestFixtures::assert4xxxCode);
     }
 
 }

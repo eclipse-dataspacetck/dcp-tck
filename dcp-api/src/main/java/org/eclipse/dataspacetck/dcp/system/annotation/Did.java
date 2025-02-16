@@ -25,10 +25,12 @@ import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * For field injection, used in conjunction with {@link Inject} to specify the injection of the verifier's did.
+ * For field injection, used in conjunction with {@link Inject} to specify the injection of a did.
  */
 @Inherited
 @Retention(RUNTIME)
 @Target({ FIELD, PARAMETER })
-public @interface VerifierDid {
+public @interface Did {
+    RoleType value();
 }
+
