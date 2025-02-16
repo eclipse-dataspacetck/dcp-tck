@@ -147,7 +147,6 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
         executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
     }
 
-
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - expired")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
@@ -164,7 +163,6 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
 
         executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
     }
-
 
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - jti")
