@@ -46,6 +46,9 @@ public class BaseAssembly {
     private DidService verifierDidService;
     private TokenValidationService verifierTokenService;
     private TokenValidationService holderTokenService;
+    private String thirdPartyDid;
+    private KeyServiceImpl thirdPartyKeyService;
+    private DidServiceImpl thirdPartyDidService;
     private ObjectMapper mapper;
 
     public ObjectMapper getMapper() {
@@ -100,11 +103,24 @@ public class BaseAssembly {
         return issuerDidService;
     }
 
+    public String getThirdPartyDid() {
+        return thirdPartyDid;
+    }
+
+    public KeyServiceImpl getThirdPartyKeyService() {
+        return thirdPartyKeyService;
+    }
+
+    public DidServiceImpl getThirdPartyDidService() {
+        return thirdPartyDidService;
+    }
+
     public BaseAssembly(SystemConfiguration configuration) {
         mapper = new ObjectMapper();
         address = configuration.getPropertyAsString(TCK_CALLBACK_ADDRESS, TCK_DEFAULT_CALLBACK_ADDRESS);
         verifierDid = parseDid("verifier");
         issuerDid = parseDid("issuer");
+        thirdPartyDid = parseDid("thirdparty");
         issuerKeyService = new KeyServiceImpl(Keys.generateEcKey());
         issuerDidService = new DidServiceImpl(issuerDid, address, issuerKeyService);
         holderDid = parseDid("holder");
@@ -114,6 +130,9 @@ public class BaseAssembly {
         verifierTokenService = new TokenValidationServiceImpl(verifierDid);
         verifierKeyService = new KeyServiceImpl(Keys.generateEcKey());
         verifierDidService = new DidServiceImpl(verifierDid, address, verifierKeyService);
+
+        thirdPartyKeyService = new KeyServiceImpl(Keys.generateEcKey());
+        thirdPartyDidService = new DidServiceImpl(thirdPartyDid, address, thirdPartyKeyService);
     }
 
     private String parseDid(String discriminator) {

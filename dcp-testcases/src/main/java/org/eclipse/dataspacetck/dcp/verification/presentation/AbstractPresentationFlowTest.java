@@ -28,10 +28,10 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.core.system.SystemBootstrapExtension;
-import org.eclipse.dataspacetck.dcp.system.annotation.HolderDid;
+import org.eclipse.dataspacetck.dcp.system.annotation.Did;
 import org.eclipse.dataspacetck.dcp.system.annotation.PresentationFlow;
+import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
-import org.eclipse.dataspacetck.dcp.system.annotation.VerifierDid;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.junit.jupiter.api.BeforeAll;
@@ -48,6 +48,9 @@ import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.HOLDER;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.THIRD_PARTY;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.VERIFIER;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.DCP_NAMESPACE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION;
@@ -69,16 +72,24 @@ public class AbstractPresentationFlowTest {
     protected static JsonSchema responseSchema;
 
     @Inject
-    @VerifierDid
+    @Did(VERIFIER)
     protected String verifierDid;
 
     @Inject
-    @HolderDid
+    @Did(HOLDER)
     protected String holderDid;
+
+    @Inject
+    @Did(THIRD_PARTY)
+    protected String thirdPartyDid;
 
     @Inject
     @Verifier
     protected KeyService verifierKeyService;
+
+    @Inject
+    @ThirdParty
+    protected KeyService thirdPartyKeyService;
 
     protected ObjectMapper mapper = new ObjectMapper();
 

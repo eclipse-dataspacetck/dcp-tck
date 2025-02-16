@@ -49,6 +49,36 @@ import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.ex
 public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
 
     @MandatoryTest
+    @DisplayName("4.3.3 Verify invalid access token - auth token bound to a different iss/sub")
+    @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
+    public void cs_04_03_03_idTokenInvalidIssuerSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+        var claimSet = new JWTClaimsSet.Builder()
+                .issuer(thirdPartyDid)     // iss and sub diff than the auth token binding to the verifier
+                .subject(thirdPartyDid)
+                .audience(holderDid)
+                .jwtID(randomUUID().toString())
+                .issueTime(new Date())
+                .expirationTime(Date.from(now().plusSeconds(600)))
+                .claim(TOKEN, authToken)
+                .build();
+
+        var idToken = thirdPartyKeyService.sign(emptyMap(), claimSet);
+
+        try {
+            var endpoint = resolveCredentialServiceEndpoint();
+            var request = new Request.Builder()
+                    .url(endpoint + PRESENTATION_QUERY_PATH)
+                    .header(AUTHORIZATION, "Bearer " + idToken)
+                    .post(RequestBody.create(mapper.writeValueAsString(createMessage()), MediaType.parse(JSON_CONTENT_TYPE)))
+                    .build();
+            executeRequest(request, TestFixtures::assert4xxxCode);
+
+        } catch (JsonProcessingException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - iss and sub different")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
     public void cs_04_03_03_idTokenInvalidSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {

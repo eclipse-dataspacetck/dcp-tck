@@ -19,11 +19,11 @@ import org.eclipse.dataspacetck.core.spi.system.ServiceResolver;
 import org.eclipse.dataspacetck.core.spi.system.SystemConfiguration;
 import org.eclipse.dataspacetck.core.spi.system.SystemLauncher;
 import org.eclipse.dataspacetck.dcp.system.annotation.AuthToken;
-import org.eclipse.dataspacetck.dcp.system.annotation.HolderDid;
+import org.eclipse.dataspacetck.dcp.system.annotation.Did;
+import org.eclipse.dataspacetck.dcp.system.annotation.Holder;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
-import org.eclipse.dataspacetck.dcp.system.annotation.IssuerDid;
+import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
-import org.eclipse.dataspacetck.dcp.system.annotation.VerifierDid;
 import org.eclipse.dataspacetck.dcp.system.assembly.BaseAssembly;
 import org.eclipse.dataspacetck.dcp.system.assembly.ServiceAssembly;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -65,20 +66,42 @@ public class DcpSystemLauncher implements SystemLauncher {
         if (type.isAssignableFrom(CredentialService.class)) {
             return type.cast(assembly.getCredentialService());
         } else if (type.isAssignableFrom(KeyService.class)) {
-            return hasAnnotation(Verifier.class, configuration) ? type.cast(baseAssembly.getVerifierKeyService())
-                    : type.cast(baseAssembly.getHolderKeyService());
+            if (hasAnnotation(Verifier.class, configuration)) {
+                return type.cast(baseAssembly.getVerifierKeyService());
+            } else if (hasAnnotation(Holder.class, configuration)) {
+                return type.cast(baseAssembly.getHolderKeyService());
+            } else if (hasAnnotation(ThirdParty.class, configuration)) {
+                return type.cast(baseAssembly.getThirdPartyKeyService());
+            }
         } else if (type.isAssignableFrom(DidService.class)) {
-            return hasAnnotation(Verifier.class, configuration) ? type.cast(baseAssembly.getVerifierDidService())
-                    : type.cast(baseAssembly.getHolderDidService());
+            if (hasAnnotation(Verifier.class, configuration)) {
+                return type.cast(baseAssembly.getVerifierDidService());
+            } else if (hasAnnotation(Holder.class, configuration)) {
+                return type.cast(baseAssembly.getHolderDidService());
+            } else if (hasAnnotation(ThirdParty.class, configuration)) {
+                return type.cast(baseAssembly.getThirdPartyDidService());
+            }
         } else if (type.isAssignableFrom(String.class)) {
-            if (hasAnnotation(VerifierDid.class, configuration)) {
-                return type.cast(baseAssembly.getVerifierDid());
-            } else if (hasAnnotation(HolderDid.class, configuration)) {
-                return type.cast(baseAssembly.getHolderDid());
-            } else if (hasAnnotation(IssuerDid.class, configuration)) {
-                return type.cast(baseAssembly.getIssuerDid());
-            } else if (hasAnnotation(AuthToken.class, configuration)) {
+            if (hasAnnotation(AuthToken.class, configuration)) {
                 return createAuthToken(type, configuration, assembly);
+            }
+
+            var did = getAnnotation(Did.class, configuration);
+            if (did.isPresent()) {
+                switch (did.get().value()) {
+                    case HOLDER -> {
+                        return type.cast(baseAssembly.getHolderDid());
+                    }
+                    case VERIFIER -> {
+                        return type.cast(baseAssembly.getVerifierDid());
+                    }
+                    case THIRD_PARTY -> {
+                        return type.cast(baseAssembly.getThirdPartyDid());
+                    }
+                    default -> {
+                        throw new UnsupportedOperationException("Unsupported DID role: " + did.get().value());
+                    }
+                }
             }
         }
         return SystemLauncher.super.getService(type, configuration, resolver);
@@ -92,7 +115,7 @@ public class DcpSystemLauncher implements SystemLauncher {
     }
 
     private <T> T createAuthToken(Class<T> type, ServiceConfiguration configuration, ServiceAssembly assembly) {
-        var scopes = Arrays.asList(getAnnotation(AuthToken.class, configuration).value());
+        var scopes = Arrays.asList(getAnnotation(AuthToken.class, configuration).orElseThrow().value());
         var tokenResult = assembly.getStsClient().obtainReadToken(baseAssembly.getVerifierDid(), scopes);
         if (tokenResult.failed()) {
             throw new AssertionError(tokenResult.getFailure());
@@ -105,10 +128,9 @@ public class DcpSystemLauncher implements SystemLauncher {
     }
 
     @SuppressWarnings({ "unchecked", "SameParameterValue" })
-    private <A extends Annotation> A getAnnotation(Class<A> annotation, ServiceConfiguration configuration) {
-        return (A) configuration.getAnnotations().stream()
+    private <A extends Annotation> Optional<A> getAnnotation(Class<A> annotation, ServiceConfiguration configuration) {
+        return (Optional<A>) configuration.getAnnotations().stream()
                 .filter(a -> a.annotationType().equals(annotation))
-                .findFirst()
-                .orElseThrow();
+                .findFirst();
     }
 }

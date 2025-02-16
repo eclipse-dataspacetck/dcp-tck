@@ -25,10 +25,10 @@ import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * For field injection, used in conjunction with {@link Inject} to specify the injection of the holder's did.
+ * For field injection, used in conjunction with {@link Inject} to specify the injection of a third-party service.
  */
 @Inherited
 @Retention(RUNTIME)
 @Target({ FIELD, PARAMETER })
-public @interface HolderDid {
+public @interface ThirdParty {
 }
