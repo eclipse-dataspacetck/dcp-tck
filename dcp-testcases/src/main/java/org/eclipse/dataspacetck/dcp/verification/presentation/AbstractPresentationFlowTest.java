@@ -29,6 +29,7 @@ import okhttp3.Response;
 import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.core.system.SystemBootstrapExtension;
 import org.eclipse.dataspacetck.dcp.system.annotation.HolderDid;
+import org.eclipse.dataspacetck.dcp.system.annotation.PresentationFlow;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
 import org.eclipse.dataspacetck.dcp.system.annotation.VerifierDid;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
@@ -57,6 +58,7 @@ import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.pa
 /**
  * Base test class.
  */
+@PresentationFlow
 @ExtendWith(SystemBootstrapExtension.class)
 public class AbstractPresentationFlowTest {
     protected static final String AUTHORIZATION = "Authorization";
