@@ -97,16 +97,15 @@ public class PresentationHandler extends AbstractProtocolHandler {
             if (result.succeeded()) {
                 return new HandlerResponse(200, mapper.writeValueAsString(result.getContent()));
             } else {
-                int code;
-                switch (result.getErrorType()) {
-                    case NOT_FOUND -> code = 404;
-                    case UNAUTHORIZED -> code = 401;
-                    case BAD_REQUEST -> code = 400;
+                int code = switch (result.getErrorType()) {
+                    case NOT_FOUND -> 404;
+                    case UNAUTHORIZED -> 401;
+                    case BAD_REQUEST -> 400;
                     default -> {
                         monitor.enableError().message(format("%s failed: %s", PRESENTATION_QUERY_MESSAGE, result.getFailure())).resetMode();
-                        code = 500;
+                        yield 500;
                     }
-                }
+                };
                 return new HandlerResponse(code, NULL_BODY);
             }
         } catch (IOException e) {
