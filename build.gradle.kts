@@ -46,11 +46,11 @@ allprojects {
 
     configure<TckBuildExtension> {
         pom {
-            scmConnection = "https://github.com/eclipse-dataspacetck/dsp-tck.git"
-            scmUrl = "scm:git:git@github.com:eclipse-dataspacetck/dsp-tck.git"
+            scmConnection = "https://github.com/eclipse-dataspacetck/dcp-tck.git"
+            scmUrl = "scm:git:git@github.com:eclipse-dataspacetck/dcp-tck.git"
             groupId = project.group.toString()
             projectName = project.name
-            description = "DSP Technology Compatibility Kit"
+            description = "DCP Technology Compatibility Kit"
             projectUrl = "https://projects.eclipse.org/projects/technology.dataspacetck"
         }
     }
