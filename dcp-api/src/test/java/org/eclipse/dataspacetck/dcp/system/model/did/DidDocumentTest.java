@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DidDocumentTest {
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     void verifyDeserializeSerialize() throws JsonProcessingException {
@@ -35,7 +35,7 @@ class DidDocumentTest {
         assertThat(deserialized.getServiceEntry("CredentialService")).isNotNull();
     }
 
-    private static String DOCUMENT = """
+    private static final String DOCUMENT = """
             {
                 "@context" : [ "https://www.w3.org/ns/did/v1", "https://w3id.org/dspace-dcp/v1.0/" ],
                 "id" : "did:web:localhost%3A8083:holder",
