@@ -1,0 +1,38 @@
+#
+#  Copyright (c) 2024 Bayerische Motoren Werke Aktiengesellschaft (BMW AG)
+#
+#  This program and the accompanying materials are made available under the
+#  terms of the Apache License, Version 2.0 which is available at
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+#  SPDX-License-Identifier: Apache-2.0
+#
+#  Contributors:
+#    Bayerische Motoren Werke Aktiengesellschaft (BMW AG) - initial API and implementation
+#
+
+---
+name: Trigger Release Preparation
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: the version to be released. If it ends with '.0' a proper release is created, bugfix otherwise
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: the version to be released. If it ends with '.0' a proper release is created, bugfix otherwise
+        required: true
+        type: string
+
+jobs:
+  Prepare-Release:
+    uses: eclipse-dataspacetck/tck-common/.github/workflows/tck-prepare-release.yml@main
+    permissions:
+      contents: write
+    secrets: inherit
+    with:
+      version: ${{ inputs.version }}

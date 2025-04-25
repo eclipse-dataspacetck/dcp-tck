@@ -47,7 +47,7 @@ import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_
  */
 public class ServiceAssembly {
     private CredentialService credentialService;
-    private SecureTokenServerImpl secureTokenServer;
+    private SecureTokenServer secureTokenServer;
 
     public ServiceAssembly(BaseAssembly baseAssembly, ServiceResolver resolver, ServiceConfiguration configuration) {
         var generator = new JwtPresentationGenerator(baseAssembly.getHolderDid(), baseAssembly.getHolderKeyService());

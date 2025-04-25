@@ -1,0 +1,44 @@
+#
+#  Copyright (c) 2024 Bayerische Motoren Werke Aktiengesellschaft (BMW AG)
+#
+#  This program and the accompanying materials are made available under the
+#  terms of the Apache License, Version 2.0 which is available at
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+#  SPDX-License-Identifier: Apache-2.0
+#
+#  Contributors:
+#    Bayerische Motoren Werke Aktiengesellschaft (BMW AG) - initial API and implementation
+#
+
+---
+name: Trigger (finalize) Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  Release:
+    uses: eclipse-dataspacetck/tck-common/.github/workflows/tck-release.yml@main
+    permissions:
+      contents: write
+    secrets: inherit
+
+  Release-Docker:
+    name: "Build and push images"
+    needs: [ Release ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read current version
+        run: |
+          echo "VERSION=$(echo ${{ github.ref_name }} | cut -d '/' -f 2)" >> $GITHUB_ENV
+      - uses: eclipse-dataspacetck/tck-common/.github/actions/publish-docker-image@main
+        name: Publish DSP TCK Docker image (release)
+        with:
+          rootDir: "dsp/dsp-tck"
+          imagename: "dsp-tck-runtime"
+          namespace: "eclipsedataspacetck"
+          docker_user: ${{ secrets.DOCKER_HUB_USER }}
+          docker_token: ${{ secrets.DOCKER_HUB_TOKEN }}
+          docker_tag: ${{ env.VERSION }}
