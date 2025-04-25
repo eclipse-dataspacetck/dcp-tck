@@ -12,7 +12,7 @@
  *
  */
 
-package org.eclipse.dataspacetck.dsp.suite;
+package org.eclipse.dataspacetck.dcp.suite;
 
 import org.eclipse.dataspacetck.core.spi.boot.Monitor;
 import org.eclipse.dataspacetck.core.system.ConsoleMonitor;

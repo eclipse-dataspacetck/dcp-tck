@@ -1,3 +1,17 @@
+/*
+ *  Copyright (c) 2025 Metaform Systems Inc.
+ *
+ *  This program and the accompanying materials are made available under the
+ *  terms of the Apache License, Version 2.0 which is available at
+ *  https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  SPDX-License-Identifier: Apache-2.0
+ *
+ *  Contributors:
+ *       Metaform Systems Inc. - initial API and implementation
+ *
+ */
+
 package org.eclipse.dataspacetck.dcp.system.model.vc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -24,13 +38,13 @@ import static org.eclipse.dataspacetck.dcp.system.model.vc.CredentialConstants.C
 @JsonDeserialize(builder = VerifiableCredential.Builder.class)
 public class VerifiableCredential extends ExtensibleModel {
 
+    private final List<String> type = new ArrayList<>();
+    private final Map<String, Object> credentialSubject = new LinkedHashMap<>();
     private String id;
     private String issuer;
     private String issuanceDate;
     private MetadataReference credentialSchema;
     private MetadataReference credentialStatus;
-    private List<String> type = new ArrayList<>();
-    private Map<String, Object> credentialSubject = new LinkedHashMap<>();
 
     public String getId() {
         return id;
@@ -83,7 +97,12 @@ public class VerifiableCredential extends ExtensibleModel {
 
     @JsonPOJOBuilder(withPrefix = "")
     public static class Builder extends ExtensibleModel.Builder<Builder> {
-        private VerifiableCredential credential;
+        private final VerifiableCredential credential;
+
+        private Builder() {
+            credential = new VerifiableCredential();
+            setModel(credential);
+        }
 
         @JsonCreator
         public static Builder newInstance() {
@@ -131,11 +150,6 @@ public class VerifiableCredential extends ExtensibleModel {
                 credential.context.add(0, CONTEXT_V1);
             }
             return credential;
-        }
-
-        private Builder() {
-            credential = new VerifiableCredential();
-            setModel(credential);
         }
     }
 }

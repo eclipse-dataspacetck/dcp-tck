@@ -40,6 +40,7 @@ import static org.eclipse.dataspacetck.dcp.system.util.Validators.validateBearer
  * Handler for resolution the API.
  */
 public class PresentationHandler extends AbstractProtocolHandler {
+    private static final String NULL_BODY = "";
     private final CredentialService credentialService;
     private final TokenValidationService tokenService;
     private final ObjectMapper mapper;
@@ -62,22 +63,22 @@ public class PresentationHandler extends AbstractProtocolHandler {
             var message = mapper.readValue(body, Map.class);
             if (!PRESENTATION_QUERY_MESSAGE.equals(message.get(TYPE))) {
                 monitor.enableError().message(format("Message is not a %s", PRESENTATION_QUERY_MESSAGE));
-                return new HandlerResponse(400, null);
+                return new HandlerResponse(400, NULL_BODY);
             }
             var tokenHeaders = headers.get(AUTHORIZATION);
             if (tokenHeaders == null || tokenHeaders.isEmpty()) {
-                return new HandlerResponse(401, null);
+                return new HandlerResponse(401, NULL_BODY);
             }
 
             var unparsedToken = tokenHeaders.get(0);
             if (!validateBearerTokenHeader(unparsedToken)) {
-                return new HandlerResponse(401, null);
+                return new HandlerResponse(401, NULL_BODY);
             }
 
             var idToken = parseBearerToken(unparsedToken);
             var jwtResult = tokenService.validateToken(idToken);
             if (jwtResult.failed()) {
-                return new HandlerResponse(401, null);
+                return new HandlerResponse(401, NULL_BODY);
             }
 
             var jwt = jwtResult.getContent();
@@ -96,23 +97,16 @@ public class PresentationHandler extends AbstractProtocolHandler {
             if (result.succeeded()) {
                 return new HandlerResponse(200, mapper.writeValueAsString(result.getContent()));
             } else {
-                int code;
-                switch (result.getErrorType()) {
-                    case NOT_FOUND -> {
-                        code = 404;
-                    }
-                    case UNAUTHORIZED -> {
-                        code = 401;
-                    }
-                    case BAD_REQUEST -> {
-                        code = 400;
-                    }
+                int code = switch (result.getErrorType()) {
+                    case NOT_FOUND -> 404;
+                    case UNAUTHORIZED -> 401;
+                    case BAD_REQUEST -> 400;
                     default -> {
                         monitor.enableError().message(format("%s failed: %s", PRESENTATION_QUERY_MESSAGE, result.getFailure())).resetMode();
-                        code = 500;
+                        yield 500;
                     }
-                }
-                return new HandlerResponse(code, null);
+                };
+                return new HandlerResponse(code, NULL_BODY);
             }
         } catch (IOException e) {
             throw new AssertionError(format("Error handling %s", PRESENTATION_QUERY_MESSAGE), e);
