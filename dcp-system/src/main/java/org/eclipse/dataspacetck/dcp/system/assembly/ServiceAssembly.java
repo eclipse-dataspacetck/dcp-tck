@@ -19,6 +19,7 @@ import org.eclipse.dataspacetck.core.spi.system.ServiceConfiguration;
 import org.eclipse.dataspacetck.core.spi.system.ServiceResolver;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialServiceImpl;
+import org.eclipse.dataspacetck.dcp.system.cs.PresentationHandler;
 import org.eclipse.dataspacetck.dcp.system.cs.SecureTokenServerImpl;
 import org.eclipse.dataspacetck.dcp.system.did.DidDocumentHandler;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
@@ -61,9 +62,9 @@ public class ServiceAssembly {
         var mapper = baseAssembly.getMapper();
 
         // register the handlers
-//        var tokenService = baseAssembly.getHolderTokenService();
-//        var presentationHandler = new PresentationHandler(credentialService, tokenService, mapper, monitor);
-//        endpoint.registerProtocolHandler("/presentations/query", new PresentationQueryClient(configuration));
+        var tokenService = baseAssembly.getHolderTokenService();
+        var presentationHandler = new PresentationHandler(credentialService, tokenService, mapper, monitor);
+        endpoint.registerProtocolHandler("/presentations/query", presentationHandler);
 
         endpoint.registerHandler("/holder/did.json", new DidDocumentHandler(baseAssembly.getHolderDidService(), mapper));
         endpoint.registerHandler("/verifier/did.json", new DidDocumentHandler(baseAssembly.getVerifierDidService(), mapper));
