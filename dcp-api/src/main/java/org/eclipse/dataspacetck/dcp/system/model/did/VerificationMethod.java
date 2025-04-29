@@ -26,10 +26,15 @@ import java.util.Map;
  */
 @JsonDeserialize(builder = VerificationMethod.Builder.class)
 public class VerificationMethod {
+    private final Map<String, Object> publicKeyJwk = new LinkedHashMap<>();
     private String id;
     private String type;
     private String controller;
-    private Map<String, Object> publicKeyJwk = new LinkedHashMap<>();
+    private String publicKeyMultibase;
+
+    public String getPublicKeyMultibase() {
+        return publicKeyMultibase;
+    }
 
     public String getId() {
         return id;
@@ -49,7 +54,11 @@ public class VerificationMethod {
 
     @JsonPOJOBuilder(withPrefix = "")
     public static class Builder {
-        private VerificationMethod method;
+        private final VerificationMethod method;
+
+        private Builder() {
+            method = new VerificationMethod();
+        }
 
         @JsonCreator
         public static Builder newInstance() {
@@ -76,12 +85,13 @@ public class VerificationMethod {
             return this;
         }
 
-        public VerificationMethod build() {
-            return method;
+        public Builder publicKeyMultibase(String publicKeyMultibase) {
+            method.publicKeyMultibase = publicKeyMultibase;
+            return this;
         }
 
-        private Builder() {
-            method = new VerificationMethod();
+        public VerificationMethod build() {
+            return method;
         }
     }
 }

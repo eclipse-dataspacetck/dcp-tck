@@ -42,8 +42,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * are instantiated per test.
  */
 public class DcpSystemLauncher implements SystemLauncher {
+    private final Map<String, ServiceAssembly> serviceAssemblies = new ConcurrentHashMap<>();
     private BaseAssembly baseAssembly;
-    private Map<String, ServiceAssembly> serviceAssemblies = new ConcurrentHashMap<>();
 
     @Override
     public void start(SystemConfiguration configuration) {
@@ -53,9 +53,9 @@ public class DcpSystemLauncher implements SystemLauncher {
     @Override
     public <T> boolean providesService(Class<T> type) {
         return type.isAssignableFrom(CredentialService.class) ||
-               type.isAssignableFrom(DidService.class) ||
-               type.isAssignableFrom(String.class) ||
-               type.isAssignableFrom(KeyService.class);
+                type.isAssignableFrom(DidService.class) ||
+                type.isAssignableFrom(String.class) ||
+                type.isAssignableFrom(KeyService.class);
     }
 
     @Nullable
@@ -127,7 +127,7 @@ public class DcpSystemLauncher implements SystemLauncher {
         return configuration.getAnnotations().stream().anyMatch(a -> a.annotationType().equals(annotation));
     }
 
-    @SuppressWarnings({ "unchecked", "SameParameterValue" })
+    @SuppressWarnings({"unchecked", "SameParameterValue"})
     private <A extends Annotation> Optional<A> getAnnotation(Class<A> annotation, ServiceConfiguration configuration) {
         return (Optional<A>) configuration.getAnnotations().stream()
                 .filter(a -> a.annotationType().equals(annotation))

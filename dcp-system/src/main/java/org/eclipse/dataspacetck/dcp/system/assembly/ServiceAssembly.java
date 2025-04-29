@@ -19,7 +19,6 @@ import org.eclipse.dataspacetck.core.spi.system.ServiceConfiguration;
 import org.eclipse.dataspacetck.core.spi.system.ServiceResolver;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialServiceImpl;
-import org.eclipse.dataspacetck.dcp.system.cs.PresentationHandler;
 import org.eclipse.dataspacetck.dcp.system.cs.SecureTokenServerImpl;
 import org.eclipse.dataspacetck.dcp.system.did.DidDocumentHandler;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
@@ -46,12 +45,12 @@ import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_
  * Assembles services that must reinitialized per test invocation.
  */
 public class ServiceAssembly {
-    private CredentialService credentialService;
-    private SecureTokenServer secureTokenServer;
+    private final CredentialService credentialService;
+    private final SecureTokenServer secureTokenServer;
 
     public ServiceAssembly(BaseAssembly baseAssembly, ServiceResolver resolver, ServiceConfiguration configuration) {
         var generator = new JwtPresentationGenerator(baseAssembly.getHolderDid(), baseAssembly.getHolderKeyService());
-        secureTokenServer = new SecureTokenServerImpl();
+        secureTokenServer = new SecureTokenServerImpl(configuration);
         credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer);
 
         // FIXME: Seed test credentials until issuance is implemented
@@ -62,9 +61,9 @@ public class ServiceAssembly {
         var mapper = baseAssembly.getMapper();
 
         // register the handlers
-        var tokenService = baseAssembly.getHolderTokenService();
-        var presentationHandler = new PresentationHandler(credentialService, tokenService, mapper, monitor);
-        endpoint.registerProtocolHandler("/presentations/query", presentationHandler);
+//        var tokenService = baseAssembly.getHolderTokenService();
+//        var presentationHandler = new PresentationHandler(credentialService, tokenService, mapper, monitor);
+//        endpoint.registerProtocolHandler("/presentations/query", new PresentationQueryClient(configuration));
 
         endpoint.registerHandler("/holder/did.json", new DidDocumentHandler(baseAssembly.getHolderDidService(), mapper));
         endpoint.registerHandler("/verifier/did.json", new DidDocumentHandler(baseAssembly.getVerifierDidService(), mapper));
