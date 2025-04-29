@@ -66,40 +66,10 @@ public class SecureTokenServerImpl implements SecureTokenServer {
             if (stsClientId == null || stsClientSecret == null) {
                 return failure("When overriding the STS URL, client ID and secret must be provided");
             }
-            return requestRemoteToken(stsUrl, stsClientId, stsClientSecret, bearerDid, scopeString);
+            return requestRemoteAccessToken(stsUrl, stsClientId, stsClientSecret, bearerDid, scopeString);
         }
     }
 
-    private Result<String> requestRemoteToken(String stsUrl, String stsClientId, String stsClientSecret, String bearerDid, String scopes) {
-        var rq = new Request.Builder()
-                .url(stsUrl + "/token")
-                .addHeader("Content-Type", "application/x-www-form-urlencoded")
-                .post(new FormBody.Builder()
-                        .add("grant_type", "client_credentials")
-                        .add("client_id", stsClientId)
-                        .add("client_secret", stsClientSecret)
-                        .add("audience", bearerDid)
-                        .add("bearer_access_scope", scopes)
-                        .build())
-                .build();
-
-        var client = new OkHttpClient();
-        try (var response = client.newCall(rq).execute()) {
-            if (response.isSuccessful()) {
-                var body = response.body();
-                if (body != null) {
-                    var token = objectMapper.readValue(body.string(), Map.class).get("access_token").toString();
-                    var tokenClaim = SignedJWT.parse(token).getJWTClaimsSet().getClaim("token").toString();
-                    return success(tokenClaim);
-                }
-            }
-            return failure("Request failed with HTTP code " + response.code());
-        } catch (IOException e) {
-            return failure("Error requesting token: " + e.getMessage());
-        } catch (ParseException e) {
-            return failure("Failed to parse token: " + e.getMessage());
-        }
-    }
 
     @Override
     public Result<List<String>> validateReadToken(String bearerDid, String token) {
@@ -136,6 +106,47 @@ public class SecureTokenServerImpl implements SecureTokenServer {
             }
             return scope.substring(SCOPE_TYPE_ALIAS.length());
         }).collect(Collectors.joining(","));
+    }
+
+    /**
+     * Request a token from a remote ("real") STS
+     *
+     * @param stsUrl          the URL of the STS
+     * @param stsClientId     the client ID for the token request
+     * @param stsClientSecret the client secret for the token request
+     * @param audience        the desired 'aud' claim of the token
+     * @param scopes          a space-separated list of scopes to be included in the token
+     * @return the access token (i.e. the "inner" token) returned from the STS
+     */
+    private Result<String> requestRemoteAccessToken(String stsUrl, String stsClientId, String stsClientSecret, String audience, String scopes) {
+        var rq = new Request.Builder()
+                .url(stsUrl + "/token")
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                .post(new FormBody.Builder()
+                        .add("grant_type", "client_credentials")
+                        .add("client_id", stsClientId)
+                        .add("client_secret", stsClientSecret)
+                        .add("audience", audience)
+                        .add("bearer_access_scope", scopes)
+                        .build())
+                .build();
+
+        var client = new OkHttpClient();
+        try (var response = client.newCall(rq).execute()) {
+            if (response.isSuccessful()) {
+                var body = response.body();
+                if (body != null) {
+                    var token = objectMapper.readValue(body.string(), Map.class).get("access_token").toString();
+                    var tokenClaim = SignedJWT.parse(token).getJWTClaimsSet().getClaim("token").toString();
+                    return success(tokenClaim);
+                }
+            }
+            return failure("Request failed with HTTP code " + response.code());
+        } catch (IOException e) {
+            return failure("Error requesting token: " + e.getMessage());
+        } catch (ParseException e) {
+            return failure("Failed to parse token: " + e.getMessage());
+        }
     }
 
 }
