@@ -23,7 +23,9 @@ public interface TestProfile {
 
     String MEMBERSHIP_CREDENTIAL_TYPE = "MembershipCredential";
 
-    String MEMBERSHIP_SCOPE = SCOPE_TYPE + MEMBERSHIP_CREDENTIAL_TYPE;
+    String OPERATION_READ = ":read";
+    
+    String MEMBERSHIP_SCOPE = SCOPE_TYPE + MEMBERSHIP_CREDENTIAL_TYPE + OPERATION_READ;
 
     String SENSITIVE_DATA_CREDENTIAL_TYPE = "SensitiveDataCredential";
 
