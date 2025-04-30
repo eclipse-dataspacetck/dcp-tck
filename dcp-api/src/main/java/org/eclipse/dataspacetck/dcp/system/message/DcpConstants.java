@@ -33,6 +33,10 @@ public interface DcpConstants {
 
     String VC = "vc";
 
+    String VP = "vp";
+
+    String VERIFIABLE_CREDENTIAL_CLAIM = "verifiableCredential";
+
     String PRESENTATION = "presentation";
 
     String SCOPE = "scope";

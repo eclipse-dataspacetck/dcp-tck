@@ -37,6 +37,9 @@ public class DidDocument extends ExtensibleModel {
     @JsonProperty("verificationMethod")
     private List<VerificationMethod> verificationMethods = new ArrayList<>();
 
+    private DidDocument() {
+    }
+
     public String getId() {
         return id;
     }
@@ -57,18 +60,26 @@ public class DidDocument extends ExtensibleModel {
     }
 
     public VerificationMethod getVerificationMethod(String id) {
-        return verificationMethods.stream()
-                .filter(m -> m.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No verification method found for id " + id));
-    }
 
-    private DidDocument() {
+        if (id.startsWith("#")) {
+            id = this.id + id;
+        }
+
+        var methodId = id;
+        return verificationMethods.stream()
+                .filter(m -> m.getId().endsWith(methodId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No verification method found for id " + methodId));
     }
 
     @JsonPOJOBuilder(withPrefix = "")
     public static class Builder extends ExtensibleModel.Builder<Builder> {
-        private DidDocument document;
+        private final DidDocument document;
+
+        private Builder() {
+            document = new DidDocument();
+            setModel(document);
+        }
 
         @JsonCreator
         public static Builder newInstance() {
@@ -93,11 +104,6 @@ public class DidDocument extends ExtensibleModel {
         public DidDocument build() {
             requireNonNull(document.id, "id");
             return document;
-        }
-
-        private Builder() {
-            document = new DidDocument();
-            setModel(document);
         }
     }
 }
