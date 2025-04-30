@@ -16,7 +16,7 @@ nimbus = "10.0.1"
 schema-validator = "1.5.2"
 slf4j="2.0.16"
 tck = "0.1.0"
-titanium = "1.4.1"
+titanium = "1.6.0"
 
 [libraries]
 
