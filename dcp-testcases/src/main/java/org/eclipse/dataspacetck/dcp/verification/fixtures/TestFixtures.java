@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.dataspacetck.dcp.system.crypto.Keys.createVerifier;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.ID;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VC;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VERIFIABLE_CREDENTIAL_CLAIM;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VP;
 
 /**
  * Testing functions.
@@ -81,13 +84,17 @@ public class TestFixtures {
     public static VerificationMethod resolveKeyMaterial(String kid) {
         var kidTokens = kid.split("#");
         if (kidTokens.length != 2) {
-            throw new AssertionError("Key material must have two parts: " + kid);
+            throw new AssertionError("Key material must have two parts: [documentId]#[keyId], but was: " + kid);
         }
         var didClient = new DidClient(false);
         var document = didClient.resolveDocument(kidTokens[0]);
-        return document.getVerificationMethod(kidTokens[1]);
+        // IDs can be relative (e.g. "#key-1") or absolute (e.g. "did:example:123#key-1").
+        // if relative, they are resolved against the document ID. To make resolution easier, and because we have already
+        // parsed anyway, we pass just the relative ID
+        return document.getVerificationMethod("#" + kidTokens[1]);
     }
 
+    @SuppressWarnings("unchecked")
     public static List<String> parseAndVerifyPresentation(List<String> presentations, String audience) {
         return presentations.stream().flatMap(vp -> {
             try {
@@ -99,14 +106,30 @@ public class TestFixtures {
                 assertThat(aud).isNotNull();
                 assertThat(aud).containsOnly(audience);
 
-                @SuppressWarnings("unchecked")
-                var serializedVcs = (List<String>) parsedVp.getJWTClaimsSet().getClaim(VC);
-                return parseAndVerifyCredentials(serializedVcs);
+                var presentationList = objectOrMap(parsedVp.getJWTClaimsSet().getClaim(VP));
+
+                // extract and flatmap all credentials from all presentations
+                var credentialJwts = presentationList.stream().map(pres -> pres.get(VERIFIABLE_CREDENTIAL_CLAIM))
+                        .map(o -> (List<String>) o)
+                        .flatMap(Collection::stream)
+                        .toList();
+
+                return parseAndVerifyCredentials(credentialJwts);
             } catch (ParseException e) {
                 throw new RuntimeException(e);
             }
 
         }).toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> objectOrMap(Object vpClaim) {
+        if (vpClaim instanceof Map) {
+            return List.of((Map<String, Object>) vpClaim);
+        } else if (vpClaim instanceof Collection<?>) {
+            return ((List<Map<String, Object>>) vpClaim);
+        }
+        throw new IllegalArgumentException("Unsupported type: " + vpClaim.getClass().getName());
     }
 
     public static Stream<String> parseAndVerifyCredentials(List<String> credentialJwts) {

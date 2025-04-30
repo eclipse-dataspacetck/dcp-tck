@@ -25,31 +25,56 @@ import org.eclipse.dataspacetck.dcp.system.did.DidService;
 import org.eclipse.dataspacetck.dcp.system.did.DidServiceImpl;
 
 import java.net.URI;
+import java.util.Objects;
 
 import static java.lang.String.format;
 import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_CALLBACK_ADDRESS;
 import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_DEFAULT_CALLBACK_ADDRESS;
+import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_PREFIX;
 
 /**
  * Assembles immutable services that are used across test invocations.
  */
 public class BaseAssembly {
-    private String address;
-    private String issuerDid;
-    private KeyService issuerKeyService;
-    private DidService issuerDidService;
-    private String holderDid;
-    private KeyService holderKeyService;
-    private DidService holderDidService;
-    private String verifierDid;
-    private KeyService verifierKeyService;
-    private DidService verifierDidService;
-    private TokenValidationService verifierTokenService;
-    private TokenValidationService holderTokenService;
-    private String thirdPartyDid;
-    private KeyServiceImpl thirdPartyKeyService;
-    private DidServiceImpl thirdPartyDidService;
-    private ObjectMapper mapper;
+    private final String address;
+    private final String issuerDid;
+    private final KeyService issuerKeyService;
+    private final DidService issuerDidService;
+    private final String holderDid;
+    private final KeyService holderKeyService;
+    private final DidService holderDidService;
+    private final String verifierDid;
+    private final KeyService verifierKeyService;
+    private final DidService verifierDidService;
+    private final TokenValidationService verifierTokenService;
+    private final TokenValidationService holderTokenService;
+    private final String thirdPartyDid;
+    private final KeyServiceImpl thirdPartyKeyService;
+    private final DidServiceImpl thirdPartyDidService;
+    private final ObjectMapper mapper;
+
+    public BaseAssembly(SystemConfiguration configuration) {
+        mapper = new ObjectMapper();
+        address = configuration.getPropertyAsString(TCK_CALLBACK_ADDRESS, TCK_DEFAULT_CALLBACK_ADDRESS);
+        verifierDid = parseDid("verifier");
+        issuerDid = parseDid("issuer");
+        thirdPartyDid = parseDid("thirdparty");
+        issuerKeyService = new KeyServiceImpl(Keys.generateEcKey());
+        issuerDidService = new DidServiceImpl(issuerDid, address, issuerKeyService);
+
+        var hd = configuration.getPropertyAsString(TCK_PREFIX + ".did.holder", null);
+        holderDid = Objects.requireNonNullElseGet(hd, () -> parseDid("holder"));
+        holderKeyService = new KeyServiceImpl(Keys.generateEcKey());
+        holderDidService = new DidServiceImpl(holderDid, address, holderKeyService);
+        holderTokenService = new TokenValidationServiceImpl(holderDid);
+
+        verifierTokenService = new TokenValidationServiceImpl(verifierDid);
+        verifierKeyService = new KeyServiceImpl(Keys.generateEcKey());
+        verifierDidService = new DidServiceImpl(verifierDid, address, verifierKeyService);
+
+        thirdPartyKeyService = new KeyServiceImpl(Keys.generateEcKey());
+        thirdPartyDidService = new DidServiceImpl(thirdPartyDid, address, thirdPartyKeyService);
+    }
 
     public ObjectMapper getMapper() {
         return mapper;
@@ -113,26 +138,6 @@ public class BaseAssembly {
 
     public DidServiceImpl getThirdPartyDidService() {
         return thirdPartyDidService;
-    }
-
-    public BaseAssembly(SystemConfiguration configuration) {
-        mapper = new ObjectMapper();
-        address = configuration.getPropertyAsString(TCK_CALLBACK_ADDRESS, TCK_DEFAULT_CALLBACK_ADDRESS);
-        verifierDid = parseDid("verifier");
-        issuerDid = parseDid("issuer");
-        thirdPartyDid = parseDid("thirdparty");
-        issuerKeyService = new KeyServiceImpl(Keys.generateEcKey());
-        issuerDidService = new DidServiceImpl(issuerDid, address, issuerKeyService);
-        holderDid = parseDid("holder");
-        holderKeyService = new KeyServiceImpl(Keys.generateEcKey());
-        holderDidService = new DidServiceImpl(holderDid, address, holderKeyService);
-        holderTokenService = new TokenValidationServiceImpl(holderDid);
-        verifierTokenService = new TokenValidationServiceImpl(verifierDid);
-        verifierKeyService = new KeyServiceImpl(Keys.generateEcKey());
-        verifierDidService = new DidServiceImpl(verifierDid, address, verifierKeyService);
-
-        thirdPartyKeyService = new KeyServiceImpl(Keys.generateEcKey());
-        thirdPartyDidService = new DidServiceImpl(thirdPartyDid, address, thirdPartyKeyService);
     }
 
     private String parseDid(String discriminator) {

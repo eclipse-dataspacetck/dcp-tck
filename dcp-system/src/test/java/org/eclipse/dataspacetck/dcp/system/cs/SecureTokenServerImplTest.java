@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE_TYPE_ALIAS;
+import static org.mockito.Mockito.mock;
 
 class SecureTokenServerImplTest {
     private static final String DID = "did:web:test";
@@ -28,7 +29,7 @@ class SecureTokenServerImplTest {
     private static final String CREDENTIAL_2 = "Credential2";
     private static final String SCOPE_2 = SCOPE_TYPE_ALIAS + CREDENTIAL_2;
 
-    private SecureTokenServerImpl server = new SecureTokenServerImpl();
+    private final SecureTokenServerImpl server = new SecureTokenServerImpl(mock());
 
     @Test
     void verify_obtainReadToken() {

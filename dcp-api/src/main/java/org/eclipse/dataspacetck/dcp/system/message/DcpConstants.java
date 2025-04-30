@@ -33,6 +33,10 @@ public interface DcpConstants {
 
     String VC = "vc";
 
+    String VP = "vp";
+
+    String VERIFIABLE_CREDENTIAL_CLAIM = "verifiableCredential";
+
     String PRESENTATION = "presentation";
 
     String SCOPE = "scope";
@@ -52,5 +56,9 @@ public interface DcpConstants {
     String CREDENTIAL_SERVICE_TYPE = "CredentialService";
 
     String PRESENTATION_QUERY_PATH = "/presentations/query";
+
+    String CREDENTIAL_OFFER_MESSAGE_TYPE = "CredentialOfferMessage";
+
+    String CREDENTIAL_MESSAGE_TYPE = "CredentialMessage";
 
 }
