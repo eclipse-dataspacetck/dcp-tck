@@ -39,17 +39,18 @@ import org.eclipse.dataspacetck.dcp.system.sts.StsClient;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static java.time.Instant.now;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_MESSAGE_TYPE;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_OFFER_MESSAGE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat.VC1_0_JWT;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
@@ -81,8 +82,7 @@ public class ServiceAssembly {
         endpoint.registerHandler("/issuer/did.json", new DidDocumentHandler(baseAssembly.getIssuerDidService(), mapper));
         endpoint.registerHandler("/thirdparty/did.json", new DidDocumentHandler(baseAssembly.getThirdPartyDidService(), mapper));
 
-        // FIXME: Seed test credentials until issuance is implemented
-        seedCredentials(baseAssembly);
+        sendCredentials(baseAssembly, configuration);
     }
 
     public CredentialService getCredentialService() {
@@ -93,7 +93,7 @@ public class ServiceAssembly {
         return secureTokenServer;
     }
 
-    private void seedCredentials(BaseAssembly baseAssembly) {
+    private void sendCredentials(BaseAssembly baseAssembly, ServiceConfiguration config) {
         var issuerDid = baseAssembly.getIssuerDid();
         var credentialGenerator = new JwtCredentialGenerator(issuerDid, baseAssembly.getIssuerKeyService());
 
@@ -102,9 +102,7 @@ public class ServiceAssembly {
         var membershipContainer = createVcContainer(issuerDid, holderDid, credentialGenerator, MEMBERSHIP_CREDENTIAL_TYPE);
         var sensitiveDataContainer = createVcContainer(issuerDid, holderDid, credentialGenerator, SENSITIVE_DATA_CREDENTIAL_TYPE);
 
-        var correlation = randomUUID().toString();
-
-        // var token = secureTokenServer.authorizeWrite(issuerDid, correlation, List.of(MEMBERSHIP_SCOPE_WRITE, SENSITIVE_DATA_SCOPE_WRITE)).getContent();
+        var correlation = Optional.ofNullable(config.getPropertyAsString("dataspacetck.credentials.correlation.id", null)).orElseGet(() -> randomUUID().toString());
 
         var claimSet = new JWTClaimsSet.Builder()
                 .issuer(issuerDid)
@@ -119,27 +117,9 @@ public class ServiceAssembly {
 
         try {
             sendCredentialMessage(baseAssembly, correlation, membershipContainer, sensitiveDataContainer, token);
-            sendCredentialOfferMessage(baseAssembly, token);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-
-    }
-
-    private void sendCredentialOfferMessage(BaseAssembly baseAssembly, String token) throws JsonProcessingException {
-        var credentialsOfferObject = DcpMessageBuilder.newInstance()
-                .type(CREDENTIAL_OFFER_MESSAGE_TYPE)
-                .property("https://w3id.org/dspace-dcp/v1.0/issuer", baseAssembly.getIssuerDid())
-                .property("https://w3id.org/dspace-dcp/v1.0/credentials", List.of(
-                        Map.of(
-                                "https://w3id.org/dspace-dcp/v1.0/profile", "vc11-sl2021/jwt",
-                                "https://w3id.org/dspace-dcp/v1.0/credentialType", MEMBERSHIP_CREDENTIAL_TYPE,
-                                "https://w3id.org/dspace-dcp/v1.0/offerReason", "issuance",
-                                "https://w3id.org/dspace-dcp/v1.0/bindingMethods", "did:web"
-                        )
-                ));
-        var msg = baseAssembly.getMapper().writeValueAsString(credentialsOfferObject.build());
-        sendDcpMessage(msg, "/offers", token, baseAssembly.getHolderDid());
 
     }
 
@@ -148,24 +128,32 @@ public class ServiceAssembly {
                 .type(CREDENTIAL_MESSAGE_TYPE)
                 .property("requestId", correlation)
                 .property("issuerPid", UUID.randomUUID().toString())
-                .property("holderPid", UUID.randomUUID().toString())
+                .property("holderPid", correlation)
                 .property("credentials", List.of(
                         Map.of(
                                 "credentialType", MEMBERSHIP_CREDENTIAL_TYPE,
-                                "format", "VC_1_0_JWT",
+                                "format", "VC1_0_JWT",
                                 "payload", membershipContainer.rawCredential()
                         ),
                         Map.of(
                                 "credentialType", SENSITIVE_DATA_CREDENTIAL_TYPE,
-                                "format", "VC_1_0_JWT",
+                                "format", "VC1_0_JWT",
                                 "payload", sensitiveDataContainer.rawCredential()
                         )));
 
         var msg = baseAssembly.getMapper().writeValueAsString(credentialsObject.build());
-        sendDcpMessage(msg, "/credentials", token, baseAssembly.getHolderDid());
+        sendCredentialServiceMessage(msg, "/credentials", token, baseAssembly.getHolderDid());
     }
 
-    private void sendDcpMessage(String messageObject, String path, String token, String holderDid) {
+    /**
+     * Sends a message to the credential service.
+     *
+     * @param messageObject the message object to send, e.g. a CredentialMessage, a CredentialOfferMessage, etc.
+     * @param path          the exact endpoint path to send the message to
+     * @param token         the ID token to use for authentication
+     * @param holderDid     the holder DID. Used to resolve the message recipient's CredentialService base URL.
+     */
+    private void sendCredentialServiceMessage(String messageObject, String path, String token, String holderDid) {
         var dd = new DidClient(false).resolveDocument(holderDid);
         var service = dd.getServiceEntry(CREDENTIAL_SERVICE_TYPE);
 
@@ -200,9 +188,11 @@ public class ServiceAssembly {
         return VerifiableCredential.Builder.newInstance()
                 .credentialSubject(Map.of("id", holderDid))
                 .id(randomUUID().toString())
-                .issuanceDate(new Date().toString())
+                .issuanceDate(Instant.now().toString())
                 .issuer(issuerDid)
                 .type(List.of(credentialType))
+                // credential subject cannot be empty
+                .credentialSubject(Map.of("id", UUID.randomUUID().toString(), "foo", "bar"))
                 .build();
 
     }

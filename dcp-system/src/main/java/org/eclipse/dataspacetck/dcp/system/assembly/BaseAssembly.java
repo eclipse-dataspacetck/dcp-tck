@@ -25,6 +25,7 @@ import org.eclipse.dataspacetck.dcp.system.did.DidService;
 import org.eclipse.dataspacetck.dcp.system.did.DidServiceImpl;
 
 import java.net.URI;
+import java.util.Objects;
 
 import static java.lang.String.format;
 import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_CALLBACK_ADDRESS;
@@ -62,11 +63,7 @@ public class BaseAssembly {
         issuerDidService = new DidServiceImpl(issuerDid, address, issuerKeyService);
 
         var hd = configuration.getPropertyAsString(TCK_PREFIX + ".did.holder", null);
-        if (hd != null) {
-            holderDid = hd;
-        } else {
-            holderDid = parseDid("holder");
-        }
+        holderDid = Objects.requireNonNullElseGet(hd, () -> parseDid("holder"));
         holderKeyService = new KeyServiceImpl(Keys.generateEcKey());
         holderDidService = new DidServiceImpl(holderDid, address, holderKeyService);
         holderTokenService = new TokenValidationServiceImpl(holderDid);
