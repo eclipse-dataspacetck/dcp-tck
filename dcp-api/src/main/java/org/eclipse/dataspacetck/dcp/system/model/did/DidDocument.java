@@ -61,15 +61,10 @@ public class DidDocument extends ExtensibleModel {
 
     public VerificationMethod getVerificationMethod(String id) {
 
-        if (id.startsWith("#")) {
-            id = this.id + id;
-        }
-
-        var methodId = id;
         return verificationMethods.stream()
-                .filter(m -> m.getId().endsWith(methodId))
+                .filter(m -> m.getId().equals(id) || m.getId().equals(this.id + id) || m.getId().equals(this.id + "#" + id))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No verification method found for id " + methodId));
+                .orElseThrow(() -> new IllegalArgumentException("No verification method found for id " + id));
     }
 
     @JsonPOJOBuilder(withPrefix = "")

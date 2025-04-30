@@ -34,7 +34,7 @@ public class DidServiceImpl implements DidService {
 
     private final String did;
     private final String baseEndpoint;
-    private KeyService keyService;
+    private final KeyService keyService;
 
     public DidServiceImpl(String did, String baseEndpoint, KeyService keyService) {
         this.did = did;
@@ -49,7 +49,7 @@ public class DidServiceImpl implements DidService {
                 .context(List.of(DID_CONTEXT, DCP_NAMESPACE))
                 .service(List.of(new ServiceEntry("TCK-Credential-Service", CREDENTIAL_SERVICE_TYPE, baseEndpoint)))
                 .verificationMethod(List.of(VerificationMethod.Builder.newInstance()
-                        .id(keyService.getPublicKey().getKeyID())
+                        .id(did + "#" + keyService.getPublicKey().getKeyID())
                         .type("JsonWebKey2020") // FIXME
                         .controller(did)
                         .publicKeyJwk(keyService.getPublicKey().toJSONObject())

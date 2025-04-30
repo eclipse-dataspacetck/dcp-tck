@@ -35,7 +35,7 @@ import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
  */
 public class TokenValidationServiceImpl implements TokenValidationService {
     private final String audience;
-    private Map<String, String> usedJts = new ConcurrentHashMap<>();
+    private final Map<String, String> usedJts = new ConcurrentHashMap<>();
 
     public TokenValidationServiceImpl(String audience) {
         this.audience = audience;
@@ -101,7 +101,7 @@ public class TokenValidationServiceImpl implements TokenValidationService {
                 }
                 method = didDocument.getVerificationMethods().get(0);
             } else {
-                method = didDocument.getVerificationMethod(parts[1]);
+                method = didDocument.getVerificationMethod("#" + parts[1]);
             }
 
             if (!claims.getSubject().equals(didDocument.getId())) {
