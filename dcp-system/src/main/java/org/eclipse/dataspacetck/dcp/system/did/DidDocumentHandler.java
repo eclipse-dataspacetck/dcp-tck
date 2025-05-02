@@ -24,8 +24,8 @@ import java.util.function.Function;
  * Serves DID documents.
  */
 public class DidDocumentHandler implements Function<InputStream, String> {
-    private DidService didService;
-    private ObjectMapper mapper;
+    private final DidService didService;
+    private final ObjectMapper mapper;
 
     public DidDocumentHandler(DidService didService, ObjectMapper mapper) {
         this.didService = didService;
