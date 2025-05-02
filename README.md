@@ -39,20 +39,20 @@ Test are grouped into packages according to the system under test (SUT) and the 
 
 ### 2.1 Running instance of the system-under-test
 
-The system under test (SUT) must be running and reachable via the network. If a SuT consists of several
+The system under test (SUT) must be running and reachable via the network. If a SUT consists of several
 microservices, it is allowed to only launch the microservices that are required for the tests. For example, if you want
 to test the VPP, then only the microservice that processes Presentation Queries is required.
 
 Further, the SecureTokenService must be running and reachable via the network. The TCK will use the SecureTokenService
-to obtain ID Tokens for Presentation Query messages. The SuT must be prepared in such a way that there is a valid
+to obtain ID Tokens for Presentation Query messages. The SUT must be prepared in such a way that there is a valid
 `clientId/clientSecret` with which ID tokens can be obtained. This will be used as configuration for the TCK.
 
 ### 2.2 Required test data
 
-The TCK dynamically generates two test credentials for every test case and attempts to load them into the SuT by sending
+The TCK dynamically generates two test credentials for every test case and attempts to load them into the SUT by sending
 a
 `CredentialMessage`
-to the SuT's [Storage API](https://eclipse-dataspace-dcp.github.io/decentralized-claims-protocol/v1.0-RC3/#storage-api).
+to the SUT's [Storage API](https://eclipse-dataspace-dcp.github.io/decentralized-claims-protocol/v1.0-RC3/#storage-api).
 This means, the SuT must accept the test credentials on that API endpoint, otherwise all tests will fail.
 
 ### 2.3 Required configuration
