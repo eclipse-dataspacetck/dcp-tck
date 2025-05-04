@@ -40,7 +40,7 @@ Test are grouped into packages according to the system under test (SUT) and the 
 ### 2.1 Running instance of the system-under-test
 
 The system under test (SUT) must be running and reachable via the network. If a SUT consists of several
-microservices, it is allowed to only launch the microservices that are required for the tests. For example, if you want
+microservices, it is permitted to only launch the microservices that are required for the tests. For example, if you want
 to test the VPP, then only the microservice that processes Presentation Queries is required.
 
 Further, the SecureTokenService must be running and reachable via the network. The TCK will use the SecureTokenService
@@ -110,7 +110,7 @@ void runVppTestsWithDocker() {
             .withExposedPorts(8080)
             .withEnv(config)
     ) {
-        tckContainer.setPortBindings(List.of("%s:%s".formatted(CALLBACK_PORT, CALLBACK_PORT)));
+        tckContainer.setPortBindings(List.of("8080:8080"));
         tckContainer.start();
         var latch = new CountDownLatch(1);
         var hasFailed = new AtomicBoolean(false);
