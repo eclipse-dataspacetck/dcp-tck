@@ -216,7 +216,7 @@ When building from source you will need git, Java 17 or higher and Gradle 8.0 or
 
 ```shell
 git clone https://github.com/eclipse-dataspacetck/dcp-tck.git
-./gardlew shadowJar
+./gradlew shadowJar
 
 # not shown here: start and configure your system-under-test
 
