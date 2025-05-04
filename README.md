@@ -205,7 +205,7 @@ docker run --rm \
    -e "DATASPACETCK_CLIENT_ID=some-client-id" \
    -e "DATASPACETCK_CLIENT_SECRET=5up3r$3cr3t" \
    -e "DATASPACETCK_CREDENTIALS_CORRELATION_ID=my-correlation-id" \
-   dcp-tck:latest
+   eclipsedataspacetck/dcp-tck-runtime:latest
 ```
 
 this will start the TCK and run all tests and print the test results to the console.
