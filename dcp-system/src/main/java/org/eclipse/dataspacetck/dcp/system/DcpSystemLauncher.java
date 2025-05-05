@@ -132,7 +132,7 @@ public class DcpSystemLauncher implements SystemLauncher {
     @Override
     public void beforeExecution(ServiceConfiguration configuration, ServiceResolver resolver) {
         if (hasAnnotation(IssueCredentials.class, configuration)) {
-            serviceAssemblies.get(configuration.getScopeId()).issueCredentials(baseAssembly, configuration);
+            serviceAssemblies.get(configuration.getScopeId()).issueCredentials(baseAssembly);
         }
     }
 

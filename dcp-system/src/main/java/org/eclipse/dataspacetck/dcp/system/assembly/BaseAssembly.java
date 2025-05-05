@@ -71,7 +71,7 @@ public class BaseAssembly {
         holderDidService = new DidServiceImpl(holderDid, address, holderKeyService);
         holderTokenService = new TokenValidationServiceImpl(holderDid);
 
-        holderPid = ofNullable(configuration.getPropertyAsString(TCK_PREFIX + "credentials.correlation.id", null)).orElseGet(() -> randomUUID().toString());
+        holderPid = ofNullable(configuration.getPropertyAsString(TCK_PREFIX + ".credentials.correlation.id", null)).orElseGet(() -> randomUUID().toString());
 
         verifierTokenService = new TokenValidationServiceImpl(verifierDid);
         verifierKeyService = new KeyServiceImpl(Keys.generateEcKey());

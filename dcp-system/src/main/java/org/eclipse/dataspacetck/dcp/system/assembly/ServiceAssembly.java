@@ -46,7 +46,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import static java.time.Instant.now;
@@ -99,7 +98,7 @@ public class ServiceAssembly {
         return secureTokenServer;
     }
 
-    public void issueCredentials(BaseAssembly baseAssembly, ServiceConfiguration config) {
+    public void issueCredentials(BaseAssembly baseAssembly) {
         var issuerDid = baseAssembly.getIssuerDid();
         var credentialGenerator = new JwtCredentialGenerator(issuerDid, baseAssembly.getIssuerKeyService());
 
@@ -108,7 +107,7 @@ public class ServiceAssembly {
         var membershipContainer = createVcContainer(issuerDid, holderDid, credentialGenerator, MEMBERSHIP_CREDENTIAL_TYPE);
         var sensitiveDataContainer = createVcContainer(issuerDid, holderDid, credentialGenerator, SENSITIVE_DATA_CREDENTIAL_TYPE);
 
-        var correlation = Optional.ofNullable(config.getPropertyAsString("dataspacetck.credentials.correlation.id", null)).orElseGet(() -> randomUUID().toString());
+        var correlation = baseAssembly.getHolderPid();
 
         var claimSet = new JWTClaimsSet.Builder()
                 .issuer(issuerDid)
