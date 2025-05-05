@@ -15,6 +15,7 @@
 package org.eclipse.dataspacetck.dcp.system.cs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jwt.SignedJWT;
 import org.eclipse.dataspacetck.dcp.system.generation.PresentationGenerator;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat;
@@ -25,11 +26,13 @@ import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import static java.util.stream.Collectors.toMap;
 import static org.eclipse.dataspacetck.dcp.system.generation.PresentationGenerator.PresentationFormat.JWT;
@@ -37,7 +40,7 @@ import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTAT
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_DEFINITION;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_RESPONSE_MESSAGE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE_TYPE_ALIAS;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VC;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.ErrorType.BAD_REQUEST;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.ErrorType.NOT_FOUND;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.ErrorType.UNAUTHORIZED;
@@ -48,6 +51,7 @@ import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
  * Implementation used for test verification.
  */
 public class CredentialServiceImpl implements CredentialService {
+    public static final Pattern SCOPE_PATTERN = Pattern.compile("(org.eclipse.dspace.dcp.vc.type):(?<type>.*):(.*)");
     private final SecureTokenServer secureTokenServer;
     private final String holderDid;
     private final Map<PresentationGenerator.PresentationFormat, PresentationGenerator> generators;
@@ -93,7 +97,7 @@ public class CredentialServiceImpl implements CredentialService {
             }
             message.getCredentials()
                     .forEach(cred -> {
-                        var container = new VcContainer(cred.payload(), new VerifiableCredential(), CredentialFormat.valueOf(cred.format()));
+                        var container = new VcContainer(cred.payload(), createCredential(cred), CredentialFormat.valueOf(cred.format()));
                         credentialsByType.computeIfAbsent(cred.credentialType(), k -> new ArrayList<>()).add(container);
                     });
             return success();
@@ -102,15 +106,27 @@ public class CredentialServiceImpl implements CredentialService {
         }
     }
 
+    private VerifiableCredential createCredential(CredentialMessage.CredentialContainer cred) {
+
+        try {
+            var claims = (Map<String, Object>) SignedJWT.parse(cred.payload()).getJWTClaimsSet().getClaim(VC);
+            return mapper.convertValue(claims, VerifiableCredential.class);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private Result<Map<String, Object>> processScopeQuery(Map<String, Object> message, List<String> scopes, String audience) {
         @SuppressWarnings("unchecked")
         var requestedScopes = (List<String>) message.get(SCOPE);
         var scopeTypes = new ArrayList<String>();
         for (var requestedScope : requestedScopes) {
-            if (!requestedScope.startsWith(SCOPE_TYPE_ALIAS)) {
+            var matcher = SCOPE_PATTERN.matcher(requestedScope);
+            if (!matcher.matches()) {
                 return failure("Invalid scope type: " + requestedScope);
             }
-            scopeTypes.add(requestedScope.substring(SCOPE_TYPE_ALIAS.length()));
+            var type = matcher.group("type");
+            scopeTypes.add(type);
         }
         var credentials = scopeTypes.stream()
                 .flatMap(c -> credentialsByType.get(c).stream())
@@ -122,7 +138,7 @@ public class CredentialServiceImpl implements CredentialService {
         for (var container : credentials) {
             boolean found = false;
             for (var type : container.credential().getType()) {
-                if (scopes.contains(type)) {
+                if (scopes.stream().anyMatch(scope -> scope.startsWith(type))) {
                     found = true;
                     break;
                 }

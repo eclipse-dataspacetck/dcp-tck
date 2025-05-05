@@ -66,6 +66,7 @@ public class ServiceAssembly {
     private final SecureTokenServer secureTokenServer;
 
     public ServiceAssembly(BaseAssembly baseAssembly, ServiceResolver resolver, ServiceConfiguration configuration) {
+        var tokenService = baseAssembly.getHolderTokenService();
         var generator = new JwtPresentationGenerator(baseAssembly.getHolderDid(), baseAssembly.getHolderKeyService());
         var mapper = baseAssembly.getMapper();
 
@@ -76,11 +77,11 @@ public class ServiceAssembly {
         var monitor = configuration.getMonitor();
 
         // register the handlers
-        var tokenService = baseAssembly.getHolderTokenService();
+        // ... for presentation query
         var presentationHandler = new PresentationHandler(credentialService, tokenService, mapper, monitor);
         endpoint.registerProtocolHandler("/presentations/query", presentationHandler);
 
-        // default handler for credential issuance
+        // ... for credential issuance
         endpoint.registerProtocolHandler("/credentials", new CredentialIssuanceHandler(credentialService));
 
         endpoint.registerHandler("/holder/did.json", new DidDocumentHandler(baseAssembly.getHolderDidService(), mapper));
@@ -144,7 +145,8 @@ public class ServiceAssembly {
                                 "credentialType", SENSITIVE_DATA_CREDENTIAL_TYPE,
                                 "format", "VC1_0_JWT",
                                 "payload", sensitiveDataContainer.rawCredential()
-                        )));
+                        )))
+                .property("status", "ISSUED");
 
         var msg = baseAssembly.getMapper().writeValueAsString(credentialsObject.build());
         sendCredentialServiceMessage(msg, "/credentials", token, baseAssembly.getHolderDid());

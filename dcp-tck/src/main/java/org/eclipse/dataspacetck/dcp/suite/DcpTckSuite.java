@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.util.stream.Collectors.toMap;
@@ -50,15 +51,17 @@ public class DcpTckSuite {
         if (!properties.containsKey(TCK_LAUNCHER)) {
             properties.put(TCK_LAUNCHER, DEFAULT_LAUNCHER);
         }
-        if (!properties.containsKey(TCK_TEST_PACKAGE)) {
-            properties.put(TCK_TEST_PACKAGE, DEFAULT_TEST_PACKAGE);
-        }
         var monitor = createMonitor(properties);
         monitor.enableBold().message("\u001B[1mRunning DCP TCK v" + VERSION + "\u001B[0m").resetMode();
-        var result = TckRuntime.Builder.newInstance()
+
+        var packages = properties.getOrDefault(TCK_TEST_PACKAGE, DEFAULT_TEST_PACKAGE).split(",");
+
+        var runtimeBuilder = TckRuntime.Builder.newInstance()
                 .properties(properties)
-                .addPackage(properties.get(TCK_TEST_PACKAGE))
-                .monitor(monitor)
+                .monitor(monitor);
+
+        Stream.of(packages).forEach(runtimeBuilder::addPackage);
+        var result = runtimeBuilder
                 .build().execute();
 
 
