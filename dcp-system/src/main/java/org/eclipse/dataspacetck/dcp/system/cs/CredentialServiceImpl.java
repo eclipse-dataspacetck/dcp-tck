@@ -14,12 +14,17 @@
 
 package org.eclipse.dataspacetck.dcp.system.cs;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.dataspacetck.dcp.system.generation.PresentationGenerator;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
+import org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
+import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,17 +48,20 @@ import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
  * Implementation used for test verification.
  */
 public class CredentialServiceImpl implements CredentialService {
-    private String holderDid;
-
     private final SecureTokenServer secureTokenServer;
+    private final String holderDid;
+    private final Map<PresentationGenerator.PresentationFormat, PresentationGenerator> generators;
+    private final Map<String, List<VcContainer>> credentialsByType = new ConcurrentHashMap<>();
+    private final TokenValidationService tokenService;
+    private final ObjectMapper mapper;
 
-    private Map<PresentationGenerator.PresentationFormat, PresentationGenerator> generators;
-    private Map<String, List<VcContainer>> credentialsByType = new ConcurrentHashMap<>();
 
-    public CredentialServiceImpl(String holderDid, List<PresentationGenerator> generators, SecureTokenServer secureTokenServer) {
+    public CredentialServiceImpl(String holderDid, List<PresentationGenerator> generators, SecureTokenServer secureTokenServer, TokenValidationService tokenService, ObjectMapper mapper) {
         this.generators = generators.stream().collect(toMap(PresentationGenerator::getFormat, v -> v));
         this.holderDid = holderDid;
         this.secureTokenServer = secureTokenServer;
+        this.tokenService = tokenService;
+        this.mapper = mapper;
     }
 
     @Override
@@ -71,14 +79,27 @@ public class CredentialServiceImpl implements CredentialService {
     }
 
     @Override
-    public Result<Void> writeCredentials(String bearerDid, String correlationId, List<VcContainer> containers) {
-        var validationResult = secureTokenServer.validateWrite(bearerDid, correlationId);
+    public Result<Void> writeCredentials(String idTokenJwt, InputStream body) {
+
+        var validationResult = secureTokenServer.validateWrite(idTokenJwt, tokenService);
         if (validationResult.failed()) {
             return failure(validationResult.getFailure(), UNAUTHORIZED);
         }
-        containers.forEach(container -> container.credential().getType()
-                .forEach(type -> credentialsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(container)));
-        return Result.success();
+
+        try {
+            var message = mapper.readValue(body, CredentialMessage.class);
+            if (!message.validate()) {
+                return failure("Invalid message", BAD_REQUEST);
+            }
+            message.getCredentials()
+                    .forEach(cred -> {
+                        var container = new VcContainer(cred.payload(), new VerifiableCredential(), CredentialFormat.valueOf(cred.format()));
+                        credentialsByType.computeIfAbsent(cred.credentialType(), k -> new ArrayList<>()).add(container);
+                    });
+            return success();
+        } catch (IOException e) {
+            return failure("Invalid JSON: " + e.getMessage(), BAD_REQUEST);
+        }
     }
 
     private Result<Map<String, Object>> processScopeQuery(Map<String, Object> message, List<String> scopes, String audience) {
@@ -91,7 +112,7 @@ public class CredentialServiceImpl implements CredentialService {
             }
             scopeTypes.add(requestedScope.substring(SCOPE_TYPE_ALIAS.length()));
         }
-        List<VcContainer> credentials = scopeTypes.stream()
+        var credentials = scopeTypes.stream()
                 .flatMap(c -> credentialsByType.get(c).stream())
                 .filter(Objects::nonNull)
                 .toList();

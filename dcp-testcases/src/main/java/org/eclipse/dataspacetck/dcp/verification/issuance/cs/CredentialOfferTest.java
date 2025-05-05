@@ -12,11 +12,8 @@
  *
  */
 
-package org.eclipse.dataspacetck.dcp.system.annotation;
+package org.eclipse.dataspacetck.dcp.verification.issuance.cs;
 
-/**
- * A holder, verifier or third-party.
- */
-public enum RoleType {
-    HOLDER, ISSUER, VERIFIER, THIRD_PARTY
+public class CredentialOfferTest {
+
 }

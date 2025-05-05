@@ -14,6 +14,7 @@
 
 package org.eclipse.dataspacetck.dcp.system.sts;
 
+import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 
 import java.util.List;
@@ -27,8 +28,9 @@ public interface StsClient {
      * Obtains the token
      *
      * @param bearerDid the bearer's DID to bind the token
-     * @param scopes      requested scope
+     * @param scopes    requested scope
      */
     Result<String> obtainReadToken(String bearerDid, List<String> scopes);
 
+    Result<String> obtainWriteToken(String bearerDid, String audience, KeyService keyService);
 }

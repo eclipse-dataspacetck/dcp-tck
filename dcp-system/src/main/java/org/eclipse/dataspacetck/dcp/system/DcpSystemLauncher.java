@@ -19,9 +19,12 @@ import org.eclipse.dataspacetck.core.spi.system.ServiceResolver;
 import org.eclipse.dataspacetck.core.spi.system.SystemConfiguration;
 import org.eclipse.dataspacetck.core.spi.system.SystemLauncher;
 import org.eclipse.dataspacetck.dcp.system.annotation.AuthToken;
+import org.eclipse.dataspacetck.dcp.system.annotation.Credential;
 import org.eclipse.dataspacetck.dcp.system.annotation.Did;
 import org.eclipse.dataspacetck.dcp.system.annotation.Holder;
+import org.eclipse.dataspacetck.dcp.system.annotation.HolderPid;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
+import org.eclipse.dataspacetck.dcp.system.annotation.Issuer;
 import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
 import org.eclipse.dataspacetck.dcp.system.assembly.BaseAssembly;
@@ -29,6 +32,8 @@ import org.eclipse.dataspacetck.dcp.system.assembly.ServiceAssembly;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialService;
 import org.eclipse.dataspacetck.dcp.system.did.DidService;
+import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
+import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
@@ -55,7 +60,8 @@ public class DcpSystemLauncher implements SystemLauncher {
         return type.isAssignableFrom(CredentialService.class) ||
                 type.isAssignableFrom(DidService.class) ||
                 type.isAssignableFrom(String.class) ||
-                type.isAssignableFrom(KeyService.class);
+                type.isAssignableFrom(KeyService.class) ||
+                type.isAssignableFrom(VcContainer.class);
     }
 
     @Nullable
@@ -65,6 +71,14 @@ public class DcpSystemLauncher implements SystemLauncher {
         var assembly = serviceAssemblies.computeIfAbsent(scopeId, id -> new ServiceAssembly(baseAssembly, resolver, configuration));
         if (type.isAssignableFrom(CredentialService.class)) {
             return type.cast(assembly.getCredentialService());
+        } else if (type.isAssignableFrom(VcContainer.class)) {
+            if (hasAnnotation(Credential.class, configuration)) {
+                var gen = new JwtCredentialGenerator(baseAssembly.getIssuerDid(), baseAssembly.getIssuerKeyService());
+                var credentialType = getAnnotation(Credential.class, configuration);
+                if (credentialType.isPresent()) {
+                    return type.cast(assembly.createVcContainer(baseAssembly.getIssuerDid(), baseAssembly.getHolderDid(), gen, credentialType.get().value()));
+                }
+            }
         } else if (type.isAssignableFrom(KeyService.class)) {
             if (hasAnnotation(Verifier.class, configuration)) {
                 return type.cast(baseAssembly.getVerifierKeyService());
@@ -72,6 +86,8 @@ public class DcpSystemLauncher implements SystemLauncher {
                 return type.cast(baseAssembly.getHolderKeyService());
             } else if (hasAnnotation(ThirdParty.class, configuration)) {
                 return type.cast(baseAssembly.getThirdPartyKeyService());
+            } else if (hasAnnotation(Issuer.class, configuration)) {
+                return type.cast(baseAssembly.getIssuerKeyService());
             }
         } else if (type.isAssignableFrom(DidService.class)) {
             if (hasAnnotation(Verifier.class, configuration)) {
@@ -80,10 +96,15 @@ public class DcpSystemLauncher implements SystemLauncher {
                 return type.cast(baseAssembly.getHolderDidService());
             } else if (hasAnnotation(ThirdParty.class, configuration)) {
                 return type.cast(baseAssembly.getThirdPartyDidService());
+            } else if (hasAnnotation(Issuer.class, configuration)) {
+                return type.cast(baseAssembly.getIssuerDidService());
             }
         } else if (type.isAssignableFrom(String.class)) {
             if (hasAnnotation(AuthToken.class, configuration)) {
                 return createAuthToken(type, configuration, assembly);
+            }
+            if (hasAnnotation(HolderPid.class, configuration)) {
+                return type.cast(baseAssembly.getHolderPid());
             }
 
             var did = getAnnotation(Did.class, configuration);
@@ -98,9 +119,10 @@ public class DcpSystemLauncher implements SystemLauncher {
                     case THIRD_PARTY -> {
                         return type.cast(baseAssembly.getThirdPartyDid());
                     }
-                    default -> {
-                        throw new UnsupportedOperationException("Unsupported DID role: " + did.get().value());
+                    case ISSUER -> {
+                        return type.cast(baseAssembly.getIssuerDid());
                     }
+                    default -> throw new UnsupportedOperationException("Unsupported DID role: " + did.get().value());
                 }
             }
         }
@@ -110,7 +132,7 @@ public class DcpSystemLauncher implements SystemLauncher {
     @Override
     public void beforeExecution(ServiceConfiguration configuration, ServiceResolver resolver) {
         if (hasAnnotation(IssueCredentials.class, configuration)) {
-            // TODO implement credential issuance
+            serviceAssemblies.get(configuration.getScopeId()).issueCredentials(baseAssembly, configuration);
         }
     }
 

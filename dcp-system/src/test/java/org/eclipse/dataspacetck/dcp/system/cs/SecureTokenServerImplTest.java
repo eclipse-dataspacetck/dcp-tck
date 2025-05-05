@@ -14,13 +14,23 @@
 
 package org.eclipse.dataspacetck.dcp.system.cs;
 
+import com.nimbusds.jwt.JWTClaimsSet;
+import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
+import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE_TYPE_ALIAS;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class SecureTokenServerImplTest {
     private static final String DID = "did:web:test";
@@ -28,11 +38,13 @@ class SecureTokenServerImplTest {
     private static final String SCOPE_1 = SCOPE_TYPE_ALIAS + CREDENTIAL_1;
     private static final String CREDENTIAL_2 = "Credential2";
     private static final String SCOPE_2 = SCOPE_TYPE_ALIAS + CREDENTIAL_2;
-
+    private static final String AUDIENCE = "did:web:audience";
+    private final TokenValidationService holderTokenService = mock();
+    private final KeyService issuerKeyService = mock();
     private final SecureTokenServerImpl server = new SecureTokenServerImpl(mock());
 
     @Test
-    void verify_obtainReadToken() {
+    void obtainReadToken() {
         var token = server.obtainReadToken(DID, List.of(SCOPE_1, SCOPE_2));
 
         var result = server.validateReadToken(DID, token.getContent());
@@ -44,45 +56,47 @@ class SecureTokenServerImplTest {
     }
 
     @Test
-    void verify_readTokenIsInvalid() {
+    void readTokenIsInvalid() {
         var result = server.validateReadToken(DID, "invalid");
         assertThat(result.failed()).isTrue();
     }
 
     @Test
-    void verify_validateWrite() {
-        server.authorizeWrite(DID, "id", List.of(SCOPE_1, SCOPE_2));
-        var result = server.validateWrite(DID, "id");
+    void validateWrite() {
+        when(holderTokenService.validateToken(anyString())).thenReturn(Result.success(null));
+        var result = server.validateWrite("id", holderTokenService);
         assertThat(result.succeeded()).isTrue();
-        assertThat(result.getContent()).containsOnly(CREDENTIAL_1, CREDENTIAL_2);
     }
 
     @Test
-    void verify_validateWriteExpired() {
-        server.authorizeWrite(DID, "id", List.of(SCOPE_1));
-        assertThat(server.validateWrite(DID, "id").succeeded()).isTrue();
+    void validateWrite_whenTokenInvalid() {
+        when(holderTokenService.validateToken(anyString())).thenReturn(Result.failure("token invalid"));
 
-        // validate single use
-        assertThat(server.validateWrite(DID, "id").failed()).isTrue();
+        assertThat(server.validateWrite("id", holderTokenService).failed()).isTrue();
     }
 
     @Test
-    void verify_writeTokenIsInvalid() {
-        var result = server.validateWrite(DID, "id");
-        assertThat(result.failed()).isTrue();
+    void authorizeWrite() {
+        when(issuerKeyService.sign(anyMap(), any(JWTClaimsSet.class)))
+                .thenReturn("test-token");
+        var result = server.authorizeWrite(issuerKeyService, DID, "id", AUDIENCE);
+        assertThat(result).isEqualTo("test-token");
+        verify(issuerKeyService).sign(anyMap(), argThat(claims -> {
+            assertThat(claims.getAudience()).containsExactly(AUDIENCE);
+            assertThat(claims.getIssuer()).isEqualTo(DID);
+            assertThat(claims.getSubject()).isEqualTo(DID);
+            assertThat(claims.getJWTID()).isEqualTo("id");
+            return true;
+        }));
     }
 
     @Test
-    void verify_writeTokenBearerIsInvalid() {
-        server.authorizeWrite(DID, "id", List.of(SCOPE_1));
-        var result = server.validateWrite("did:web:invalid:com", "id");
-        assertThat(result.failed()).isTrue();
-    }
+    void authorizeWrite_whenSigningFails() {
+        when(issuerKeyService.sign(anyMap(), any(JWTClaimsSet.class)))
+                .thenThrow(new RuntimeException("Signing failed"));
 
-    @Test
-    void verify_writeIdIsInvalid() {
-        server.authorizeWrite(DID, "id", List.of(SCOPE_1));
-        var result = server.validateWrite(DID, "invalid");
-        assertThat(result.failed()).isTrue();
+        assertThatThrownBy(() -> server.authorizeWrite(issuerKeyService, DID, "id", AUDIENCE))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Signing failed");
     }
 }

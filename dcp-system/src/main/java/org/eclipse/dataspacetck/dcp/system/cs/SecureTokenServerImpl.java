@@ -15,24 +15,28 @@
 package org.eclipse.dataspacetck.dcp.system.cs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.eclipse.dataspacetck.core.spi.system.ServiceConfiguration;
+import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
 import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_PREFIX;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE_TYPE_ALIAS;
@@ -41,11 +45,11 @@ import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
 
 public class SecureTokenServerImpl implements SecureTokenServer {
     private final Map<String, String> readTokens = new ConcurrentHashMap<>();
-    private final Map<String, String> writeAuthorizations = new ConcurrentHashMap<>();
     private final String stsUrl;
     private final String stsClientId;
     private final String stsClientSecret;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
 
     public SecureTokenServerImpl(ServiceConfiguration configuration) {
         this.stsUrl = configuration.getPropertyAsString(TCK_PREFIX + ".sts.url", null);
@@ -70,6 +74,11 @@ public class SecureTokenServerImpl implements SecureTokenServer {
         }
     }
 
+    @Override
+    public Result<String> obtainWriteToken(String bearerDid, String audience, KeyService keyService) {
+        return success(authorizeWrite(keyService, bearerDid, randomUUID().toString(), audience));
+    }
+
 
     @Override
     public Result<List<String>> validateReadToken(String bearerDid, String token) {
@@ -87,15 +96,25 @@ public class SecureTokenServerImpl implements SecureTokenServer {
     }
 
     @Override
-    public void authorizeWrite(String bearerDid, String correlationId, List<String> scopes) {
-        var types = transformScopes(scopes);
-        writeAuthorizations.put(bearerDid + "::" + correlationId, types);
+    public String authorizeWrite(KeyService keyService, String bearerDid, String correlationId, String audience) {
+        var claims = new JWTClaimsSet.Builder()
+                .audience(audience)
+                .issuer(bearerDid)
+                .subject(bearerDid)
+                .jwtID(correlationId)
+                .issueTime(new Date())
+                .expirationTime(Date.from(Instant.now().plusSeconds(600)))
+                .build();
+        return keyService.sign(emptyMap(), claims);
     }
 
     @Override
-    public Result<List<String>> validateWrite(String bearerDid, String correlationId) {
-        var entry = writeAuthorizations.remove(bearerDid + "::" + correlationId);
-        return entry == null ? failure("Not authorized") : success(asList(entry.split(",")));
+    public Result<Void> validateWrite(String serializedJwt, TokenValidationService tokenValidationService) {
+        var validationResult = tokenValidationService.validateToken(serializedJwt);
+        if (validationResult.succeeded()) {
+            return success();
+        }
+        return failure("Token not valid: " + validationResult.getFailure());
     }
 
     @NotNull

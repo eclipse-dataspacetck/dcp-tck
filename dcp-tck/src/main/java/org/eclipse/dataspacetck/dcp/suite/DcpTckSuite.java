@@ -50,14 +50,14 @@ public class DcpTckSuite {
         if (!properties.containsKey(TCK_LAUNCHER)) {
             properties.put(TCK_LAUNCHER, DEFAULT_LAUNCHER);
         }
-        if (properties.containsKey(TCK_TEST_PACKAGE)) {
+        if (!properties.containsKey(TCK_TEST_PACKAGE)) {
             properties.put(TCK_TEST_PACKAGE, DEFAULT_TEST_PACKAGE);
         }
         var monitor = createMonitor(properties);
         monitor.enableBold().message("\u001B[1mRunning DCP TCK v" + VERSION + "\u001B[0m").resetMode();
         var result = TckRuntime.Builder.newInstance()
                 .properties(properties)
-                .addPackage(DEFAULT_TEST_PACKAGE)
+                .addPackage(properties.get(TCK_TEST_PACKAGE))
                 .monitor(monitor)
                 .build().execute();
 

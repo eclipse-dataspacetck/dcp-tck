@@ -15,6 +15,7 @@
 package org.eclipse.dataspacetck.dcp.system.assembly;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.nimbusds.jwt.JWTClaimsSet;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -23,6 +24,7 @@ import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.core.api.system.CallbackEndpoint;
 import org.eclipse.dataspacetck.core.spi.system.ServiceConfiguration;
 import org.eclipse.dataspacetck.core.spi.system.ServiceResolver;
+import org.eclipse.dataspacetck.dcp.system.cs.CredentialIssuanceHandler;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.cs.PresentationHandler;
@@ -65,24 +67,27 @@ public class ServiceAssembly {
 
     public ServiceAssembly(BaseAssembly baseAssembly, ServiceResolver resolver, ServiceConfiguration configuration) {
         var generator = new JwtPresentationGenerator(baseAssembly.getHolderDid(), baseAssembly.getHolderKeyService());
+        var mapper = baseAssembly.getMapper();
+
         secureTokenServer = new SecureTokenServerImpl(configuration);
-        credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer);
+        credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer, baseAssembly.getHolderTokenService(), mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
 
         var endpoint = (CallbackEndpoint) requireNonNull(resolver.resolve(CallbackEndpoint.class, configuration));
         var monitor = configuration.getMonitor();
-        var mapper = baseAssembly.getMapper();
 
         // register the handlers
         var tokenService = baseAssembly.getHolderTokenService();
         var presentationHandler = new PresentationHandler(credentialService, tokenService, mapper, monitor);
         endpoint.registerProtocolHandler("/presentations/query", presentationHandler);
 
+        // default handler for credential issuance
+        endpoint.registerProtocolHandler("/credentials", new CredentialIssuanceHandler(credentialService));
+
         endpoint.registerHandler("/holder/did.json", new DidDocumentHandler(baseAssembly.getHolderDidService(), mapper));
         endpoint.registerHandler("/verifier/did.json", new DidDocumentHandler(baseAssembly.getVerifierDidService(), mapper));
         endpoint.registerHandler("/issuer/did.json", new DidDocumentHandler(baseAssembly.getIssuerDidService(), mapper));
         endpoint.registerHandler("/thirdparty/did.json", new DidDocumentHandler(baseAssembly.getThirdPartyDidService(), mapper));
 
-        sendCredentials(baseAssembly, configuration);
     }
 
     public CredentialService getCredentialService() {
@@ -93,7 +98,7 @@ public class ServiceAssembly {
         return secureTokenServer;
     }
 
-    private void sendCredentials(BaseAssembly baseAssembly, ServiceConfiguration config) {
+    public void issueCredentials(BaseAssembly baseAssembly, ServiceConfiguration config) {
         var issuerDid = baseAssembly.getIssuerDid();
         var credentialGenerator = new JwtCredentialGenerator(issuerDid, baseAssembly.getIssuerKeyService());
 
@@ -176,9 +181,9 @@ public class ServiceAssembly {
     }
 
     @NotNull
-    private VcContainer createVcContainer(String issuerDid, String holderDid,
-                                          JwtCredentialGenerator credentialGenerator,
-                                          String credentialType) {
+    public VcContainer createVcContainer(String issuerDid, String holderDid,
+                                         JwtCredentialGenerator credentialGenerator,
+                                         String credentialType) {
         var credential = createCredential(issuerDid, holderDid, credentialType);
         var result = credentialGenerator.generateCredential(credential);
         return new VcContainer(result.getContent(), credential, VC1_0_JWT);

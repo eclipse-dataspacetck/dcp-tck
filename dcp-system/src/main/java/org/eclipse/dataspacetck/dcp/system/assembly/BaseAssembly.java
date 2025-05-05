@@ -28,6 +28,8 @@ import java.net.URI;
 import java.util.Objects;
 
 import static java.lang.String.format;
+import static java.util.Optional.ofNullable;
+import static java.util.UUID.randomUUID;
 import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_CALLBACK_ADDRESS;
 import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_DEFAULT_CALLBACK_ADDRESS;
 import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_PREFIX;
@@ -52,6 +54,7 @@ public class BaseAssembly {
     private final KeyServiceImpl thirdPartyKeyService;
     private final DidServiceImpl thirdPartyDidService;
     private final ObjectMapper mapper;
+    private final String holderPid;
 
     public BaseAssembly(SystemConfiguration configuration) {
         mapper = new ObjectMapper();
@@ -67,6 +70,8 @@ public class BaseAssembly {
         holderKeyService = new KeyServiceImpl(Keys.generateEcKey());
         holderDidService = new DidServiceImpl(holderDid, address, holderKeyService);
         holderTokenService = new TokenValidationServiceImpl(holderDid);
+
+        holderPid = ofNullable(configuration.getPropertyAsString(TCK_PREFIX + "credentials.correlation.id", null)).orElseGet(() -> randomUUID().toString());
 
         verifierTokenService = new TokenValidationServiceImpl(verifierDid);
         verifierKeyService = new KeyServiceImpl(Keys.generateEcKey());
@@ -145,4 +150,9 @@ public class BaseAssembly {
         return uri.getPort() != 443 ? format("did:web:%s%%3A%s:%s", uri.getHost(), uri.getPort(), discriminator)
                 : format("did:web:%s:%s", uri.getHost(), discriminator);
     }
+
+    public String getHolderPid() {
+        return holderPid;
+    }
+
 }

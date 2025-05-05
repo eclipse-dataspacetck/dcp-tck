@@ -80,6 +80,10 @@ public class TokenValidationServiceImpl implements TokenValidationService {
                 return failure("IAT not specified");
             }
 
+            if (claims.getIssueTime().after(new Date())) {
+                return failure("Token issued in the future");
+            }
+
             if (claims.getNotBeforeTime() != null && claims.getNotBeforeTime().after(new Date())) {
                 return failure("Token used before start");
             }

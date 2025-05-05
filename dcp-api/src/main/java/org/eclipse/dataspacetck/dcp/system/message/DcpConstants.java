@@ -57,6 +57,8 @@ public interface DcpConstants {
 
     String PRESENTATION_QUERY_PATH = "/presentations/query";
 
+    String CREDENTIALS_PATH = "/credentials";
+
     String CREDENTIAL_OFFER_MESSAGE_TYPE = "CredentialOfferMessage";
 
     String CREDENTIAL_MESSAGE_TYPE = "CredentialMessage";
