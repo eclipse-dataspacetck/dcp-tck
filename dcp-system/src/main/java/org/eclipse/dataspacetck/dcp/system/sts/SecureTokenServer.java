@@ -14,6 +14,8 @@
 
 package org.eclipse.dataspacetck.dcp.system.sts;
 
+import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
+import org.eclipse.dataspacetck.dcp.system.cs.TokenValidationService;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 
 import java.util.List;
@@ -31,11 +33,11 @@ public interface SecureTokenServer extends StsClient {
     /**
      * Authorize a write operation with scopes for the given bearer and correlation id.
      */
-    void authorizeWrite(String bearerDid, String correlationId, List<String> scopes);
+    String authorizeWrite(KeyService keyService, String bearerDid, String correlationId, String audience);
 
     /**
      * Validates a write operation.
      */
-    Result<List<String>> validateWrite(String bearerDid, String correlationId);
+    Result<Void> validateWrite(String serializedJwt, TokenValidationService holderTokenService);
 
 }
