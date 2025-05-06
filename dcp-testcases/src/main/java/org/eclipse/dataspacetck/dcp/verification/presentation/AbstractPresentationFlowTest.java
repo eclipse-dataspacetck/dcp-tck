@@ -33,7 +33,6 @@ import org.eclipse.dataspacetck.dcp.system.annotation.PresentationFlow;
 import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
-import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -51,12 +50,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.HOLDER;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.THIRD_PARTY;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.VERIFIER;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.DCP_NAMESPACE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_QUERY_PATH;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TOKEN;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.parseAndVerifyPresentation;
+import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveCredentialServiceEndpoint;
 
 /**
  * Base test class.
@@ -108,7 +107,7 @@ public class AbstractPresentationFlowTest {
      * Creates a DCP presentation request.
      */
     protected Request createPresentationRequest(String authToken, Map<String, Object> message) {
-        var endpoint = resolveCredentialServiceEndpoint();
+        var endpoint = resolveCredentialServiceEndpoint(holderDid);
         try {
             return new Request.Builder()
                     .url(endpoint + PRESENTATION_QUERY_PATH)
@@ -136,14 +135,6 @@ public class AbstractPresentationFlowTest {
         return verifierKeyService.sign(emptyMap(), claimSet);
     }
 
-    /**
-     * Resolves the credential service endpoint from its DID.
-     */
-    protected String resolveCredentialServiceEndpoint() {
-        var didClient = new DidClient(false);
-        var document = didClient.resolveDocument(holderDid);
-        return document.getServiceEntry(CREDENTIAL_SERVICE_TYPE).getServiceEndpoint();
-    }
 
     public void verifyCredentials(Response response, String... expectedTypes) {
         assertThat(response.isSuccessful())

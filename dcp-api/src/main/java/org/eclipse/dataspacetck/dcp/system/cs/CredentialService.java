@@ -33,4 +33,9 @@ public interface CredentialService {
      * Writes issued credentials.
      */
     Result<Void> writeCredentials(String idTokenJwt, InputStream body);
+
+    /**
+     * Process a credential offer message.
+     */
+    Result<Void> offerCredentials(String idTokenJwt, InputStream body);
 }

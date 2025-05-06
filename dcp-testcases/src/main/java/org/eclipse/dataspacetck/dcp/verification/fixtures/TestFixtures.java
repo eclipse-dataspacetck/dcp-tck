@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.dataspacetck.dcp.system.crypto.Keys.createVerifier;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.ID;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VC;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VERIFIABLE_CREDENTIAL_CLAIM;
@@ -75,7 +76,7 @@ public class TestFixtures {
         return map;
     }
 
-    public static void assert4xxxCode(Response response) {
+    public static void assert4xxCode(Response response) {
         assertThat(response.isSuccessful()).isFalse();
         assertThat(response.code() >= 400).isTrue();
         assertThat(response.code() <= 500).isTrue();
@@ -92,6 +93,15 @@ public class TestFixtures {
         // if relative, they are resolved against the document ID. To make resolution easier, and because we have already
         // parsed anyway, we pass just the relative ID
         return document.getVerificationMethod("#" + kidTokens[1]);
+    }
+
+    /**
+     * Resolves the credential service endpoint from its DID.
+     */
+    public static String resolveCredentialServiceEndpoint(String holderDid) {
+        var didClient = new DidClient(false);
+        var document = didClient.resolveDocument(holderDid);
+        return document.getServiceEntry(CREDENTIAL_SERVICE_TYPE).getServiceEndpoint();
     }
 
     @SuppressWarnings("unchecked")

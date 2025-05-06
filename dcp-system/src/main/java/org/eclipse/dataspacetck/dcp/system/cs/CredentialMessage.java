@@ -26,9 +26,9 @@ public class CredentialMessage {
     private String issuerPid;
     @JsonProperty(value = "holderPid", required = true)
     private String holderPid;
-    @JsonProperty(value = "status", required = true)
+    @JsonProperty(value = "status", required = true, defaultValue = "ISSUED")
     private String status;
-    @JsonProperty(value = "type", required = true, defaultValue = "ISSUED")
+    @JsonProperty(value = "type", required = true)
     private String type;
 
 

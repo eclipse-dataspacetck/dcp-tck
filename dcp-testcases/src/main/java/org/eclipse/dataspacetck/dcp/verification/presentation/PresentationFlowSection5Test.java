@@ -40,6 +40,7 @@ import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_SCOPE;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.createPresentationDefinition;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
+import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveCredentialServiceEndpoint;
 
 /**
  * Presentation flow tests.
@@ -64,14 +65,14 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                 .property(SCOPE, List.of(MEMBERSHIP_SCOPE))
                 .build();
 
-        var endpoint = resolveCredentialServiceEndpoint();
+        var endpoint = resolveCredentialServiceEndpoint(holderDid);
         try {
             var request = new Request.Builder()
                     .url(endpoint + PRESENTATION_QUERY_PATH)
                     .header(AUTHORIZATION, createIdToken(authToken))  // invalid auth header missing "Bearer" prefix
                     .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(JSON_CONTENT_TYPE)))
                     .build();
-            executeRequest(request, TestFixtures::assert4xxxCode);
+            executeRequest(request, TestFixtures::assert4xxCode);
         } catch (JsonProcessingException e) {
             throw new AssertionError(e);
         }
@@ -87,7 +88,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                 .build();
 
         var request = createPresentationRequest("faketoken", message);
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -116,7 +117,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     @MandatoryTest
     @DisplayName("5.4.1.2 Verify Resolution API presentation definition less types than requested for a " + SENSITIVE_DATA_CREDENTIAL_TYPE)
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_05_04_01_02_lessTypesThanAuthorizedByTypeRequest(@AuthToken({ MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE }) String authToken) {
+    public void cs_05_04_01_02_lessTypesThanAuthorizedByTypeRequest(@AuthToken({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE}) String authToken) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
@@ -144,7 +145,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     @MandatoryTest
     @DisplayName("5.4.1.2 Verify Resolution API with less scopes than requested for a " + SENSITIVE_DATA_CREDENTIAL_TYPE)
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_05_04_01_02_lessScopesThanAuthorizedByTypeRequest(@AuthToken({ MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE }) String authToken) {
+    public void cs_05_04_01_02_lessScopesThanAuthorizedByTypeRequest(@AuthToken({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE}) String authToken) {
         var message = DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
                 .property(SCOPE, List.of(SENSITIVE_DATA_SCOPE))
@@ -156,7 +157,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
 
     @MandatoryTest
     @DisplayName("5.4.1.2 Verify Resolution API invalid scope escalation request for a " + SENSITIVE_DATA_CREDENTIAL_TYPE)
-    @IssueCredentials({ MEMBERSHIP_CREDENTIAL_TYPE, SENSITIVE_DATA_CREDENTIAL_TYPE })
+    @IssueCredentials({MEMBERSHIP_CREDENTIAL_TYPE, SENSITIVE_DATA_CREDENTIAL_TYPE})
     public void cs_05_04_01_02_invalidScopeEscalationRequest(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
         var message = DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
@@ -164,7 +165,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                 .build();
 
         var request = createPresentationRequest(authToken, message);
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
 }

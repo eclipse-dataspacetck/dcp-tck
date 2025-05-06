@@ -15,26 +15,22 @@
 package org.eclipse.dataspacetck.dcp.verification.issuance.cs;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.crypto.ECDSASigner;
+import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jose.jwk.KeyUse;
+import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
+import com.nimbusds.jwt.SignedJWT;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.api.system.MandatoryTest;
-import org.eclipse.dataspacetck.core.api.system.Inject;
-import org.eclipse.dataspacetck.core.system.SystemBootstrapExtension;
-import org.eclipse.dataspacetck.dcp.system.annotation.Credential;
 import org.eclipse.dataspacetck.dcp.system.annotation.Did;
 import org.eclipse.dataspacetck.dcp.system.annotation.HolderPid;
-import org.eclipse.dataspacetck.dcp.system.annotation.IssuanceFlow;
-import org.eclipse.dataspacetck.dcp.system.annotation.Issuer;
-import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
-import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
-import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -43,47 +39,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.nimbusds.jose.JOSEObjectType.JWT;
+import static com.nimbusds.jose.JWSAlgorithm.ES256;
 import static java.time.Instant.now;
-import static java.util.Collections.emptyMap;
-import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.HOLDER;
-import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.ISSUER;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.THIRD_PARTY;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.AUTHORIZATION;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIALS_PATH;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_MESSAGE_TYPE;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
+import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveCredentialServiceEndpoint;
 
 /**
  * Verifies Credential Issuance messages testing the CredentialService as system-under-test.
  */
-@IssuanceFlow
-@ExtendWith(SystemBootstrapExtension.class)
-public class CredentialIssuanceTest {
-    private final ObjectMapper mapper = new ObjectMapper();
-    @Inject
-    @Did(ISSUER)
-    protected String issuerDid;
-
-    @Inject
-    @Did(HOLDER)
-    protected String holderDid;
-
-    @Inject
-    @Credential(MEMBERSHIP_CREDENTIAL_TYPE)
-    private VcContainer membershipCredential;
-
-    @Inject
-    @Credential(SENSITIVE_DATA_CREDENTIAL_TYPE)
-    private VcContainer sensitiveDataCredential;
-
-    @Inject
-    @Issuer
-    private KeyService issuerKeyService;
+public class CredentialIssuanceTest extends AbstractCredentialIssuanceTest {
 
     @MandatoryTest
     @DisplayName("6.5.1 CredentialService should accept expected CredentialMessage")
@@ -104,7 +76,7 @@ public class CredentialIssuanceTest {
         var credentialMessage = createCredentialMessage(holderPid).build();
 
         var request = createCredentialMessageRequest(null, credentialMessage).build();
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -116,7 +88,7 @@ public class CredentialIssuanceTest {
         var request = createCredentialMessageRequest(null, credentialMessage)
                 .header("Authorization", token)
                 .build();
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -129,13 +101,30 @@ public class CredentialIssuanceTest {
         var token = createToken(createClaims().build());
 
         var request = createCredentialMessageRequest(token, invalidMessage).build();
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("6.5.1 CredentialService rejects an invalid auth token - wrong signing key")
-    void cs_06_05_01_credentialMessage_tokenSignedWithWrongKey() {
+    void cs_06_05_01_credentialMessage_tokenSignedWithWrongKey(@HolderPid String holderPid) throws JOSEException {
+        var msg = createCredentialMessage(holderPid).build();
 
+        var claims = createClaims().build();
+        var kid = issuerKeyService.getPublicKey().getKeyID();
+        var spoofedKey = new ECKeyGenerator(Curve.P_256)
+                .keyID(kid)
+                .keyUse(KeyUse.SIGNATURE)
+                .generate();
+
+        var header = new JWSHeader.Builder(ES256).type(JWT);
+        header.keyID(claims.getClaim("iss") + "#" + spoofedKey.getKeyID());
+
+        var signedJwt = new SignedJWT(header.build(), claims);
+        signedJwt.sign(new ECDSASigner(spoofedKey.toECPrivateKey()));
+        var token = signedJwt.serialize();
+
+        var request = createCredentialMessageRequest(token, msg).build();
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -146,7 +135,7 @@ public class CredentialIssuanceTest {
         var token = createToken(createClaims().expirationTime(Date.from(now().minus(1, ChronoUnit.HOURS))).build());
         var request = createCredentialMessageRequest(token, credentialMessage).build();
 
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -157,7 +146,7 @@ public class CredentialIssuanceTest {
         var token = createToken(createClaims().issueTime(Date.from(now().plus(1, ChronoUnit.HOURS))).build());
         var request = createCredentialMessageRequest(token, credentialMessage).build();
 
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -168,7 +157,7 @@ public class CredentialIssuanceTest {
         var token = createToken(createClaims().notBeforeTime(Date.from(now().plus(1, ChronoUnit.HOURS))).build());
         var request = createCredentialMessageRequest(token, credentialMessage).build();
 
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -179,7 +168,7 @@ public class CredentialIssuanceTest {
         var token = createToken(createClaims().audience(thirdPartyDid).build());
         var request = createCredentialMessageRequest(token, credentialMessage).build();
 
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -193,7 +182,7 @@ public class CredentialIssuanceTest {
                 .build());
         var request = createCredentialMessageRequest(token, credentialMessage).build();
 
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -205,7 +194,7 @@ public class CredentialIssuanceTest {
         var request = createCredentialMessageRequest(token, credentialMessage).build();
 
         executeRequest(request, response -> assertThat(response.isSuccessful()).isTrue());
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -217,34 +206,12 @@ public class CredentialIssuanceTest {
         var token = createToken(createClaims().build());
         var request = createCredentialMessageRequest(token, credentialMessage).build();
 
-        executeRequest(request, TestFixtures::assert4xxxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
-    private JWTClaimsSet.Builder createClaims() {
-        return new JWTClaimsSet.Builder()
-                .audience(holderDid)
-                .issuer(issuerDid)
-                .subject(issuerDid)
-                .jwtID(randomUUID().toString())
-                .issueTime(new Date())
-                .expirationTime(Date.from(now().plusSeconds(600)));
-    }
-
-    private String createToken(JWTClaimsSet claims) {
-        return issuerKeyService.sign(emptyMap(), claims);
-    }
-
-    /**
-     * Resolves the credential service endpoint from its DID.
-     */
-    protected String resolveCredentialServiceEndpoint() {
-        var didClient = new DidClient(false);
-        var document = didClient.resolveDocument(holderDid);
-        return document.getServiceEntry(CREDENTIAL_SERVICE_TYPE).getServiceEndpoint();
-    }
 
     private Request.Builder createCredentialMessageRequest(String authToken, Map<String, Object> credentialMessage) {
-        var endpoint = resolveCredentialServiceEndpoint();
+        var endpoint = resolveCredentialServiceEndpoint(holderDid);
         try {
             var builder = new Request.Builder()
                     .url(endpoint + CREDENTIALS_PATH)

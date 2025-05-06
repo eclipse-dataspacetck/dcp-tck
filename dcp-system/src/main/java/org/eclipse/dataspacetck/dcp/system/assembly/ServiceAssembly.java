@@ -25,6 +25,7 @@ import org.eclipse.dataspacetck.core.api.system.CallbackEndpoint;
 import org.eclipse.dataspacetck.core.spi.system.ServiceConfiguration;
 import org.eclipse.dataspacetck.core.spi.system.ServiceResolver;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialIssuanceHandler;
+import org.eclipse.dataspacetck.dcp.system.cs.CredentialOfferHandler;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.cs.PresentationHandler;
@@ -82,6 +83,7 @@ public class ServiceAssembly {
 
         // ... for credential issuance
         endpoint.registerProtocolHandler("/credentials", new CredentialIssuanceHandler(credentialService));
+        endpoint.registerProtocolHandler("/offers", new CredentialOfferHandler(credentialService));
 
         endpoint.registerHandler("/holder/did.json", new DidDocumentHandler(baseAssembly.getHolderDidService(), mapper));
         endpoint.registerHandler("/verifier/did.json", new DidDocumentHandler(baseAssembly.getVerifierDidService(), mapper));

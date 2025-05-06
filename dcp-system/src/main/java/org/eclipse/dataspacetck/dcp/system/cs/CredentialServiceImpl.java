@@ -106,6 +106,25 @@ public class CredentialServiceImpl implements CredentialService {
         }
     }
 
+    @Override
+    public Result<Void> offerCredentials(String idTokenJwt, InputStream body) {
+        var validationResult = secureTokenServer.validateWrite(idTokenJwt, tokenService);
+        if (validationResult.failed()) {
+            return failure(validationResult.getFailure(), UNAUTHORIZED);
+        }
+
+        try {
+            var message = mapper.readValue(body, CredentialOfferMessage.class);
+            if (!message.validate()) {
+                return failure("Invalid message", BAD_REQUEST);
+            }
+
+            return success();
+        } catch (IOException e) {
+            return failure("Invalid JSON: " + e.getMessage(), BAD_REQUEST);
+        }
+    }
+
     private VerifiableCredential createCredential(CredentialMessage.CredentialContainer cred) {
 
         try {

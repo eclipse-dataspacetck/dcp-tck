@@ -69,6 +69,11 @@ public class Result<T> {
         return (R) this;
     }
 
+    @Override
+    public String toString() {
+        return succeeded() ? getContent().toString() : failure;
+    }
+
     public enum ErrorType {
         NOT_FOUND, UNAUTHORIZED, BAD_REQUEST, GENERAL_ERROR, NO_ERROR
     }

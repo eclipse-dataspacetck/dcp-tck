@@ -41,6 +41,7 @@ import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TOKEN;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_SCOPE;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
+import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveCredentialServiceEndpoint;
 
 
 /**
@@ -65,13 +66,13 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
         var idToken = thirdPartyKeyService.sign(emptyMap(), claimSet);
 
         try {
-            var endpoint = resolveCredentialServiceEndpoint();
+            var endpoint = resolveCredentialServiceEndpoint(holderDid);
             var request = new Request.Builder()
                     .url(endpoint + PRESENTATION_QUERY_PATH)
                     .header(AUTHORIZATION, "Bearer " + idToken)
                     .post(RequestBody.create(mapper.writeValueAsString(createMessage()), MediaType.parse(JSON_CONTENT_TYPE)))
                     .build();
-            executeRequest(request, TestFixtures::assert4xxxCode);
+            executeRequest(request, TestFixtures::assert4xxCode);
 
         } catch (JsonProcessingException e) {
             throw new AssertionError(e);
@@ -92,7 +93,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
+        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -109,7 +110,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
+        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -126,7 +127,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
+        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -144,7 +145,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
+        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -161,7 +162,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxxCode);
+        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -192,7 +193,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken2)
                 .build();
 
-        executeRequest(createRequest(claimSet2, createMessage()), TestFixtures::assert4xxxCode);
+        executeRequest(createRequest(claimSet2, createMessage()), TestFixtures::assert4xxCode);
     }
 
     @NotNull
@@ -200,7 +201,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
         var idToken = verifierKeyService.sign(emptyMap(), claimSet);
 
         try {
-            var endpoint = resolveCredentialServiceEndpoint();
+            var endpoint = resolveCredentialServiceEndpoint(holderDid);
             return new Request.Builder()
                     .url(endpoint + PRESENTATION_QUERY_PATH)
                     .header(AUTHORIZATION, "Bearer " + idToken)

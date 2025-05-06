@@ -59,6 +59,8 @@ public interface DcpConstants {
 
     String CREDENTIALS_PATH = "/credentials";
 
+    String OFFERS_PATH = "/offers";
+
     String CREDENTIAL_OFFER_MESSAGE_TYPE = "CredentialOfferMessage";
 
     String CREDENTIAL_MESSAGE_TYPE = "CredentialMessage";
