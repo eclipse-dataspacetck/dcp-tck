@@ -18,7 +18,10 @@ import org.eclipse.dataspacetck.dcp.system.service.Result;
 
 import java.util.Map;
 
+/**
+ * Issuer service used for testing when a real System-under-Test is not available.
+ */
 public interface IssuerService {
 
-    Result<Map<String, Object>> processCredentialRequest(String idTokenJwt, Map<String, Object> credentialRequestMessage);
+    Result<Void> processCredentialRequest(String idTokenJwt, Map<String, Object> credentialRequestMessage);
 }

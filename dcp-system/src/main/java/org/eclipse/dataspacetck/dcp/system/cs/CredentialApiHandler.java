@@ -14,7 +14,7 @@
 
 package org.eclipse.dataspacetck.dcp.system.cs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.dataspacetck.core.api.system.HandlerResponse;
 import org.eclipse.dataspacetck.core.api.system.ProtocolHandler;
@@ -24,17 +24,21 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_MESSAGE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_REQUEST_MESSAGE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TYPE;
 
+/**
+ * This handler handles requests to the "/credentials" endpoint. As per DCP Spec, this endpoint is used both for
+ * CredentialsMessages and CredentialRequestMessages.
+ * Therefor, upon receiving a message, this handler delegates based on the message type.
+ */
 public class CredentialApiHandler implements ProtocolHandler {
+    private static final TypeReference<Map<String, Object>> MAP_REF = new TypeReference<>() {
+    };
     private final CredentialService credentialService;
     private final ObjectMapper mapper;
     private final IssuerService issuerService;
@@ -56,55 +60,31 @@ public class CredentialApiHandler implements ProtocolHandler {
         idToken = idToken.replace("Bearer", "").trim();
 
         try {
-            // todo: add a registry of handlers mapped to the message type
-            //noinspection unchecked
-            var msg = (Map<String, Object>) mapper.readValue(body, Map.class);
-            var msgType = msg.get(TYPE);
-            if (msgType.equals(CREDENTIAL_MESSAGE_TYPE)) {
-                return handleCredentialMessage(idToken, msg);
-            } else if (msgType.equals(CREDENTIAL_REQUEST_MESSAGE_TYPE)) {
-                return handleCredentialRequestMessage(idToken, msg);
-            }
-            return new HandlerResponse(400, "Invalid message type, expected either '%s' or '%s', got '%s".formatted(CREDENTIAL_MESSAGE_TYPE, CREDENTIAL_REQUEST_MESSAGE_TYPE, msgType));
-        } catch (IOException | ParseException e) {
+            var msg = mapper.readValue(body, MAP_REF);
+            var msgType = msg.getOrDefault(TYPE, "").toString();
+
+            return switch (msgType) {
+                case CREDENTIAL_MESSAGE_TYPE -> toResponse(credentialService.writeCredentials(idToken, msg));
+                case CREDENTIAL_REQUEST_MESSAGE_TYPE ->
+                        toResponse(issuerService.processCredentialRequest(idToken, msg));
+                default ->
+                        new HandlerResponse(400, "Invalid message type, expected either '%s' or '%s', got '%s'".formatted(CREDENTIAL_MESSAGE_TYPE, CREDENTIAL_REQUEST_MESSAGE_TYPE, msgType));
+            };
+
+        } catch (IOException e) {
             return new HandlerResponse(400, "Invalid JSON");
         }
 
     }
 
     @NotNull
-    private HandlerResponse handleCredentialRequestMessage(String idToken, Map<String, Object> msg) throws JsonProcessingException, ParseException {
-
-        var credentialsMsg = issuerService.processCredentialRequest(idToken, msg);
-        if (credentialsMsg.succeeded()) {
-            Executors.newSingleThreadScheduledExecutor().schedule(() -> {
-                ((CredentialServiceImpl) credentialService).storeCredentials(credentialsMsg.getContent());
-            }, 1, SECONDS);
-        }
-
-        var failure = credentialsMsg.getFailure();
-        return switch (credentialsMsg.getErrorType()) {
-            case BAD_REQUEST -> new HandlerResponse(400, failure);
-            case UNAUTHORIZED -> new HandlerResponse(401, failure);
-            case NOT_FOUND -> new HandlerResponse(404, failure);
-            case GENERAL_ERROR -> new HandlerResponse(500, failure);
-            case NO_ERROR -> new HandlerResponse(201, "");
-        };
-    }
-
-    private HandlerResponse handleCredentialMessage(String idToken, Map<String, Object> msg) {
-        Result<Void> result;
-        result = credentialService.writeCredentials(idToken, msg);
-
-        if (result.succeeded()) {
-            return new HandlerResponse(200, "");
-        }
-        var failure = result.getFailure();
+    private HandlerResponse toResponse(Result<?> result) {
         return switch (result.getErrorType()) {
-            case BAD_REQUEST -> new HandlerResponse(400, failure);
-            case UNAUTHORIZED -> new HandlerResponse(401, failure);
-            case NOT_FOUND -> new HandlerResponse(404, failure);
-            default -> new HandlerResponse(500, failure);
+            case BAD_REQUEST -> new HandlerResponse(400, result.getFailure());
+            case UNAUTHORIZED -> new HandlerResponse(401, result.getFailure());
+            case NOT_FOUND -> new HandlerResponse(404, result.getFailure());
+            case GENERAL_ERROR -> new HandlerResponse(500, result.getFailure());
+            case NO_ERROR -> new HandlerResponse(201, "");
         };
     }
 }

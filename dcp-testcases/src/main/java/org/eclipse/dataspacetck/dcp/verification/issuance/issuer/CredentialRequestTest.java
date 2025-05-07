@@ -65,14 +65,14 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
         var request = createHttpRequest(token, msg);
         executeRequest(request.build(), response -> assertThat(response.code()).isEqualTo(201));
 
-        await()
-                .atMost(Duration.ofSeconds(10))
+        // wait until the IssuerService has processed the request and sends a CredentialMessage
+        // to the StorageApi
+        await().atMost(Duration.ofSeconds(10))
                 .pollInterval(Duration.ofMillis(500))
                 .untilAsserted((() -> assertThat(credentialService.getCredentials())
                         .withFailMessage("Expected to receive a CredentialMessage")
                         .hasSize(2)));
     }
-
 
     @MandatoryTest
     @DisplayName("6.4 IssuerService should reject a CredentialRequest without an Authorization header")

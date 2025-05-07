@@ -201,7 +201,7 @@ public class ServiceAssembly {
                 .issuer(issuerDid)
                 .type(List.of(credentialType))
                 // credential subject cannot be empty
-                .credentialSubject(Map.of("id", UUID.randomUUID().toString(), "foo", "bar"))
+                .credentialSubject(Map.of("id", holderDid, "foo", "bar"))
                 .build();
 
     }
