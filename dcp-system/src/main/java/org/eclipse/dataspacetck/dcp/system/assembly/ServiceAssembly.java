@@ -24,7 +24,7 @@ import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.core.api.system.CallbackEndpoint;
 import org.eclipse.dataspacetck.core.spi.system.ServiceConfiguration;
 import org.eclipse.dataspacetck.core.spi.system.ServiceResolver;
-import org.eclipse.dataspacetck.dcp.system.cs.CredentialIssuanceHandler;
+import org.eclipse.dataspacetck.dcp.system.cs.CredentialApiHandler;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialOfferHandler;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialServiceImpl;
@@ -34,6 +34,7 @@ import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.eclipse.dataspacetck.dcp.system.did.DidDocumentHandler;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtPresentationGenerator;
+import org.eclipse.dataspacetck.dcp.system.issuer.IssuerServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
@@ -82,7 +83,7 @@ public class ServiceAssembly {
         endpoint.registerProtocolHandler("/presentations/query", presentationHandler);
 
         // ... for credential issuance
-        endpoint.registerProtocolHandler("/credentials", new CredentialIssuanceHandler(credentialService));
+        endpoint.registerProtocolHandler("/credentials", new CredentialApiHandler(credentialService, mapper, new IssuerServiceImpl(baseAssembly.getIssuerKeyService(), baseAssembly.getIssuerTokenService())));
         endpoint.registerProtocolHandler("/offers", new CredentialOfferHandler(credentialService));
 
         endpoint.registerHandler("/holder/did.json", new DidDocumentHandler(baseAssembly.getHolderDidService(), mapper));
@@ -167,7 +168,7 @@ public class ServiceAssembly {
 
         try {
             var rq = new Request.Builder()
-                    .url(service.getServiceEndpoint() + path)
+                    .url(service.serviceEndpoint() + path)
                     .post(RequestBody.create(messageObject, MediaType.parse("application/json")))
                     .addHeader("Authorization", "Bearer " + token)
                     .build();

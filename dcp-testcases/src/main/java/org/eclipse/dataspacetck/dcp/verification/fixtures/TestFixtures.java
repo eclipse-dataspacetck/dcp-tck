@@ -77,9 +77,10 @@ public class TestFixtures {
     }
 
     public static void assert4xxCode(Response response) {
+        assertThat(response.code())
+                .withFailMessage("Expected a 4xx client error HTTP code but got %s".formatted(response.code()))
+                .isBetween(400, 500);
         assertThat(response.isSuccessful()).isFalse();
-        assertThat(response.code() >= 400).isTrue();
-        assertThat(response.code() <= 500).isTrue();
     }
 
     public static VerificationMethod resolveKeyMaterial(String kid) {
@@ -101,7 +102,7 @@ public class TestFixtures {
     public static String resolveCredentialServiceEndpoint(String holderDid) {
         var didClient = new DidClient(false);
         var document = didClient.resolveDocument(holderDid);
-        return document.getServiceEntry(CREDENTIAL_SERVICE_TYPE).getServiceEndpoint();
+        return document.getServiceEntry(CREDENTIAL_SERVICE_TYPE).serviceEndpoint();
     }
 
     @SuppressWarnings("unchecked")

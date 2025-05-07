@@ -55,6 +55,8 @@ public interface DcpConstants {
 
     String CREDENTIAL_SERVICE_TYPE = "CredentialService";
 
+    String ISSUER_SERVICE_TYPE = "IssuerService";
+
     String PRESENTATION_QUERY_PATH = "/presentations/query";
 
     String CREDENTIALS_PATH = "/credentials";
@@ -64,5 +66,9 @@ public interface DcpConstants {
     String CREDENTIAL_OFFER_MESSAGE_TYPE = "CredentialOfferMessage";
 
     String CREDENTIAL_MESSAGE_TYPE = "CredentialMessage";
+
+    String CREDENTIAL_REQUEST_MESSAGE_TYPE = "CredentialRequestMessage";
+
+    String CREDENTIAL_REQUEST_PATH = "/credentials";
 
 }

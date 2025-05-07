@@ -23,6 +23,7 @@ import org.eclipse.dataspacetck.dcp.system.cs.TokenValidationService;
 import org.eclipse.dataspacetck.dcp.system.cs.TokenValidationServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.did.DidService;
 import org.eclipse.dataspacetck.dcp.system.did.DidServiceImpl;
+import org.eclipse.dataspacetck.dcp.system.did.IssuerDidService;
 
 import java.net.URI;
 import java.util.Objects;
@@ -50,6 +51,7 @@ public class BaseAssembly {
     private final DidService verifierDidService;
     private final TokenValidationService verifierTokenService;
     private final TokenValidationService holderTokenService;
+    private final TokenValidationService issuerTokenService;
     private final String thirdPartyDid;
     private final KeyServiceImpl thirdPartyKeyService;
     private final DidServiceImpl thirdPartyDidService;
@@ -63,7 +65,8 @@ public class BaseAssembly {
         issuerDid = parseDid("issuer");
         thirdPartyDid = parseDid("thirdparty");
         issuerKeyService = new KeyServiceImpl(Keys.generateEcKey());
-        issuerDidService = new DidServiceImpl(issuerDid, address, issuerKeyService);
+        issuerDidService = new IssuerDidService(issuerDid, address, issuerKeyService);
+        issuerTokenService = new TokenValidationServiceImpl(issuerDid);
 
         var hd = configuration.getPropertyAsString(TCK_PREFIX + ".did.holder", null);
         holderDid = Objects.requireNonNullElseGet(hd, () -> parseDid("holder"));
@@ -79,6 +82,10 @@ public class BaseAssembly {
 
         thirdPartyKeyService = new KeyServiceImpl(Keys.generateEcKey());
         thirdPartyDidService = new DidServiceImpl(thirdPartyDid, address, thirdPartyKeyService);
+    }
+
+    public TokenValidationService getIssuerTokenService() {
+        return issuerTokenService;
     }
 
     public ObjectMapper getMapper() {

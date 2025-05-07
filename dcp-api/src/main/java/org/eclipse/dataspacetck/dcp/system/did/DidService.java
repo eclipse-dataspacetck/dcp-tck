@@ -21,6 +21,7 @@ import org.eclipse.dataspacetck.dcp.system.service.Result;
  * Manages the DID document for a holder or verifier.
  */
 public interface DidService {
+    String DID_CONTEXT = "https://www.w3.org/ns/did/v1";
 
     Result<DidDocument> resolveDidDocument();
 

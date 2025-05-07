@@ -30,11 +30,10 @@ import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
  * Default implementation.
  */
 public class DidServiceImpl implements DidService {
-    private static final String DID_CONTEXT = "https://www.w3.org/ns/did/v1";
 
-    private final String did;
-    private final String baseEndpoint;
-    private final KeyService keyService;
+    protected final String did;
+    protected final String baseEndpoint;
+    protected final KeyService keyService;
 
     public DidServiceImpl(String did, String baseEndpoint, KeyService keyService) {
         this.did = did;
@@ -44,7 +43,12 @@ public class DidServiceImpl implements DidService {
 
     @Override
     public Result<DidDocument> resolveDidDocument() {
-        var document = DidDocument.Builder.newInstance()
+        var document = createDocumentBuilder().build();
+        return success(document);
+    }
+
+    protected DidDocument.Builder createDocumentBuilder() {
+        return DidDocument.Builder.newInstance()
                 .id(did)
                 .context(List.of(DID_CONTEXT, DCP_NAMESPACE))
                 .service(List.of(new ServiceEntry("TCK-Credential-Service", CREDENTIAL_SERVICE_TYPE, baseEndpoint)))
@@ -53,9 +57,7 @@ public class DidServiceImpl implements DidService {
                         .type("JsonWebKey2020") // FIXME
                         .controller(did)
                         .publicKeyJwk(keyService.getPublicKey().toJSONObject())
-                        .build()))
-                .build();
-        return success(document);
+                        .build()));
     }
 
 }
