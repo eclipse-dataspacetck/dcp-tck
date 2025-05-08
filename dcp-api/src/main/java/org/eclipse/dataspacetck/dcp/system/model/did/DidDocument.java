@@ -54,7 +54,7 @@ public class DidDocument extends ExtensibleModel {
 
     public ServiceEntry getServiceEntry(String type) {
         return services.stream()
-                .filter(s -> s.getType().equals(type))
+                .filter(s -> s.type().equals(type))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No service found for type " + type));
     }

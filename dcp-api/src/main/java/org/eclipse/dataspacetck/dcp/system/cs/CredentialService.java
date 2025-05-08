@@ -14,9 +14,11 @@
 
 package org.eclipse.dataspacetck.dcp.system.cs;
 
+import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -32,10 +34,17 @@ public interface CredentialService {
     /**
      * Writes issued credentials.
      */
-    Result<Void> writeCredentials(String idTokenJwt, InputStream body);
+    Result<Void> writeCredentials(String idTokenJwt, Map<String, Object> credentialMessage);
 
     /**
      * Process a credential offer message.
      */
     Result<Void> offerCredentials(String idTokenJwt, InputStream body);
+
+    /**
+     * Retrieves a collection of issued credentials.
+     *
+     * @return A collection of {@link VcContainer} objects representing the issued credentials.
+     */
+    Collection<VcContainer> getCredentials();
 }

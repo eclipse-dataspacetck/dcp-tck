@@ -53,7 +53,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
         var didClient = new DidClient(false);
         var didDocument = didClient.resolveDocument(holderDid);
         assertThat(didDocument).isNotNull();
-        assertThat(didDocument.getServiceEntry(CREDENTIAL_SERVICE_TYPE).getServiceEndpoint()).isNotNull();
+        assertThat(didDocument.getServiceEntry(CREDENTIAL_SERVICE_TYPE).serviceEndpoint()).isNotNull();
     }
 
     @MandatoryTest

@@ -14,6 +14,7 @@
 
 package org.eclipse.dataspacetck.dcp.verification.fixtures;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jwt.SignedJWT;
@@ -32,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.UUID.randomUUID;
@@ -39,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.dataspacetck.dcp.system.crypto.Keys.createVerifier;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.ID;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.ISSUER_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VC;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VERIFIABLE_CREDENTIAL_CLAIM;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VP;
@@ -61,6 +64,19 @@ public class TestFixtures {
         }
     }
 
+    /**
+     * Executes the request and applies the given verification, returning the result of the verification function
+     */
+    public static <T> T executeRequestAndGet(Request request, Function<Response, T> verification) {
+        var client = new OkHttpClient();
+        var call = client.newCall(request);
+        try (var response = call.execute()) {
+            return verification.apply(response);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Map<String, Object> createPresentationDefinition(String credentialType) {
         var fields = new HashMap<String, Object>();
         fields.put("path", List.of("$.type"));
@@ -77,9 +93,10 @@ public class TestFixtures {
     }
 
     public static void assert4xxCode(Response response) {
+        assertThat(response.code())
+                .withFailMessage("Expected a 4xx client error HTTP code but got %s".formatted(response.code()))
+                .isBetween(400, 500);
         assertThat(response.isSuccessful()).isFalse();
-        assertThat(response.code() >= 400).isTrue();
-        assertThat(response.code() <= 500).isTrue();
     }
 
     public static VerificationMethod resolveKeyMaterial(String kid) {
@@ -101,7 +118,16 @@ public class TestFixtures {
     public static String resolveCredentialServiceEndpoint(String holderDid) {
         var didClient = new DidClient(false);
         var document = didClient.resolveDocument(holderDid);
-        return document.getServiceEntry(CREDENTIAL_SERVICE_TYPE).getServiceEndpoint();
+        return document.getServiceEntry(CREDENTIAL_SERVICE_TYPE).serviceEndpoint();
+    }
+
+    /**
+     * Resolves the issuer service endpoint from its DID.
+     */
+    public static String resolveIssuerServiceEndpoint(String holderDid) {
+        var didClient = new DidClient(false);
+        var document = didClient.resolveDocument(holderDid);
+        return document.getServiceEntry(ISSUER_SERVICE_TYPE).serviceEndpoint();
     }
 
     @SuppressWarnings("unchecked")
@@ -172,4 +198,19 @@ public class TestFixtures {
             throw new RuntimeException(e);
         }
     }
+
+    public static void assert2xxCode(Response response) {
+        assertThat(response.code()).isBetween(200, 300);
+        assertThat(response.isSuccessful()).isTrue();
+    }
+
+    public static <T> T bodyAs(Response response, Class<T> type, ObjectMapper objectMapper) {
+        try {
+            return objectMapper.readValue(response.body().byteStream(), type);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }

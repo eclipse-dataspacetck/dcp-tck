@@ -14,6 +14,8 @@
 
 package org.eclipse.dataspacetck.dcp.system.service;
 
+import static java.util.Optional.ofNullable;
+
 /**
  * Result of a service invocation.
  */
@@ -71,7 +73,7 @@ public class Result<T> {
 
     @Override
     public String toString() {
-        return succeeded() ? getContent().toString() : failure;
+        return succeeded() ? ofNullable(getContent()).orElseGet(() -> (T) "").toString() : failure;
     }
 
     public enum ErrorType {
