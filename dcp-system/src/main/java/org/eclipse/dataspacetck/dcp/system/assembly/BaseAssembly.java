@@ -62,7 +62,8 @@ public class BaseAssembly {
         mapper = new ObjectMapper();
         address = configuration.getPropertyAsString(TCK_CALLBACK_ADDRESS, TCK_DEFAULT_CALLBACK_ADDRESS);
         verifierDid = parseDid("verifier");
-        issuerDid = parseDid("issuer");
+        var id = configuration.getPropertyAsString(TCK_PREFIX + ".did.issuer", null);
+        issuerDid = Objects.requireNonNullElseGet(id, () -> parseDid("issuer"));
         thirdPartyDid = parseDid("thirdparty");
         issuerKeyService = new KeyServiceImpl(Keys.generateEcKey());
         issuerDidService = new IssuerDidService(issuerDid, address, issuerKeyService);

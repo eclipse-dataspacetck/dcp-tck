@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.dataspacetck.dcp.system.crypto.Keys.createVerifier;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.ID;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.ISSUER_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VC;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VERIFIABLE_CREDENTIAL_CLAIM;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VP;
@@ -103,6 +104,15 @@ public class TestFixtures {
         var didClient = new DidClient(false);
         var document = didClient.resolveDocument(holderDid);
         return document.getServiceEntry(CREDENTIAL_SERVICE_TYPE).serviceEndpoint();
+    }
+
+    /**
+     * Resolves the issuer service endpoint from its DID.
+     */
+    public static String resolveIssuerServiceEndpoint(String holderDid) {
+        var didClient = new DidClient(false);
+        var document = didClient.resolveDocument(holderDid);
+        return document.getServiceEntry(ISSUER_SERVICE_TYPE).serviceEndpoint();
     }
 
     @SuppressWarnings("unchecked")
@@ -172,5 +182,10 @@ public class TestFixtures {
         } catch (ParseException | JOSEException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void assert2xxCode(Response response) {
+        assertThat(response.code()).isBetween(200, 300);
+        assertThat(response.isSuccessful()).isTrue();
     }
 }

@@ -60,7 +60,7 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
 
         var token = createToken(createClaims().build());
         var request = createCredentialOfferMessageRequest(token, msg).build();
-        executeRequest(request, response -> assertThat(response.code()).isEqualTo(200));
+        executeRequest(request, TestFixtures::assert2xxCode);
     }
 
     @MandatoryTest

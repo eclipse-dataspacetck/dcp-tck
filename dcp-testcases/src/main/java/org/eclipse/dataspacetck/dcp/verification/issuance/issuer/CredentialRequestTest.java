@@ -47,7 +47,7 @@ import static org.awaitility.Awaitility.await;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.AUTHORIZATION;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_REQUEST_PATH;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
-import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveCredentialServiceEndpoint;
+import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveIssuerServiceEndpoint;
 
 public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
 
@@ -75,8 +75,8 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.4 IssuerService should reject a CredentialRequest without an Authorization header")
-    void is_6_4_credentialRequest_noAuthHeader() {
+    @DisplayName("6.4.2 IssuerService should reject a CredentialRequest without an Authorization header")
+    void is_6_4_2_credentialRequest_noAuthHeader() {
         var msg = createCredentialRequestMessage(holderDid).build();
         var request = createHttpRequest(null, msg);
 
@@ -84,8 +84,8 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.4 IssuerService should reject a CredentialRequest where the auth header does not have a Bearer prefix")
-    void is_6_4_credentialRequest_noBearerPrefix() {
+    @DisplayName("6.4.3 IssuerService should reject a CredentialRequest where the auth header does not have a Bearer prefix")
+    void is_6_4_3_credentialRequest_noBearerPrefix() {
         var credentialMessage = createCredentialRequestMessage(holderPid).build();
         var token = createToken(createClaims().build());
 
@@ -96,8 +96,8 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.4 IssuerService should reject a CredentialRequest with an invalid body")
-    void is_6_4_credentialRequest_invalidBody() {
+    @DisplayName("6.4.4 IssuerService should reject a CredentialRequest with an invalid body")
+    void is_6_4_4_credentialRequest_invalidBody() {
         var credentialMessage = createCredentialRequestMessage(holderPid).build();
 
         var invalidMessage = new HashMap<>(credentialMessage);
@@ -109,8 +109,8 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.4 IssuerService should reject a CredentialRequest with an invalid token - wrong signature")
-    void is_6_4_credentialRequest_tokenSignedWithWrongKey() throws JOSEException {
+    @DisplayName("6.4.5 IssuerService should reject a CredentialRequest with an invalid token - wrong signature")
+    void is_6_4_5_credentialRequest_tokenSignedWithWrongKey() throws JOSEException {
         var msg = createCredentialRequestMessage(holderPid).build();
 
         var claims = createClaims().build();
@@ -132,8 +132,8 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.4 IssuerService should reject a CredentialRequest with an invalid token - expired")
-    void is_6_4_credentialRequest_tokenExpired() {
+    @DisplayName("6.4.6 IssuerService should reject a CredentialRequest with an invalid token - expired")
+    void is_6_4_6_credentialRequest_tokenExpired() {
         var token = createToken(createClaims()
                 .expirationTime(Date.from(now().minusSeconds(60)))
                 .build());
@@ -143,8 +143,8 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.4 IssuerService should reject a CredentialRequest with an invalid token - iat in future")
-    void is_6_4_credentialRequest_iatInFuture() {
+    @DisplayName("6.4.7 IssuerService should reject a CredentialRequest with an invalid token - iat in future")
+    void is_6_4_7_credentialRequest_iatInFuture() {
         var token = createToken(createClaims()
                 .issueTime(Date.from(now().plusSeconds(60)))
                 .build());
@@ -154,8 +154,8 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.4 IssuerService should reject a CredentialRequest with an invalid token - nbf in future")
-    void is_6_4_credentialRequest_nbfViolated() {
+    @DisplayName("6.4.8 IssuerService should reject a CredentialRequest with an invalid token - nbf in future")
+    void is_6_4_8_credentialRequest_nbfViolated() {
         var token = createToken(createClaims()
                 .notBeforeTime(Date.from(now().plusSeconds(60)))
                 .build());
@@ -165,8 +165,8 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.4 IssuerService should reject a CredentialRequest with an invalid token - incorrect aud")
-    void is_6_4_credentialRequest_invalidAud(@Did(RoleType.THIRD_PARTY) String thirdPartyDid) {
+    @DisplayName("6.4.9 IssuerService should reject a CredentialRequest with an invalid token - incorrect aud")
+    void is_6_4_8_credentialRequest_invalidAud(@Did(RoleType.THIRD_PARTY) String thirdPartyDid) {
         var token = createToken(createClaims()
                 .audience(thirdPartyDid)
                 .build());
@@ -176,8 +176,8 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.4 IssuerService should reject a CredentialRequest with an invalid token - iss != sub")
-    void is_6_4_credentialRequest_issNotEqualSub(@Did(RoleType.THIRD_PARTY) String thirdPartyDid) {
+    @DisplayName("6.4.10 IssuerService should reject a CredentialRequest with an invalid token - iss != sub")
+    void is_6_4_10_credentialRequest_issNotEqualSub(@Did(RoleType.THIRD_PARTY) String thirdPartyDid) {
         var token = createToken(createClaims()
                 .issuer(thirdPartyDid)
                 .build());
@@ -187,8 +187,8 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.4 IssuerService should reject a CredentialRequest with an invalid token - jti already used")
-    void is_6_4_credentialRequest_jtiAlreadyUsed() {
+    @DisplayName("6.4.11 IssuerService should reject a CredentialRequest with an invalid token - jti already used")
+    void is_6_4_11_credentialRequest_jtiAlreadyUsed() {
         var token = createToken(createClaims().build());
         var msg = createCredentialRequestMessage(holderPid).build();
         var request = createHttpRequest(token, msg).build();
@@ -197,8 +197,8 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.4 IssuerService should reject a CredentialRequest with a missing holderPid")
-    void is_6_4_credentialRequest_missingHolderPid() {
+    @DisplayName("6.4.12 IssuerService should reject a CredentialRequest with a missing holderPid")
+    void is_6_4_12_credentialRequest_missingHolderPid() {
         var token = createToken(createClaims().build());
         var msg = createCredentialRequestMessage(holderPid).build();
         var invalidMessage = new HashMap<>(msg);
@@ -208,7 +208,7 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     }
 
     private Request.Builder createHttpRequest(String authToken, Map<String, Object> msg) {
-        var endpoint = resolveCredentialServiceEndpoint(holderDid);
+        var endpoint = resolveIssuerServiceEndpoint(issuerDid);
         try {
             var builder = new Request.Builder()
                     .url(endpoint + CREDENTIAL_REQUEST_PATH)
