@@ -71,4 +71,6 @@ public interface DcpConstants {
 
     String CREDENTIAL_REQUEST_PATH = "/credentials";
 
+    String CREDENTIAL_STATUS_PATH = "/requests/";
+
 }

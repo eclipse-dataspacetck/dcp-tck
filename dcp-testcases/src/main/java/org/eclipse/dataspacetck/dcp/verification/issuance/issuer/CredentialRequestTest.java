@@ -14,7 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.verification.issuance.issuer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.ECDSASigner;
@@ -22,9 +21,6 @@ import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import com.nimbusds.jwt.SignedJWT;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.api.system.MandatoryTest;
 import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.dcp.system.annotation.Did;
@@ -37,17 +33,13 @@ import org.junit.jupiter.api.DisplayName;
 import java.time.Duration;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
 
 import static com.nimbusds.jose.JOSEObjectType.JWT;
 import static com.nimbusds.jose.JWSAlgorithm.ES256;
 import static java.time.Instant.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.AUTHORIZATION;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_REQUEST_PATH;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
-import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveIssuerServiceEndpoint;
 
 public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
 
@@ -62,8 +54,11 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
         var msg = createCredentialRequestMessage(holderPid).build();
         var token = createToken(createClaims().build());
 
-        var request = createHttpRequest(token, msg);
-        executeRequest(request.build(), response -> assertThat(response.code()).isEqualTo(201));
+        var request = createCredentialRequest(token, msg);
+        executeRequest(request.build(), response -> {
+            TestFixtures.assert2xxCode(response);
+            assertThat(response.header("Location")).isNotEmpty();
+        });
 
         // wait until the IssuerService has processed the request and sends a CredentialMessage
         // to the StorageApi
@@ -78,7 +73,7 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     @DisplayName("6.4.2 IssuerService should reject a CredentialRequest without an Authorization header")
     void is_6_4_2_credentialRequest_noAuthHeader() {
         var msg = createCredentialRequestMessage(holderDid).build();
-        var request = createHttpRequest(null, msg);
+        var request = createCredentialRequest(null, msg);
 
         executeRequest(request.build(), TestFixtures::assert4xxCode);
     }
@@ -89,7 +84,7 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
         var credentialMessage = createCredentialRequestMessage(holderPid).build();
         var token = createToken(createClaims().build());
 
-        var request = createHttpRequest(null, credentialMessage)
+        var request = createCredentialRequest(null, credentialMessage)
                 .header("Authorization", token)
                 .build();
         executeRequest(request, TestFixtures::assert4xxCode);
@@ -104,7 +99,7 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
         invalidMessage.remove("credentials");
         var token = createToken(createClaims().build());
 
-        var request = createHttpRequest(token, invalidMessage).build();
+        var request = createCredentialRequest(token, invalidMessage).build();
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
@@ -127,7 +122,7 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
         signedJwt.sign(new ECDSASigner(spoofedKey.toECPrivateKey()));
         var token = signedJwt.serialize();
 
-        var request = createHttpRequest(token, msg).build();
+        var request = createCredentialRequest(token, msg).build();
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
@@ -138,7 +133,7 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
                 .expirationTime(Date.from(now().minusSeconds(60)))
                 .build());
         var msg = createCredentialRequestMessage(holderPid).build();
-        var request = createHttpRequest(token, msg).build();
+        var request = createCredentialRequest(token, msg).build();
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
@@ -149,7 +144,7 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
                 .issueTime(Date.from(now().plusSeconds(60)))
                 .build());
         var msg = createCredentialRequestMessage(holderPid).build();
-        var request = createHttpRequest(token, msg).build();
+        var request = createCredentialRequest(token, msg).build();
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
@@ -160,7 +155,7 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
                 .notBeforeTime(Date.from(now().plusSeconds(60)))
                 .build());
         var msg = createCredentialRequestMessage(holderPid).build();
-        var request = createHttpRequest(token, msg).build();
+        var request = createCredentialRequest(token, msg).build();
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
@@ -171,7 +166,7 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
                 .audience(thirdPartyDid)
                 .build());
         var msg = createCredentialRequestMessage(holderPid).build();
-        var request = createHttpRequest(token, msg).build();
+        var request = createCredentialRequest(token, msg).build();
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
@@ -182,7 +177,7 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
                 .issuer(thirdPartyDid)
                 .build());
         var msg = createCredentialRequestMessage(holderPid).build();
-        var request = createHttpRequest(token, msg).build();
+        var request = createCredentialRequest(token, msg).build();
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
@@ -191,7 +186,7 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
     void is_6_4_11_credentialRequest_jtiAlreadyUsed() {
         var token = createToken(createClaims().build());
         var msg = createCredentialRequestMessage(holderPid).build();
-        var request = createHttpRequest(token, msg).build();
+        var request = createCredentialRequest(token, msg).build();
         executeRequest(request, response -> assertThat(response.code()).isEqualTo(201));
         executeRequest(request, TestFixtures::assert4xxCode);
     }
@@ -203,22 +198,9 @@ public class CredentialRequestTest extends AbstractCredentialIssuanceTest {
         var msg = createCredentialRequestMessage(holderPid).build();
         var invalidMessage = new HashMap<>(msg);
         invalidMessage.remove("holderPid");
-        var request = createHttpRequest(token, invalidMessage).build();
+        var request = createCredentialRequest(token, invalidMessage).build();
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
-    private Request.Builder createHttpRequest(String authToken, Map<String, Object> msg) {
-        var endpoint = resolveIssuerServiceEndpoint(issuerDid);
-        try {
-            var builder = new Request.Builder()
-                    .url(endpoint + CREDENTIAL_REQUEST_PATH)
-                    .post(RequestBody.create(mapper.writeValueAsString(msg), MediaType.parse("application/json")));
-            if (authToken != null) {
-                builder.addHeader(AUTHORIZATION, "Bearer " + authToken);
-            }
-            return builder;
-        } catch (JsonProcessingException e) {
-            throw new AssertionError(e);
-        }
-    }
+
 }

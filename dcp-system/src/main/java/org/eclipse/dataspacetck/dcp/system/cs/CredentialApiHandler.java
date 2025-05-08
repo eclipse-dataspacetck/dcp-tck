@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_MESSAGE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_REQUEST_MESSAGE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TYPE;
@@ -79,12 +80,18 @@ public class CredentialApiHandler implements ProtocolHandler {
 
     @NotNull
     private HandlerResponse toResponse(Result<?> result) {
+        var content = result.getContent();
+        Map<String, String> headers = emptyMap();
+        if (content != null) {
+            headers = Map.of("Location", content.toString());
+        }
+
         return switch (result.getErrorType()) {
             case BAD_REQUEST -> new HandlerResponse(400, result.getFailure());
             case UNAUTHORIZED -> new HandlerResponse(401, result.getFailure());
             case NOT_FOUND -> new HandlerResponse(404, result.getFailure());
             case GENERAL_ERROR -> new HandlerResponse(500, result.getFailure());
-            case NO_ERROR -> new HandlerResponse(201, "");
+            case NO_ERROR -> new HandlerResponse(201, "", headers);
         };
     }
 }

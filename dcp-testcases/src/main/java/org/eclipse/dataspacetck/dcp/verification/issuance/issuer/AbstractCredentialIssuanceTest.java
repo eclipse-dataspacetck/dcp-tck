@@ -14,8 +14,13 @@
 
 package org.eclipse.dataspacetck.dcp.verification.issuance.issuer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.core.system.SystemBootstrapExtension;
 import org.eclipse.dataspacetck.dcp.system.annotation.Did;
@@ -34,15 +39,18 @@ import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.HOLDER;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.AUTHORIZATION;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_REQUEST_MESSAGE_TYPE;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_REQUEST_PATH;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_CREDENTIAL_TYPE;
+import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveIssuerServiceEndpoint;
 
 @IssuerService
 @ExtendWith(SystemBootstrapExtension.class)
 public abstract class AbstractCredentialIssuanceTest {
 
-    protected final ObjectMapper mapper = new ObjectMapper();
+    protected final ObjectMapper mapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     @Inject
     @Did(HOLDER)
     protected String holderDid;
@@ -67,6 +75,24 @@ public abstract class AbstractCredentialIssuanceTest {
                                 "format", "VC1_0_JWT"
                         )
                 ));
+    }
+
+    /**
+     * constructs a HTTP request using a CredentialRequestMessage
+     */
+    protected Request.Builder createCredentialRequest(String authToken, Map<String, Object> credentialRequestMessage) {
+        var endpoint = resolveIssuerServiceEndpoint(issuerDid);
+        try {
+            var builder = new Request.Builder()
+                    .url(endpoint + CREDENTIAL_REQUEST_PATH)
+                    .post(RequestBody.create(mapper.writeValueAsString(credentialRequestMessage), MediaType.parse("application/json")));
+            if (authToken != null) {
+                builder.addHeader(AUTHORIZATION, "Bearer " + authToken);
+            }
+            return builder;
+        } catch (JsonProcessingException e) {
+            throw new AssertionError(e);
+        }
     }
 
     protected JWTClaimsSet.Builder createClaims() {

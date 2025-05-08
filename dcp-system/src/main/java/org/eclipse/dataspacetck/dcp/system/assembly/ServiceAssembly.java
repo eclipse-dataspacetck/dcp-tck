@@ -34,6 +34,8 @@ import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.eclipse.dataspacetck.dcp.system.did.DidDocumentHandler;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtPresentationGenerator;
+import org.eclipse.dataspacetck.dcp.system.issuer.CredentialRequestHandler;
+import org.eclipse.dataspacetck.dcp.system.issuer.IssuerService;
 import org.eclipse.dataspacetck.dcp.system.issuer.IssuerServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
@@ -65,6 +67,7 @@ import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_
 public class ServiceAssembly {
     private final CredentialService credentialService;
     private final SecureTokenServer secureTokenServer;
+    private final IssuerService issuerService;
 
     public ServiceAssembly(BaseAssembly baseAssembly, ServiceResolver resolver, ServiceConfiguration configuration) {
         var tokenService = baseAssembly.getHolderTokenService();
@@ -73,6 +76,7 @@ public class ServiceAssembly {
 
         secureTokenServer = new SecureTokenServerImpl(configuration);
         credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer, baseAssembly.getHolderTokenService(), mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
+        issuerService = new IssuerServiceImpl(baseAssembly.getIssuerKeyService(), baseAssembly.getIssuerTokenService());
 
         var endpoint = (CallbackEndpoint) requireNonNull(resolver.resolve(CallbackEndpoint.class, configuration));
         var monitor = configuration.getMonitor();
@@ -83,8 +87,9 @@ public class ServiceAssembly {
         endpoint.registerProtocolHandler("/presentations/query", presentationHandler);
 
         // ... for credential issuance
-        endpoint.registerProtocolHandler("/credentials", new CredentialApiHandler(credentialService, mapper, new IssuerServiceImpl(baseAssembly.getIssuerKeyService(), baseAssembly.getIssuerTokenService())));
+        endpoint.registerProtocolHandler("/credentials", new CredentialApiHandler(credentialService, mapper, issuerService));
         endpoint.registerProtocolHandler("/offers", new CredentialOfferHandler(credentialService));
+        endpoint.registerProtocolHandler("/requests/.*", new CredentialRequestHandler(issuerService, mapper));
 
         endpoint.registerHandler("/holder/did.json", new DidDocumentHandler(baseAssembly.getHolderDidService(), mapper));
         endpoint.registerHandler("/verifier/did.json", new DidDocumentHandler(baseAssembly.getVerifierDidService(), mapper));

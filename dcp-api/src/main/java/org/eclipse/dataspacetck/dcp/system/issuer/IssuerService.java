@@ -23,5 +23,7 @@ import java.util.Map;
  */
 public interface IssuerService {
 
-    Result<Void> processCredentialRequest(String idTokenJwt, Map<String, Object> credentialRequestMessage);
+    Result<String> processCredentialRequest(String idTokenJwt, Map<String, Object> credentialRequestMessage);
+
+    Result<Map<String, String>> getCredentialStatus(String idTokenJwt, String id);
 }

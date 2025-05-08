@@ -14,6 +14,7 @@
 
 package org.eclipse.dataspacetck.dcp.verification.fixtures;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jwt.SignedJWT;
@@ -32,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.UUID.randomUUID;
@@ -57,6 +59,19 @@ public class TestFixtures {
         var call = client.newCall(request);
         try (var response = call.execute()) {
             verification.accept(response);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Executes the request and applies the given verification, returning the result of the verification function
+     */
+    public static <T> T executeRequestAndGet(Request request, Function<Response, T> verification) {
+        var client = new OkHttpClient();
+        var call = client.newCall(request);
+        try (var response = call.execute()) {
+            return verification.apply(response);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -188,4 +203,14 @@ public class TestFixtures {
         assertThat(response.code()).isBetween(200, 300);
         assertThat(response.isSuccessful()).isTrue();
     }
+
+    public static <T> T bodyAs(Response response, Class<T> type, ObjectMapper objectMapper) {
+        try {
+            return objectMapper.readValue(response.body().byteStream(), type);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }

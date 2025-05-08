@@ -36,7 +36,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 
 import static java.time.Instant.now;
@@ -50,6 +50,7 @@ public class IssuerServiceImpl implements IssuerService {
     private final KeyService issuerKeyService;
     private final TokenValidationService issuerTokenValidationService;
     private final ObjectMapper objectMapper;
+    private final Map<String, RequestStatus> credentialRequests = new java.util.HashMap<>();
 
     public IssuerServiceImpl(KeyService issuerKeyService, TokenValidationService issuerTokenValidationService) {
         this.issuerKeyService = issuerKeyService;
@@ -70,7 +71,7 @@ public class IssuerServiceImpl implements IssuerService {
     }
 
     @Override
-    public Result<Void> processCredentialRequest(String idTokenJwt, Map<String, Object> credentialRequestMessage) {
+    public Result<String> processCredentialRequest(String idTokenJwt, Map<String, Object> credentialRequestMessage) {
 
         // validate the token
         var validationResult = issuerTokenValidationService.validateToken(idTokenJwt);
@@ -96,23 +97,43 @@ public class IssuerServiceImpl implements IssuerService {
             return failure("Invalid credential request message", Result.ErrorType.BAD_REQUEST);
         }
 
+
         // generate CredentialMessage
         var correlation = credentialRequest.getHolderPid();
         var credentials = credentialRequest.getCredentials().stream()
                 .map(cred -> new CredentialMessage.CredentialContainer(cred.credentialType(),
                         generateJwtCredential(cred, gen, holderDid, issuerDid).getContent(), cred.format()
                 )).toList();
+        var issuerPid = randomUUID().toString();
         var credentialsMessage = CredentialMessage.Builder.newInstance()
                 .holderPid(correlation)
-                .issuerPid(UUID.randomUUID().toString())
+                .issuerPid(issuerPid)
                 .status("ISSUED")
                 .credentials(credentials)
                 .build();
 
+        credentialRequests.put(issuerPid, new RequestStatus(credentialRequest, "RECEIVED"));
+
         // send CredentialMessage to holder's Storage API
         sendBackCredentials(holderDid, issuerDid, credentialsMessage);
 
-        return success();
+        return success(issuerPid);
+    }
+
+    @Override
+    public Result<Map<String, String>> getCredentialStatus(String idTokenJwt, String id) {
+        // validate the token
+        var validationResult = issuerTokenValidationService.validateToken(idTokenJwt);
+        if (!validationResult.succeeded()) {
+            return failure(validationResult.getFailure(), Result.ErrorType.UNAUTHORIZED);
+        }
+        return Optional.ofNullable(credentialRequests.get(id)).map(rqs -> success(Map.of(
+                        "type", "CredentialStatus",
+                        "holderPid", rqs.credentialRequest.getHolderPid(),
+                        "issuerPid", id,
+                        "status", rqs.status.toUpperCase()
+                )))
+                .orElseGet(() -> failure("No credential request found", Result.ErrorType.NOT_FOUND));
     }
 
     private void sendBackCredentials(String holderDid, String issuerDid, CredentialMessage credentialsMsg) {
@@ -151,5 +172,8 @@ public class IssuerServiceImpl implements IssuerService {
                 }, 500, MILLISECONDS);
 
         scheduledExecutorService.shutdown();
+    }
+
+    private record RequestStatus(CredentialRequestMessage credentialRequest, String status) {
     }
 }
