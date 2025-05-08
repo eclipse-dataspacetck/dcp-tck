@@ -13,8 +13,9 @@ jupiter = "5.12.2"
 okhttp = "4.12.0"
 mockito = "5.17.0"
 nimbus = "10.0.1"
+restAssured = "5.5.1"
 schema-validator = "1.5.2"
-slf4j="2.0.17"
+slf4j = "2.0.17"
 tck = "0.1.0"
 titanium = "1.6.0"
 
@@ -40,6 +41,7 @@ nimbus-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
 schema-validator = { module = "com.networknt:json-schema-validator", version.ref = "schema-validator" }
 slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 titanium = { module = "com.apicatalog:titanium-json-ld", version.ref = "titanium" }
+restAssured = { module = "io.rest-assured:rest-assured", version.ref = "restAssured" }
 
 
 [plugins]

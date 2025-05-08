@@ -64,15 +64,13 @@ public class DcpTckSuite {
         var result = runtimeBuilder
                 .build().execute();
 
-
-        monitor.resetMode().message("Test run complete");
-
         if (!result.getFailures().isEmpty()) {
             var failures = result.getFailures().stream()
                     .map(f -> "- " + f.getTestIdentifier().getDisplayName() + " (" + f.getException() + ")")
                     .collect(Collectors.joining("\n"));
             monitor.enableError().message("There were failing tests:\n" + failures);
         }
+        monitor.resetMode().message("Test run complete");
     }
 
     @NotNull

@@ -66,7 +66,7 @@ public class CredentialIssuanceTest extends AbstractCredentialIssuanceTest {
 
         var token = createToken(createClaims().build());
         var request = createCredentialMessageRequest(token, credentialMessage).build();
-        executeRequest(request, response -> assertThat(response.code()).isEqualTo(200));
+        executeRequest(request, TestFixtures::assert2xxCode);
     }
 
 

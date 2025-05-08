@@ -19,30 +19,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * A DID service entry.
  */
-public class ServiceEntry {
-    private String id;
-    private String type;
-    private String serviceEndpoint;
-
+public record ServiceEntry(String id, String type, String serviceEndpoint) {
     public ServiceEntry(@JsonProperty("id") String id,
-                        @JsonProperty("type")
-                        String type,
-                        @JsonProperty("serviceEndpoint")
-                        String serviceEndpoint) {
+                        @JsonProperty("type") String type,
+                        @JsonProperty("serviceEndpoint") String serviceEndpoint) {
         this.id = id;
         this.type = type;
         this.serviceEndpoint = serviceEndpoint;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public String getServiceEndpoint() {
-        return serviceEndpoint;
     }
 }

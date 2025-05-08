@@ -21,20 +21,6 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DidDocumentTest {
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    @Test
-    void verifyDeserializeSerialize() throws JsonProcessingException {
-        var original = objectMapper.readValue(DOCUMENT, DidDocument.class);
-        var serialized = objectMapper.writeValueAsString(original);
-        var deserialized = objectMapper.readValue(serialized, DidDocument.class);
-        assertThat(deserialized.getId()).isEqualTo("did:web:localhost%3A8083:holder");
-        assertThat(deserialized.getServices()).allMatch(s -> s.getId().equals("TCK-Credential-Service"));
-        assertThat(deserialized.getVerificationMethods()).allMatch(v -> v.getId().equals("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c"));
-        assertThat(deserialized.getVerificationMethod("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c")).isNotNull();
-        assertThat(deserialized.getServiceEntry("CredentialService")).isNotNull();
-    }
-
     private static final String DOCUMENT = """
             {
                 "@context" : [ "https://www.w3.org/ns/did/v1", "https://w3id.org/dspace-dcp/v1.0/" ],
@@ -58,4 +44,17 @@ class DidDocumentTest {
                   }
                 } ]
              }""";
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Test
+    void verifyDeserializeSerialize() throws JsonProcessingException {
+        var original = objectMapper.readValue(DOCUMENT, DidDocument.class);
+        var serialized = objectMapper.writeValueAsString(original);
+        var deserialized = objectMapper.readValue(serialized, DidDocument.class);
+        assertThat(deserialized.getId()).isEqualTo("did:web:localhost%3A8083:holder");
+        assertThat(deserialized.getServices()).allMatch(s -> s.id().equals("TCK-Credential-Service"));
+        assertThat(deserialized.getVerificationMethods()).allMatch(v -> v.getId().equals("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c"));
+        assertThat(deserialized.getVerificationMethod("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c")).isNotNull();
+        assertThat(deserialized.getServiceEntry("CredentialService")).isNotNull();
+    }
 }

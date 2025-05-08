@@ -19,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_MESSAGE_TYPE;
+
 public class CredentialMessage {
     @JsonProperty(value = "credentials", required = true)
     private final List<CredentialContainer> credentials = new ArrayList<>();
@@ -29,8 +31,11 @@ public class CredentialMessage {
     @JsonProperty(value = "status", required = true, defaultValue = "ISSUED")
     private String status;
     @JsonProperty(value = "type", required = true)
-    private String type;
+    private String type = CREDENTIAL_MESSAGE_TYPE;
 
+    private CredentialMessage() {
+        // Default constructor for deserialization
+    }
 
     public boolean validate() {
         return List.of("ISSUED", "REJECTED").contains(status) &&
@@ -57,6 +62,43 @@ public class CredentialMessage {
 
     public String getType() {
         return type;
+    }
+
+    public static class Builder {
+        private final CredentialMessage instance = new CredentialMessage();
+
+        public static Builder newInstance() {
+            return new Builder();
+        }
+
+        public Builder credentials(List<CredentialContainer> credentials) {
+            instance.credentials.addAll(credentials);
+            return this;
+        }
+
+        public Builder issuerPid(String issuerPid) {
+            instance.issuerPid = issuerPid;
+            return this;
+        }
+
+        public Builder holderPid(String holderPid) {
+            instance.holderPid = holderPid;
+            return this;
+        }
+
+        public Builder status(String status) {
+            instance.status = status;
+            return this;
+        }
+
+        public Builder type(String type) {
+            instance.type = type;
+            return this;
+        }
+
+        public CredentialMessage build() {
+            return instance;
+        }
     }
 
     public record CredentialContainer(String credentialType, String payload, String format) {

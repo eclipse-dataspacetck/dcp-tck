@@ -23,11 +23,13 @@ import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -83,27 +85,28 @@ public class CredentialServiceImpl implements CredentialService {
     }
 
     @Override
-    public Result<Void> writeCredentials(String idTokenJwt, InputStream body) {
+    public Result<Void> writeCredentials(String idTokenJwt, Map<String, Object> credentialMessage) {
 
         var validationResult = secureTokenServer.validateWrite(idTokenJwt, tokenService);
         if (validationResult.failed()) {
             return failure(validationResult.getFailure(), UNAUTHORIZED);
         }
 
-        try {
-            var message = mapper.readValue(body, CredentialMessage.class);
-            if (!message.validate()) {
-                return failure("Invalid message", BAD_REQUEST);
-            }
-            message.getCredentials()
-                    .forEach(cred -> {
-                        var container = new VcContainer(cred.payload(), createCredential(cred), CredentialFormat.valueOf(cred.format()));
-                        credentialsByType.computeIfAbsent(cred.credentialType(), k -> new ArrayList<>()).add(container);
-                    });
-            return success();
-        } catch (IOException e) {
-            return failure("Invalid JSON: " + e.getMessage(), BAD_REQUEST);
+        return storeCredentials(credentialMessage);
+    }
+
+    @NotNull
+    public Result<Void> storeCredentials(Map<String, Object> credentialMessage) {
+        var message = mapper.convertValue(credentialMessage, CredentialMessage.class);
+        if (!message.validate()) {
+            return failure("Invalid message", BAD_REQUEST);
         }
+        message.getCredentials()
+                .forEach(cred -> {
+                    var container = new VcContainer(cred.payload(), createCredential(cred), CredentialFormat.valueOf(cred.format()));
+                    credentialsByType.computeIfAbsent(cred.credentialType(), k -> new ArrayList<>()).add(container);
+                });
+        return success();
     }
 
     @Override
@@ -123,6 +126,11 @@ public class CredentialServiceImpl implements CredentialService {
         } catch (IOException e) {
             return failure("Invalid JSON: " + e.getMessage(), BAD_REQUEST);
         }
+    }
+
+    @Override
+    public Collection<VcContainer> getCredentials() {
+        return credentialsByType.values().stream().flatMap(Collection::stream).toList();
     }
 
     private VerifiableCredential createCredential(CredentialMessage.CredentialContainer cred) {

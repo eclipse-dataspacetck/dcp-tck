@@ -1,5 +1,3 @@
-import org.eclipse.dataspacetck.gradle.plugins.tckgen.TckGeneratorExtension
-
 /*
  *  Copyright (c) 2025 Metaform Systems, Inc.
  *
@@ -24,6 +22,7 @@ dependencies {
     implementation(rootProject.libs.okhttp)
     implementation(rootProject.libs.nimbus.jwt)
     implementation(rootProject.libs.assertj)
+    implementation(rootProject.libs.restAssured)
     implementation(rootProject.libs.tck.common.api)
     implementation(rootProject.libs.schema.validator) {
         exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml")
@@ -32,6 +31,7 @@ dependencies {
     implementation(rootProject.libs.slf4j.nop)
 
     implementation(project(":dcp-api"))
+    implementation(project(":dcp-system"))
 
     testImplementation(project(":dcp-system"))
 }
