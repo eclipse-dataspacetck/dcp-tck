@@ -27,9 +27,11 @@ The following matrix shows the SUTs and the tests they have to complete:
 
 Test are grouped into packages according to the system under test (SUT) and the protocol they are testing:
 
-- `org.eclipse.dataspacetck.dcp.verification.presentation` for the Verifiable Presentation Protocol tests targeting the
-  Credential
-  Service
+- `org.eclipse.dataspacetck.dcp.verification.presentation.cs` for the Verifiable Presentation Protocol tests targeting
+  the
+  Credential Service
+- `org.eclipse.dataspacetck.dcp.verification.presentation.issuer` for the Verifiable Presentation Protocol tests
+  targeting the verifier
 - `org.eclipse.dataspacetck.dcp.verification.issuance.cs` for the Credential Issuance Protocol tests targeting the
   Credential Service
 - `org.eclipse.dataspacetck.dcp.verification.issuance.issuer` for the Credential Issuance Protocol tests targeting the
@@ -40,7 +42,8 @@ Test are grouped into packages according to the system under test (SUT) and the 
 ### 2.1 Running instance of the system-under-test
 
 The system under test (SUT) must be running and reachable via the network. If a SUT consists of several
-microservices, it is permitted to only launch the microservices that are required for the tests. For example, if you want
+microservices, it is permitted to only launch the microservices that are required for the tests. For example, if you
+want
 to test the VPP, then only the microservice that processes Presentation Queries is required.
 
 Further, the SecureTokenService must be running and reachable via the network. The TCK will use the SecureTokenService
@@ -102,7 +105,7 @@ void runVppTestsWithDocker() {
             "dataspacetck.sts.client.id", "some-client-id", // must be accepted by the STS
             "dataspacetck.sts.client.secret", "5up3r$3cr3t", // must be accepted by the STS
             "dataspacetck.credentials.correlation.id", "my-correlation-id", // optional
-            "dataspacetck.test.package", "org.eclipse.dataspacetck.dcp.verification.presentation"
+            "dataspacetck.test.package", "org.eclipse.dataspacetck.dcp.verification.presentation.cs"
     );
 
     try (var tckContainer = new GenericContainer<>("eclipsedataspacetck/dcp-tck-runtime:latest")
@@ -160,7 +163,7 @@ void runVppTests() {
                     "dataspacetck.sts.client.secret", "5up3r$3cr3t", // must be accepted by the STS
                     "dataspacetck.credentials.correlation.id", "my-correlation-id" // optional
             ))
-            .addPackage("org.eclipse.dataspacetck.dcp.verification.presentation")
+            .addPackage("org.eclipse.dataspacetck.dcp.verification.presentation.cs")
             .monitor(new ConsoleMonitor(true, true))
             .build()
             .execute();

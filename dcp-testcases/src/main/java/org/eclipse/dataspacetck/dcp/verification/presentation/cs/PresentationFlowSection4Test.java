@@ -12,7 +12,7 @@
  *
  */
 
-package org.eclipse.dataspacetck.dcp.verification.presentation;
+package org.eclipse.dataspacetck.dcp.verification.presentation.cs;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jwt.JWTClaimsSet;
