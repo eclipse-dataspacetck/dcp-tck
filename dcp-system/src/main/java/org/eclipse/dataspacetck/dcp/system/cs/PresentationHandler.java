@@ -61,7 +61,7 @@ public class PresentationHandler extends AbstractProtocolHandler {
     public HandlerResponse apply(Map<String, List<String>> headers, InputStream body) {
         try {
             var message = mapper.readValue(body, Map.class);
-            if (!PRESENTATION_QUERY_MESSAGE.equals(message.get(TYPE))) {
+            if (!PRESENTATION_QUERY_MESSAGE.equals(message.get(TYPE)) && !PRESENTATION_QUERY_MESSAGE.equals(message.get("@" + TYPE))) {
                 monitor.enableError().message(format("Message is not a %s", PRESENTATION_QUERY_MESSAGE));
                 return new HandlerResponse(400, NULL_BODY);
             }

@@ -26,6 +26,7 @@ import org.eclipse.dataspacetck.dcp.system.annotation.HolderPid;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
 import org.eclipse.dataspacetck.dcp.system.annotation.Issuer;
 import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
+import org.eclipse.dataspacetck.dcp.system.annotation.TriggerEndpoint;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
 import org.eclipse.dataspacetck.dcp.system.assembly.BaseAssembly;
 import org.eclipse.dataspacetck.dcp.system.assembly.ServiceAssembly;
@@ -105,6 +106,9 @@ public class DcpSystemLauncher implements SystemLauncher {
             }
             if (hasAnnotation(HolderPid.class, configuration)) {
                 return type.cast(baseAssembly.getHolderPid());
+            }
+            if (hasAnnotation(TriggerEndpoint.class, configuration)) {
+                return type.cast(baseAssembly.getVerifierTriggerEndpoint());
             }
 
             var did = getAnnotation(Did.class, configuration);

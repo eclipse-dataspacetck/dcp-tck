@@ -82,6 +82,7 @@ public class ServiceAssembly {
         var monitor = configuration.getMonitor();
 
         // register the handlers
+
         // ... for presentation query
         var presentationHandler = new PresentationHandler(credentialService, tokenService, mapper, monitor);
         endpoint.registerProtocolHandler("/presentations/query", presentationHandler);

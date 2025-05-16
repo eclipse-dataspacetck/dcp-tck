@@ -18,6 +18,10 @@
         "type": {
           "type": "string",
           "const": "PresentationQueryMessage"
+        },
+        "@type": {
+          "type": "string",
+          "const": "PresentationQueryMessage"
         }
       },
       "allOf": [
@@ -48,11 +52,16 @@
               ]
             }
           ]
+        },
+        {
+          "oneOf": [
+            {"required": ["type"], "not":  {"required": ["@type"]}},
+            {"required": ["@type"], "not":  {"required":  ["type"]}}
+          ]
         }
       ],
       "required": [
-        "@context",
-        "type"
+        "@context"
       ]
     }
   }

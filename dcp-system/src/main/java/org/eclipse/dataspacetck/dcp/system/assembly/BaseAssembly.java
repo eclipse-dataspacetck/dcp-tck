@@ -57,11 +57,12 @@ public class BaseAssembly {
     private final DidServiceImpl thirdPartyDidService;
     private final ObjectMapper mapper;
     private final String holderPid;
+    private final String verifierTriggerEndpoint;
 
     public BaseAssembly(SystemConfiguration configuration) {
         mapper = new ObjectMapper();
         address = configuration.getPropertyAsString(TCK_CALLBACK_ADDRESS, TCK_DEFAULT_CALLBACK_ADDRESS);
-        verifierDid = parseDid("verifier");
+        verifierDid = Objects.requireNonNullElseGet(configuration.getPropertyAsString(TCK_PREFIX + ".did.verifier", null), () -> parseDid("verifier"));
         var id = configuration.getPropertyAsString(TCK_PREFIX + ".did.issuer", null);
         issuerDid = Objects.requireNonNullElseGet(id, () -> parseDid("issuer"));
         thirdPartyDid = parseDid("thirdparty");
@@ -80,9 +81,15 @@ public class BaseAssembly {
         verifierTokenService = new TokenValidationServiceImpl(verifierDid);
         verifierKeyService = new KeyServiceImpl(Keys.generateEcKey());
         verifierDidService = new DidServiceImpl(verifierDid, address, verifierKeyService);
+        verifierTriggerEndpoint = Objects.requireNonNullElse(configuration.getPropertyAsString(TCK_PREFIX + ".vpp.trigger.endpoint", null), "/api/trigger");
+
 
         thirdPartyKeyService = new KeyServiceImpl(Keys.generateEcKey());
         thirdPartyDidService = new DidServiceImpl(thirdPartyDid, address, thirdPartyKeyService);
+    }
+
+    public String getVerifierTriggerEndpoint() {
+        return verifierTriggerEndpoint;
     }
 
     public TokenValidationService getIssuerTokenService() {
