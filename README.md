@@ -347,10 +347,3 @@ java -Ddataspacetck.callback.address="http://localhost:8080" \
   -Ddataspacetck.credentials.correlation.id="my-correlation-id" \
   -jar dcp-tck/build/libs/dcp-tck-runtime.jar
 ```
-
-## References
-- the Decentralized Claims Protocol: https://eclipse-dataspace-dcp.github.io/decentralized-claims-protocol/
-- Example implementation of verifier tests (VPP): https://github.com/eclipse-edc/Connector/tree/main/system-tests/dcp-tck-tests/presentation
-- Example implementation of CredentialService tests (VPP): https://github.com/eclipse-edc/IdentityHub/tree/main/e2e-tests/tck-tests/presentation/src/test/java/org/eclipse/edc/test/e2e/tck/presentation
-- Example implementation of CredentialService tests (CIP): https://github.com/eclipse-edc/IdentityHub/tree/main/e2e-tests/tck-tests/presentation/src/test/java/org/eclipse/edc/test/e2e/tck/issuance
-- Example implementation of IssuerService tests (CIP): https://github.com/eclipse-edc/IdentityHub/tree/main/e2e-tests/tck-tests/presentation/src/test/java/org/eclipse/edc/test/e2e/tck/issuer
