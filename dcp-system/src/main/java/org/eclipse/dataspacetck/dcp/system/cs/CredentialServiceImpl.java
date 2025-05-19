@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
 import static org.eclipse.dataspacetck.dcp.system.generation.PresentationGenerator.PresentationFormat.JWT;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION;
@@ -44,7 +45,6 @@ import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTAT
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VC;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.ErrorType.BAD_REQUEST;
-import static org.eclipse.dataspacetck.dcp.system.service.Result.ErrorType.NOT_FOUND;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.ErrorType.UNAUTHORIZED;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.failure;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
@@ -60,9 +60,13 @@ public class CredentialServiceImpl implements CredentialService {
     private final Map<String, List<VcContainer>> credentialsByType = new ConcurrentHashMap<>();
     private final TokenValidationService tokenService;
     private final ObjectMapper mapper;
+    private CredentialService delegate;
 
-
-    public CredentialServiceImpl(String holderDid, List<PresentationGenerator> generators, SecureTokenServer secureTokenServer, TokenValidationService tokenService, ObjectMapper mapper) {
+    public CredentialServiceImpl(String holderDid,
+                                 List<PresentationGenerator> generators,
+                                 SecureTokenServer secureTokenServer,
+                                 TokenValidationService tokenService,
+                                 ObjectMapper mapper) {
         this.generators = generators.stream().collect(toMap(PresentationGenerator::getFormat, v -> v));
         this.holderDid = holderDid;
         this.secureTokenServer = secureTokenServer;
@@ -72,6 +76,9 @@ public class CredentialServiceImpl implements CredentialService {
 
     @Override
     public Result<Map<String, Object>> presentationQueryMessage(String bearerDid, String accessToken, Map<String, Object> message) {
+        if (delegate != null) {
+            return delegate.presentationQueryMessage(bearerDid, accessToken, message);
+        }
         var validationResult = secureTokenServer.validateReadToken(bearerDid, accessToken);
         if (validationResult.failed()) {
             return failure(validationResult.getFailure(), UNAUTHORIZED);
@@ -86,7 +93,9 @@ public class CredentialServiceImpl implements CredentialService {
 
     @Override
     public Result<Void> writeCredentials(String idTokenJwt, Map<String, Object> credentialMessage) {
-
+        if (delegate != null) {
+            return delegate.writeCredentials(idTokenJwt, credentialMessage);
+        }
         var validationResult = secureTokenServer.validateWrite(idTokenJwt, tokenService);
         if (validationResult.failed()) {
             return failure(validationResult.getFailure(), UNAUTHORIZED);
@@ -95,22 +104,11 @@ public class CredentialServiceImpl implements CredentialService {
         return storeCredentials(credentialMessage);
     }
 
-    @NotNull
-    public Result<Void> storeCredentials(Map<String, Object> credentialMessage) {
-        var message = mapper.convertValue(credentialMessage, CredentialMessage.class);
-        if (!message.validate()) {
-            return failure("Invalid message", BAD_REQUEST);
-        }
-        message.getCredentials()
-                .forEach(cred -> {
-                    var container = new VcContainer(cred.payload(), createCredential(cred), CredentialFormat.valueOf(cred.format()));
-                    credentialsByType.computeIfAbsent(cred.credentialType(), k -> new ArrayList<>()).add(container);
-                });
-        return success();
-    }
-
     @Override
     public Result<Void> offerCredentials(String idTokenJwt, InputStream body) {
+        if (delegate != null) {
+            return delegate.offerCredentials(idTokenJwt, body);
+        }
         var validationResult = secureTokenServer.validateWrite(idTokenJwt, tokenService);
         if (validationResult.failed()) {
             return failure(validationResult.getFailure(), UNAUTHORIZED);
@@ -130,7 +128,29 @@ public class CredentialServiceImpl implements CredentialService {
 
     @Override
     public Collection<VcContainer> getCredentials() {
+        if (delegate != null) {
+            return delegate.getCredentials();
+        }
         return credentialsByType.values().stream().flatMap(Collection::stream).toList();
+    }
+
+    @Override
+    public void withDelegate(CredentialService delegate) {
+        this.delegate = delegate;
+    }
+
+    @NotNull
+    private Result<Void> storeCredentials(Map<String, Object> credentialMessage) {
+        var message = mapper.convertValue(credentialMessage, CredentialMessage.class);
+        if (!message.validate()) {
+            return failure("Invalid message", BAD_REQUEST);
+        }
+        message.getCredentials()
+                .forEach(cred -> {
+                    var container = new VcContainer(cred.payload(), createCredential(cred), CredentialFormat.valueOf(cred.format()));
+                    credentialsByType.computeIfAbsent(cred.credentialType(), k -> new ArrayList<>()).add(container);
+                });
+        return success();
     }
 
     private VerifiableCredential createCredential(CredentialMessage.CredentialContainer cred) {
@@ -156,12 +176,13 @@ public class CredentialServiceImpl implements CredentialService {
             scopeTypes.add(type);
         }
         var credentials = scopeTypes.stream()
-                .flatMap(c -> credentialsByType.get(c).stream())
+                .flatMap(c -> ofNullable(credentialsByType.get(c)).stream().flatMap(Collection::stream))
                 .filter(Objects::nonNull)
                 .toList();
-        if (credentials.isEmpty()) {
-            return failure("No credentials found", NOT_FOUND);
-        }
+        // technically, responding with an empty credentials array is nonsensical, but allowed
+        // if (credentials.isEmpty()) {
+        //    return failure("No credentials found", NOT_FOUND);
+        // }
         for (var container : credentials) {
             boolean found = false;
             for (var type : container.credential().getType()) {

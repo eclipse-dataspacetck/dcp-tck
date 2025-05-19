@@ -23,14 +23,7 @@ import java.util.function.Function;
 /**
  * Serves DID documents.
  */
-public class DidDocumentHandler implements Function<InputStream, String> {
-    private final DidService didService;
-    private final ObjectMapper mapper;
-
-    public DidDocumentHandler(DidService didService, ObjectMapper mapper) {
-        this.didService = didService;
-        this.mapper = mapper;
-    }
+public record DidDocumentHandler(DidService didService, ObjectMapper mapper) implements Function<InputStream, String> {
 
     @Override
     public String apply(InputStream inputStream) {

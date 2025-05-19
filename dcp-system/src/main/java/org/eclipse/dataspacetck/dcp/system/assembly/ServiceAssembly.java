@@ -42,6 +42,8 @@ import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
 import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
 import org.eclipse.dataspacetck.dcp.system.sts.StsClient;
+import org.eclipse.dataspacetck.dcp.system.verifier.BaseTokenValidationService;
+import org.eclipse.dataspacetck.dcp.system.verifier.VerifierTriggerHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -97,6 +99,12 @@ public class ServiceAssembly {
         endpoint.registerHandler("/issuer/did.json", new DidDocumentHandler(baseAssembly.getIssuerDidService(), mapper));
         endpoint.registerHandler("/thirdparty/did.json", new DidDocumentHandler(baseAssembly.getThirdPartyDidService(), mapper));
 
+        // ... for the verifier's trigger endpoint
+        endpoint.registerProtocolHandler("/api/trigger", new VerifierTriggerHandler(baseAssembly.getVerifierTokenService(),
+                mapper,
+                baseAssembly.getVerifierKeyService(),
+                baseAssembly.getVerifierDid(),
+                new BaseTokenValidationService()));
     }
 
     public CredentialService getCredentialService() {
@@ -135,6 +143,15 @@ public class ServiceAssembly {
             throw new RuntimeException(e);
         }
 
+    }
+
+    @NotNull
+    public VcContainer createVcContainer(String issuerDid, String holderDid,
+                                         JwtCredentialGenerator credentialGenerator,
+                                         String credentialType) {
+        var credential = createCredential(issuerDid, holderDid, credentialType);
+        var result = credentialGenerator.generateCredential(credential);
+        return new VcContainer(result.getContent(), credential, VC1_0_JWT);
     }
 
     private void sendCredentialMessage(BaseAssembly baseAssembly, String correlation, VcContainer membershipContainer, VcContainer sensitiveDataContainer, String token) throws JsonProcessingException {
@@ -188,15 +205,6 @@ public class ServiceAssembly {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @NotNull
-    public VcContainer createVcContainer(String issuerDid, String holderDid,
-                                         JwtCredentialGenerator credentialGenerator,
-                                         String credentialType) {
-        var credential = createCredential(issuerDid, holderDid, credentialType);
-        var result = credentialGenerator.generateCredential(credential);
-        return new VcContainer(result.getContent(), credential, VC1_0_JWT);
     }
 
     private VerifiableCredential createCredential(String issuerDid, String holderDid, String credentialType) {

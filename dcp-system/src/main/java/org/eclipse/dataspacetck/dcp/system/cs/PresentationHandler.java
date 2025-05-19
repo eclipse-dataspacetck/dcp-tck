@@ -30,6 +30,7 @@ import java.util.Map;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.AUTHORIZATION;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.NULL_BODY;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_QUERY_MESSAGE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TOKEN;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TYPE;
@@ -40,7 +41,6 @@ import static org.eclipse.dataspacetck.dcp.system.util.Validators.validateBearer
  * Handler for resolution the API.
  */
 public class PresentationHandler extends AbstractProtocolHandler {
-    private static final String NULL_BODY = "";
     private final CredentialService credentialService;
     private final TokenValidationService tokenService;
     private final ObjectMapper mapper;

@@ -14,48 +14,56 @@
 
 package org.eclipse.dataspacetck.dcp.verification.presentation.verifier;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jwt.JWTClaimsSet;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.api.system.MandatoryTest;
+import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.dcp.system.annotation.AuthToken;
+import org.eclipse.dataspacetck.dcp.system.annotation.Did;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
-import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
+import org.eclipse.dataspacetck.dcp.system.annotation.RoleType;
+import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
+import org.eclipse.dataspacetck.dcp.system.annotation.TriggerEndpoint;
+import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
-import org.eclipse.dataspacetck.dcp.verification.presentation.cs.AbstractPresentationFlowTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_QUERY_MESSAGE;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_QUERY_PATH;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TOKEN;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_SCOPE;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
-import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveCredentialServiceEndpoint;
 
 
 /**
  * Verifies ID token validation for the Credential Service.
  */
-@Disabled
-public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
+public class PresentationFlowSection4Test extends AbstractVerifierPresentationFlowTest {
+
+    @Inject
+    @ThirdParty
+    private KeyService thirdPartyKeyService;
+
+    @DisplayName("Verifier should reject an auth token without the Bearer prefix")
+    @MandatoryTest
+    void presentationResponse_rejectMissingBearerPrefix(@TriggerEndpoint String triggerEndpoint,
+                                                        @AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+        var triggerMessage = createTriggerMessage();
+
+        var rq = createRequest(triggerEndpoint, createIdToken(authToken), triggerMessage);
+        executeRequest(rq, TestFixtures::assert4xxCode);
+    }
 
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - auth token bound to a different iss/sub")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idTokenInvalidIssuerSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+    public void cs_04_03_03_idTokenInvalidIssuerSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
+                                                    @TriggerEndpoint String triggerEndpoint,
+                                                    @Did(RoleType.THIRD_PARTY) String thirdPartyDid) {
         var claimSet = new JWTClaimsSet.Builder()
                 .issuer(thirdPartyDid)     // iss and sub diff than the auth token binding to the verifier
                 .subject(thirdPartyDid)
@@ -66,26 +74,17 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        var idToken = thirdPartyKeyService.sign(emptyMap(), claimSet);
+        var idToken = "Bearer " + thirdPartyKeyService.sign(emptyMap(), claimSet);
 
-        try {
-            var endpoint = resolveCredentialServiceEndpoint(holderDid);
-            var request = new Request.Builder()
-                    .url(endpoint + PRESENTATION_QUERY_PATH)
-                    .header(AUTHORIZATION, "Bearer " + idToken)
-                    .post(RequestBody.create(mapper.writeValueAsString(createMessage()), MediaType.parse(JSON_CONTENT_TYPE)))
-                    .build();
-            executeRequest(request, TestFixtures::assert4xxCode);
-
-        } catch (JsonProcessingException e) {
-            throw new AssertionError(e);
-        }
+        var msg = createTriggerMessage();
+        var request = createRequest(triggerEndpoint, idToken, msg);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - iss and sub different")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idTokenInvalidSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+    public void cs_04_03_03_idTokenInvalidSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
         var claimSet = new JWTClaimsSet.Builder()
                 .issuer(verifierDid)
                 .subject("did:web:another.com:subject")    // invalid subject
@@ -96,47 +95,50 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxCode);
+        var authHeader = "Bearer " + holderKeyService.sign(emptyMap(), claimSet);
+        executeRequest(createRequest(triggerEndpoint, authHeader, createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - incorrect aud")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idtokenIncorrectAud(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+    public void cs_04_03_03_idTokenIncorrectAud(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
         var claimSet = new JWTClaimsSet.Builder()
                 .issuer(verifierDid)
                 .subject(verifierDid)
-                .audience(verifierDid)  // invalid audience
+                .audience("did:web:invalid-audience")  // invalid audience
                 .jwtID(randomUUID().toString())
                 .issueTime(new Date())
                 .expirationTime(Date.from(now().plusSeconds(600)))
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxCode);
+        var authHeader = "Bearer " + holderKeyService.sign(emptyMap(), claimSet);
+        executeRequest(createRequest(triggerEndpoint, authHeader, createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - sub does not match DID document id")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idtokenIncorrectSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+    public void cs_04_03_03_idTokenIncorrectSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
         var claimSet = new JWTClaimsSet.Builder()
                 .issuer("did:web:another.com:subject")
                 .subject("did:web:another.com:subject")    // invalid subject
-                .audience(verifierDid)
+                .audience(holderDid)
                 .jwtID(randomUUID().toString())
                 .issueTime(new Date())
                 .expirationTime(Date.from(now().plusSeconds(600)))
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxCode);
+        var authHeader = "Bearer " + holderKeyService.sign(emptyMap(), claimSet);
+        executeRequest(createRequest(triggerEndpoint, authHeader, createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - nbf in future")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idtokenNbfInFuture(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+    public void cs_04_03_03_idTokenNbfInFuture(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
         var claimSet = new JWTClaimsSet.Builder()
                 .issuer(verifierDid)
                 .subject(verifierDid)
@@ -148,78 +150,60 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxCode);
+        var authHeader = "Bearer " + holderKeyService.sign(emptyMap(), claimSet);
+        executeRequest(createRequest(triggerEndpoint, authHeader, createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - expired")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idtokenExpired(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+    public void cs_04_03_03_idTokenExpired(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
         var claimSet = new JWTClaimsSet.Builder()
-                .issuer(verifierDid)
-                .subject(verifierDid)
-                .audience(holderDid)
+                .issuer(holderDid)
+                .subject(holderDid)
+                .audience(verifierDid)
                 .jwtID(randomUUID().toString())
                 .issueTime(new Date())
                 .expirationTime(Date.from(now().minusSeconds(1000000))) // in past
                 .claim(TOKEN, authToken)
                 .build();
 
-        executeRequest(createRequest(claimSet, createMessage()), TestFixtures::assert4xxCode);
+        var authHeader = "Bearer " + holderKeyService.sign(emptyMap(), claimSet);
+        executeRequest(createRequest(triggerEndpoint, authHeader, createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - jti")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idtokenJtiUsedTwice(@AuthToken(MEMBERSHIP_SCOPE) String authToken1,
-                                                @AuthToken(MEMBERSHIP_SCOPE) String authToken2) {
+    public void cs_04_03_03_idTokenJtiUsedTwice(@AuthToken(MEMBERSHIP_SCOPE) String authToken1,
+                                                @AuthToken(MEMBERSHIP_SCOPE) String authToken2,
+                                                @TriggerEndpoint String triggerEndpoint) {
         var jti = randomUUID().toString();
         var claimSet1 = new JWTClaimsSet.Builder()
-                .issuer(verifierDid)
-                .subject(verifierDid)
-                .audience(holderDid)
+                .issuer(holderDid)
+                .subject(holderDid)
+                .audience(verifierDid)
                 .jwtID(jti)
                 .issueTime(new Date())
                 .expirationTime(Date.from(now().plusSeconds(600)))
                 .claim(TOKEN, authToken1)
                 .build();
 
-        executeRequest(createRequest(claimSet1, createMessage()), response -> verifyCredentials(response, MEMBERSHIP_CREDENTIAL_TYPE));
+        var authHeader1 = "Bearer " + holderKeyService.sign(emptyMap(), claimSet1);
+        executeRequest(createRequest(triggerEndpoint, authHeader1, createTriggerMessage()), TestFixtures::assert2xxCode);
 
         var claimSet2 = new JWTClaimsSet.Builder()
-                .issuer(verifierDid)
-                .subject(verifierDid)
-                .audience(holderDid)
+                .issuer(holderDid)
+                .subject(holderDid)
+                .audience(verifierDid)
                 .jwtID(jti)
                 .issueTime(new Date())
                 .expirationTime(Date.from(now().plusSeconds(600)))
                 .claim(TOKEN, authToken2)
                 .build();
 
-        executeRequest(createRequest(claimSet2, createMessage()), TestFixtures::assert4xxCode);
-    }
-
-    @NotNull
-    private Request createRequest(JWTClaimsSet claimSet, Map<String, Object> message) {
-        var idToken = verifierKeyService.sign(emptyMap(), claimSet);
-
-        try {
-            var endpoint = resolveCredentialServiceEndpoint(holderDid);
-            return new Request.Builder()
-                    .url(endpoint + PRESENTATION_QUERY_PATH)
-                    .header(AUTHORIZATION, "Bearer " + idToken)
-                    .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(JSON_CONTENT_TYPE)))
-                    .build();
-        } catch (JsonProcessingException e) {
-            throw new AssertionError(e);
-        }
-    }
-
-    private Map<String, Object> createMessage() {
-        return DcpMessageBuilder.newInstance()
-                .type(PRESENTATION_QUERY_MESSAGE)
-                .property(SCOPE, List.of(MEMBERSHIP_SCOPE))
-                .build();
+        var authHeader2 = "Bearer " + holderKeyService.sign(emptyMap(), claimSet2);
+        executeRequest(createRequest(triggerEndpoint, authHeader2, createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 
 }

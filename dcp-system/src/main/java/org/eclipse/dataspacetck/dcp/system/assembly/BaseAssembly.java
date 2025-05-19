@@ -62,7 +62,8 @@ public class BaseAssembly {
     public BaseAssembly(SystemConfiguration configuration) {
         mapper = new ObjectMapper();
         address = configuration.getPropertyAsString(TCK_CALLBACK_ADDRESS, TCK_DEFAULT_CALLBACK_ADDRESS);
-        verifierDid = Objects.requireNonNullElseGet(configuration.getPropertyAsString(TCK_PREFIX + ".did.verifier", null), () -> parseDid("verifier"));
+        var verifierDid = configuration.getPropertyAsString(TCK_PREFIX + ".did.verifier", null);
+        this.verifierDid = Objects.requireNonNullElseGet(verifierDid, () -> parseDid("verifier"));
         var id = configuration.getPropertyAsString(TCK_PREFIX + ".did.issuer", null);
         issuerDid = Objects.requireNonNullElseGet(id, () -> parseDid("issuer"));
         thirdPartyDid = parseDid("thirdparty");
@@ -78,11 +79,10 @@ public class BaseAssembly {
 
         holderPid = ofNullable(configuration.getPropertyAsString(TCK_PREFIX + ".credentials.correlation.id", null)).orElseGet(() -> randomUUID().toString());
 
-        verifierTokenService = new TokenValidationServiceImpl(verifierDid);
+        verifierTokenService = new TokenValidationServiceImpl(this.verifierDid);
         verifierKeyService = new KeyServiceImpl(Keys.generateEcKey());
-        verifierDidService = new DidServiceImpl(verifierDid, address, verifierKeyService);
-        verifierTriggerEndpoint = Objects.requireNonNullElse(configuration.getPropertyAsString(TCK_PREFIX + ".vpp.trigger.endpoint", null), "/api/trigger");
-
+        verifierDidService = new DidServiceImpl(this.verifierDid, address, verifierKeyService);
+        verifierTriggerEndpoint = Objects.requireNonNullElse(configuration.getPropertyAsString(TCK_PREFIX + ".vpp.trigger.endpoint", null), address + "/api/trigger");
 
         thirdPartyKeyService = new KeyServiceImpl(Keys.generateEcKey());
         thirdPartyDidService = new DidServiceImpl(thirdPartyDid, address, thirdPartyKeyService);
@@ -160,14 +160,14 @@ public class BaseAssembly {
         return thirdPartyDidService;
     }
 
+    public String getHolderPid() {
+        return holderPid;
+    }
+
     private String parseDid(String discriminator) {
         var uri = URI.create(address);
         return uri.getPort() != 443 ? format("did:web:%s%%3A%s:%s", uri.getHost(), uri.getPort(), discriminator)
                 : format("did:web:%s:%s", uri.getHost(), discriminator);
-    }
-
-    public String getHolderPid() {
-        return holderPid;
     }
 
 }

@@ -73,4 +73,7 @@ public interface DcpConstants {
 
     String CREDENTIAL_STATUS_PATH = "/requests/";
 
+    String NULL_BODY = "";
+
+    String JSON_CONTENT_TYPE = "application/json";
 }
