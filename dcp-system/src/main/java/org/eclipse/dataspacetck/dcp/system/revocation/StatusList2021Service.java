@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class BitstringStatusListService implements CredentialRevocationService {
+public class StatusList2021Service implements CredentialRevocationService {
     public static final String REVOCATION = "revocation";
     private static final int LENGTH = 16 * 1024; // 16k bits
     private final BitString bitstring = BitString.Builder.newInstance().size(LENGTH).build();
@@ -30,7 +30,7 @@ public class BitstringStatusListService implements CredentialRevocationService {
     private final String issuerDid;
     private final String address;
 
-    public BitstringStatusListService(String issuerDid, String address) {
+    public StatusList2021Service(String issuerDid, String address) {
         this.issuerDid = issuerDid;
         this.address = address;
     }
@@ -47,13 +47,13 @@ public class BitstringStatusListService implements CredentialRevocationService {
     public VerifiableCredential createStatusListCredential() {
         var credential = VerifiableCredential.Builder.newInstance()
                 .id(credentialId)
-                .type(List.of("VerifiableCredential", "BitstringStatusListCredential"))
+                .type(List.of("VerifiableCredential", "StatusList2021Credential"))
                 .issuer(issuerDid)
                 .issuanceDate(Instant.now().toString())
-                .context(List.of("https://www.w3.org/ns/credentials/v2"))
+                .context(List.of("https://www.w3.org/2018/credentials/v1", "https://w3id.org/vc/status-list/2021/v1"))
                 .credentialSubject(Map.of(
                         "id", credentialId,
-                        "type", "BitstringStatusList",
+                        "type", "StatusList2021",
                         "statusPurpose", REVOCATION,
                         "encodedList", generateEncodedStatusList()
                 ));
@@ -86,7 +86,7 @@ public class BitstringStatusListService implements CredentialRevocationService {
 
     @Override
     public String getStatusEntryType() {
-        return "BitstringStatusListEntry";
+        return "StatusList2021Entry";
     }
 
 }

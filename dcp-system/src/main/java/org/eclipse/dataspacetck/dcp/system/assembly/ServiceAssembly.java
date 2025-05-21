@@ -41,9 +41,10 @@ import org.eclipse.dataspacetck.dcp.system.issuer.IssuerServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
+import org.eclipse.dataspacetck.dcp.system.revocation.BitstringStatusListService;
 import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationHandler;
 import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationService;
-import org.eclipse.dataspacetck.dcp.system.revocation.BitstringStatusListService;
+import org.eclipse.dataspacetck.dcp.system.revocation.StatusList2021Service;
 import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
 import org.eclipse.dataspacetck.dcp.system.sts.StsClient;
 import org.eclipse.dataspacetck.dcp.system.verifier.BaseTokenValidationService;
@@ -84,7 +85,7 @@ public class ServiceAssembly {
         secureTokenServer = new SecureTokenServerImpl(configuration);
         credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer, baseAssembly.getHolderTokenService(), mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
         issuerService = new IssuerServiceImpl(baseAssembly.getIssuerKeyService(), baseAssembly.getIssuerTokenService());
-        revocationService = new BitstringStatusListService(baseAssembly.getIssuerDid(), baseAssembly.getAddress());
+        revocationService = createRevocationService(baseAssembly);
 
         var endpoint = (CallbackEndpoint) requireNonNull(resolver.resolve(CallbackEndpoint.class, configuration));
         var monitor = configuration.getMonitor();
@@ -168,6 +169,16 @@ public class ServiceAssembly {
         var credential = createCredential(issuerDid, holderDid, credentialType);
         var result = credentialGenerator.generateCredential(credential);
         return new VcContainer(result.getContent(), credential, VC1_0_JWT);
+    }
+
+    private CredentialRevocationService createRevocationService(BaseAssembly baseAssembly) {
+        return switch (baseAssembly.getRevocationListType().toLowerCase()) {
+            case "bitstringstatuslist" ->
+                    new BitstringStatusListService(baseAssembly.getIssuerDid(), baseAssembly.getAddress());
+            case "statuslist2021" -> new StatusList2021Service(baseAssembly.getIssuerDid(), baseAssembly.getAddress());
+            default ->
+                    throw new IllegalArgumentException("Unsupported revocation list type: " + baseAssembly.getRevocationListType());
+        };
     }
 
     private void sendCredentialMessage(BaseAssembly baseAssembly, String correlation, VcContainer membershipContainer, VcContainer sensitiveDataContainer, String token) throws JsonProcessingException {

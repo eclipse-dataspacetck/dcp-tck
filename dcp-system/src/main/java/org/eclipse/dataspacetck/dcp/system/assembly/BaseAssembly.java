@@ -58,6 +58,7 @@ public class BaseAssembly {
     private final ObjectMapper mapper;
     private final String holderPid;
     private final String verifierTriggerEndpoint;
+    private final String revocationListType;
 
     public BaseAssembly(SystemConfiguration configuration) {
         mapper = new ObjectMapper();
@@ -87,6 +88,8 @@ public class BaseAssembly {
 
         thirdPartyKeyService = new KeyServiceImpl(Keys.generateEcKey());
         thirdPartyDidService = new DidServiceImpl(thirdPartyDid, address, thirdPartyKeyService);
+
+        revocationListType = configuration.getPropertyAsString(TCK_PREFIX + ".revocation.type", "bitstringstatuslist");
     }
 
     public String getVerifierTriggerEndpoint() {
@@ -163,6 +166,10 @@ public class BaseAssembly {
 
     public String getHolderPid() {
         return holderPid;
+    }
+
+    public String getRevocationListType() {
+        return revocationListType;
     }
 
     private String parseDid(String discriminator) {
