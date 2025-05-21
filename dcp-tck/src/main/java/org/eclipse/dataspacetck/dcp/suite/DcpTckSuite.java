@@ -70,7 +70,7 @@ public class DcpTckSuite {
                         var sw = new java.io.StringWriter();
                         var pw = new java.io.PrintWriter(sw);
                         f.getException().printStackTrace(pw);
-                        return "- " + f.getTestIdentifier().getDisplayName() + " (" + f.getException() + ")\n"+sw.toString();
+                        return "- " + f.getTestIdentifier().getDisplayName() + " (" + f.getException() + ")\n" + sw;
                     })
                     .collect(Collectors.joining("\n"));
             monitor.enableError().message("There were failing tests:\n" + failures);

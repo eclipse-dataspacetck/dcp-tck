@@ -20,7 +20,6 @@ import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.dcp.system.annotation.AuthToken;
 import org.eclipse.dataspacetck.dcp.system.annotation.Did;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
-import org.eclipse.dataspacetck.dcp.system.annotation.RoleType;
 import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.TriggerEndpoint;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;

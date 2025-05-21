@@ -25,7 +25,6 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.failure;
-import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
 
 /**
  * Models a DID document.
@@ -68,7 +67,6 @@ public class DidDocument extends ExtensibleModel {
                 .filter(m -> m.getId().equals(id) || m.getId().equals(this.id + id) || m.getId().equals(this.id + "#" + id))
                 .findFirst()
                 .map(Result::success)
-//                .orElseThrow(() -> new IllegalArgumentException("No verification method found for id " + id));
                 .orElseGet(() -> failure("No verification method found for id " + id));
     }
 
