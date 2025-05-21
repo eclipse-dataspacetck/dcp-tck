@@ -1,23 +1,24 @@
 package org.eclipse.dataspacetck.dcp.verification.presentation.verifier;
 
 import org.eclipse.dataspacetck.api.system.MandatoryTest;
+import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.dcp.system.annotation.AuthToken;
 import org.eclipse.dataspacetck.dcp.system.annotation.Did;
 import org.eclipse.dataspacetck.dcp.system.annotation.Holder;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
-import org.eclipse.dataspacetck.dcp.system.annotation.Issuer;
 import org.eclipse.dataspacetck.dcp.system.annotation.RoleType;
 import org.eclipse.dataspacetck.dcp.system.annotation.TriggerEndpoint;
-import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialService;
-import org.eclipse.dataspacetck.dcp.system.cs.CredentialServiceAdapter;
+import org.eclipse.dataspacetck.dcp.system.cs.Delegates;
 import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtPresentationGenerator;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat;
+import org.eclipse.dataspacetck.dcp.system.model.vc.MetadataReference;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
+import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationService;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +26,8 @@ import org.junit.jupiter.api.DisplayName;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Stream;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,6 +46,9 @@ import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.ex
  * For Verifiers that also implement DSP, the /catalog endpoint could be used.
  */
 public class PresentationFlowSection5Test extends AbstractVerifierPresentationFlowTest {
+    @Inject
+    @TriggerEndpoint
+    private String triggerEndpoint;
 
     @DisplayName("Verifier should resolve the DID from the prover's ID token")
     @MandatoryTest
@@ -57,8 +63,7 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
     @DisplayName("Verifier should accept a valid PresentationResponseMessage")
     @MandatoryTest
     @IssueCredentials({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE})
-    void presentationResponse_success(@TriggerEndpoint String triggerEndpoint,
-                                      @AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+    void presentationResponse_success(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
         var triggerMessage = createTriggerMessage();
 
         var rq = createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), triggerMessage);
@@ -69,33 +74,31 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
     @DisplayName("Verifier should reject a presentation response message that contains a different credential than requested")
     @MandatoryTest
     @IssueCredentials({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE})
-    void presentationResponse_tooFewCredentials(@TriggerEndpoint String triggerEndpoint,
-                                                @AuthToken("org.eclipse.dspace.dcp.vc.type:SomeOtherCredential:read") String authToken) {
+    void presentationResponse_tooFewCredentials(@AuthToken("org.eclipse.dspace.dcp.vc.type:SomeOtherCredential:read") String authToken) {
         executeRequest(createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 
     @DisplayName("Verifier should accept a presentation response message that contains more credentials than requested")
     @MandatoryTest
     @IssueCredentials({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE})
-    void presentationResponse_tooManyCredentials(@TriggerEndpoint String triggerEndpoint, @AuthToken({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE}) String authToken) {
+    void presentationResponse_tooManyCredentials(@AuthToken({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE}) String authToken) {
         executeRequest(createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage()), TestFixtures::assert2xxCode);
     }
 
     @DisplayName("Verifier should reject an ID token that does not contain an access token")
     @MandatoryTest
     @IssueCredentials({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE})
-    void presentationResponse_idTokenNoTokenClaim(@TriggerEndpoint String triggerEndpoint) {
+    void presentationResponse_idTokenNoTokenClaim() {
         executeRequest(createRequest(triggerEndpoint, "Bearer " + createIdToken(null), createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 
     @DisplayName("Verifier should reject an empty 'presentation' array")
     @MandatoryTest
-    void presentationResponse_emptyPresentations(@TriggerEndpoint String triggerEndpoint,
-                                                 @AuthToken(SENSITIVE_DATA_SCOPE) String authToken,
+    void presentationResponse_emptyPresentations(@AuthToken(SENSITIVE_DATA_SCOPE) String authToken,
                                                  @Holder CredentialService holderCredentialService) {
         var request = createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage());
 
-        holderCredentialService.withDelegate(new CredentialServiceAdapter() {
+        holderCredentialService.withDelegate(new PresentationProvider() {
             @Override
             public Result<Map<String, Object>> presentationQueryMessage(String bearerDid, String accessToken, Map<String, Object> message) {
                 return Result.success(DcpMessageBuilder.newInstance()
@@ -109,20 +112,14 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
 
     @DisplayName("Verifier should reject an empty 'verifiableCredentials' array")
     @MandatoryTest
-    void presentationResponse_emptyCredentials(@TriggerEndpoint String triggerEndpoint,
-                                               @AuthToken(MEMBERSHIP_SCOPE) String authToken,
+    void presentationResponse_emptyCredentials(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
                                                @Holder CredentialService holderCredentialService) {
         var request = createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage());
 
-        holderCredentialService.withDelegate(new CredentialServiceAdapter() {
+        holderCredentialService.withDelegate(new PresentationProvider() {
             @Override
             public Result<Map<String, Object>> presentationQueryMessage(String bearerDid, String accessToken, Map<String, Object> message) {
-                var presentation = new JwtPresentationGenerator(holderDid, holderKeyService)
-                        .generatePresentation(verifierDid, holderDid, List.of());
-                return Result.success(DcpMessageBuilder.newInstance()
-                        .type(PRESENTATION_RESPONSE_MESSAGE)
-                        .property(PRESENTATION, List.of(presentation.getContent()))
-                        .build());
+                return Result.success(createPresentation());
             }
         });
         executeRequest(request, TestFixtures::assert4xxCode);
@@ -130,47 +127,55 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
 
     @MandatoryTest
     @DisplayName("Verifier should reject Presentations where the holder does not match the credentialSubject.id")
-    void presentationResponse_holderNotEqualSubjectId(@TriggerEndpoint String triggerEndpoint,
-                                                      @AuthToken(MEMBERSHIP_SCOPE) String authToken,
-                                                      @Did(RoleType.ISSUER) String issuerDid,
-                                                      @Issuer KeyService issuerKeyService,
+    void presentationResponse_holderNotEqualSubjectId(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
                                                       @Did(RoleType.THIRD_PARTY) String thirdPartyDid,
                                                       @Holder CredentialService holderCredentialService) {
 
         var request = createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage());
 
-        holderCredentialService.withDelegate(new CredentialServiceAdapter() {
+        holderCredentialService.withDelegate(new PresentationProvider() {
             @Override
             public Result<Map<String, Object>> presentationQueryMessage(String bearerDid, String accessToken, Map<String, Object> message) {
                 // create credential - subject-id is not equal to presentation holder
-                var cred = VerifiableCredential.Builder.newInstance()
-                        .credentialSubject(Map.of("id", holderDid))
-                        .id(randomUUID().toString())
-                        .issuanceDate(Instant.now().toString())
-                        .issuer(issuerDid)
-                        .type(List.of(MEMBERSHIP_CREDENTIAL_TYPE))
+                var cred = createCredential(MEMBERSHIP_CREDENTIAL_TYPE)
                         .credentialSubject(Map.of("id", thirdPartyDid, "foo", "bar"))
                         .build();
-                var rawJwt = new JwtCredentialGenerator(issuerDid, issuerKeyService).generateCredential(cred);
 
-
-                var container = new VcContainer(rawJwt.getContent(), cred, CredentialFormat.VC1_0_JWT);
-                // error: should be 'holderDid' instead!
-                var rawPres = new JwtPresentationGenerator(holderDid, holderKeyService)
-                        .generatePresentation(verifierDid, holderDid, List.of(container));
-                return Result.success(DcpMessageBuilder.newInstance()
-                        .type(PRESENTATION_RESPONSE_MESSAGE)
-                        .property(PRESENTATION, List.of(rawPres.getContent()))
-                        .build());
+                return Result.success(createPresentation(cred));
             }
         });
-
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
+    @MandatoryTest
     @DisplayName("Verifier should reject Presentations where at least 1 credential is revoked/suspended")
-    void presentationResponse_credentialRevoked() {
+    void presentationResponse_credentialRevoked(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
+                                                @TriggerEndpoint String triggerEndpoint,
+                                                @Holder CredentialService holderCredentialService,
+                                                CredentialRevocationService credentialRevocationService) {
 
+        var index = 1;
+        credentialRevocationService.setRevoked(index);
+
+        holderCredentialService.withDelegate(new PresentationProvider() {
+            @Override
+            public Result<Map<String, Object>> presentationQueryMessage(String bearerDid, String accessToken, Map<String, Object> message) {
+                // create credential - subject-id is not equal to presentation holder
+                var cred = createCredential(MEMBERSHIP_CREDENTIAL_TYPE)
+                        .credentialStatus(MetadataReference.Builder.newInstance()
+                                .id(UUID.randomUUID().toString())
+                                .type("BitstringStatusListEntry")
+                                .setExtensibleProperty("statusPurpose", "revocation")
+                                .setExtensibleProperty("statusListIndex", String.valueOf(index))
+                                .setExtensibleProperty("statusListCredential", "http://localhost:%s/statuslist/" + credentialRevocationService.getCredentialId())
+                                .build())
+                        .build();
+                return Result.success(createPresentation(cred));
+            }
+        });
+
+        var request = createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage());
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @DisplayName("Verifier should reject Presentations where at least 1 credential schema is violated")
@@ -183,5 +188,35 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
 
     }
 
+    // utility class that contains helpers for creating credentials and presentations
+    private abstract class PresentationProvider implements Delegates.PresentationQuery {
+
+        VerifiableCredential.Builder createCredential(String credentialType) {
+            return VerifiableCredential.Builder.newInstance()
+                    .id(randomUUID().toString())
+                    .issuanceDate(Instant.now().toString())
+                    .issuer(issuerDid)
+                    .type(List.of(credentialType))
+                    // credential subject cannot be empty
+                    .credentialSubject(Map.of("id", holderDid, "foo", "bar"));
+        }
+
+        Map<String, Object> createPresentation(VerifiableCredential... credentials) {
+
+            var containers = Stream.of(credentials).map(cred -> {
+                var rawJwt = new JwtCredentialGenerator(issuerDid, issuerKeyService).generateCredential(cred);
+                return new VcContainer(rawJwt.getContent(), cred, CredentialFormat.VC1_0_JWT);
+            }).toList();
+
+            // error: should be 'holderDid' instead!
+            var rawPres = new JwtPresentationGenerator(holderDid, holderKeyService)
+                    .generatePresentation(verifierDid, holderDid, containers);
+            return DcpMessageBuilder.newInstance()
+                    .type(PRESENTATION_RESPONSE_MESSAGE)
+                    .property(PRESENTATION, List.of(rawPres.getContent()))
+                    .build();
+        }
+
+    }
 }
 

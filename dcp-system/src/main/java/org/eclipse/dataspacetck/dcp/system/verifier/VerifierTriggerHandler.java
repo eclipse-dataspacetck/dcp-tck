@@ -1,6 +1,5 @@
 package org.eclipse.dataspacetck.dcp.system.verifier;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import okhttp3.MediaType;
@@ -16,6 +15,7 @@ import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.eclipse.dataspacetck.dcp.system.message.DcpConstants;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
+import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationService;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,23 +45,23 @@ import static org.eclipse.dataspacetck.dcp.system.util.Parsers.parseBearerToken;
 import static org.eclipse.dataspacetck.dcp.system.util.Validators.validateBearerTokenHeader;
 
 public class VerifierTriggerHandler implements ProtocolHandler {
-    private static final TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<>() {
-    };
     private final TokenValidationService tokenService;
     private final ObjectMapper objectMapper;
     private final OkHttpClient httpClient;
     private final KeyService keyService;
     private final String verifierDid;
     private final TokenValidationService credentialValidationService;
+    private final CredentialRevocationService credentialRevocationService;
 
     public VerifierTriggerHandler(TokenValidationService tokenService, ObjectMapper objectMapper,
                                   KeyService keyService, String verifierDid,
-                                  TokenValidationService credentialValidationService) {
+                                  TokenValidationService credentialValidationService, CredentialRevocationService credentialRevocationService) {
         this.tokenService = tokenService;
         this.objectMapper = objectMapper;
         this.keyService = keyService;
         this.verifierDid = verifierDid;
         this.credentialValidationService = credentialValidationService;
+        this.credentialRevocationService = credentialRevocationService;
         this.httpClient = new OkHttpClient();
     }
 
@@ -164,7 +164,6 @@ public class VerifierTriggerHandler implements ProtocolHandler {
             return Result.failure(tokenResult.getFailure());
         }
 
-
         try {
             var vc = objectMapper.convertValue(tokenResult.getContent().getJWTClaimsSet().getJSONObjectClaim(VC), VerifiableCredential.class);
             // 5.4.3.4 all credential subject IDs must match the holder ID
@@ -176,6 +175,18 @@ public class VerifierTriggerHandler implements ProtocolHandler {
             if (!match) {
                 return Result.failure("Not all credential subject IDs match the holder ID");
             }
+
+            // check revocation - this is a shortcut, bypassing credential resolution through HTTP
+            if (vc.getCredentialStatus() != null) {
+                var index = vc.getCredentialStatus().getExtensibleProperties().get("statusListIndex");
+                var ix = Integer.parseInt(index.toString());
+                var status = credentialRevocationService.isRevoked(ix);
+                if (status) {
+                    return Result.failure("Credential is revoked");
+                }
+            }
+
+
         } catch (ParseException e) {
             return Result.failure(e.getMessage());
         }

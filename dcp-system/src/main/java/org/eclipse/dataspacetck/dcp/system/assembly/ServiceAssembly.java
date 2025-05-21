@@ -40,6 +40,9 @@ import org.eclipse.dataspacetck.dcp.system.issuer.IssuerServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
+import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationHandler;
+import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationService;
+import org.eclipse.dataspacetck.dcp.system.revocation.BitstringStatusListService;
 import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
 import org.eclipse.dataspacetck.dcp.system.sts.StsClient;
 import org.eclipse.dataspacetck.dcp.system.verifier.BaseTokenValidationService;
@@ -70,6 +73,7 @@ public class ServiceAssembly {
     private final CredentialService credentialService;
     private final SecureTokenServer secureTokenServer;
     private final IssuerService issuerService;
+    private final CredentialRevocationService revocationService;
 
     public ServiceAssembly(BaseAssembly baseAssembly, ServiceResolver resolver, ServiceConfiguration configuration) {
         var tokenService = baseAssembly.getHolderTokenService();
@@ -79,6 +83,7 @@ public class ServiceAssembly {
         secureTokenServer = new SecureTokenServerImpl(configuration);
         credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer, baseAssembly.getHolderTokenService(), mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
         issuerService = new IssuerServiceImpl(baseAssembly.getIssuerKeyService(), baseAssembly.getIssuerTokenService());
+        revocationService = new BitstringStatusListService(baseAssembly.getIssuerDid());
 
         var endpoint = (CallbackEndpoint) requireNonNull(resolver.resolve(CallbackEndpoint.class, configuration));
         var monitor = configuration.getMonitor();
@@ -104,11 +109,19 @@ public class ServiceAssembly {
                 mapper,
                 baseAssembly.getVerifierKeyService(),
                 baseAssembly.getVerifierDid(),
-                new BaseTokenValidationService()));
+                new BaseTokenValidationService(),
+                revocationService));
+
+        // ... for revocation
+        endpoint.registerHandler("/statuslist/.*", new CredentialRevocationHandler(revocationService, mapper));
     }
 
     public CredentialService getCredentialService() {
         return credentialService;
+    }
+
+    public CredentialRevocationService getRevocationService() {
+        return revocationService;
     }
 
     public StsClient getStsClient() {
@@ -209,7 +222,6 @@ public class ServiceAssembly {
 
     private VerifiableCredential createCredential(String issuerDid, String holderDid, String credentialType) {
         return VerifiableCredential.Builder.newInstance()
-                .credentialSubject(Map.of("id", holderDid))
                 .id(randomUUID().toString())
                 .issuanceDate(Instant.now().toString())
                 .issuer(issuerDid)

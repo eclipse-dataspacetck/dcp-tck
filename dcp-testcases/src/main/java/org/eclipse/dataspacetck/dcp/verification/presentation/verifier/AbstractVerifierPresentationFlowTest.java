@@ -8,6 +8,7 @@ import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.core.system.SystemBootstrapExtension;
 import org.eclipse.dataspacetck.dcp.system.annotation.Did;
 import org.eclipse.dataspacetck.dcp.system.annotation.Holder;
+import org.eclipse.dataspacetck.dcp.system.annotation.Issuer;
 import org.eclipse.dataspacetck.dcp.system.annotation.PresentationFlow;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +20,7 @@ import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.HOLDER;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.ISSUER;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.VERIFIER;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TOKEN;
 
@@ -34,6 +36,12 @@ public class AbstractVerifierPresentationFlowTest {
     @Inject
     @Holder
     protected KeyService holderKeyService;
+    @Inject
+    @Did(ISSUER)
+    protected String issuerDid;
+    @Inject
+    @Issuer
+    protected KeyService issuerKeyService;
 
     @NotNull
     protected static String createTriggerMessage() {
