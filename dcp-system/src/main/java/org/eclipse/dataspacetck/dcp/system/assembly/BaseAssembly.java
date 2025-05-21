@@ -66,7 +66,8 @@ public class BaseAssembly {
         this.verifierDid = Objects.requireNonNullElseGet(verifierDid, () -> parseDid("verifier"));
         var id = configuration.getPropertyAsString(TCK_PREFIX + ".did.issuer", null);
         issuerDid = Objects.requireNonNullElseGet(id, () -> parseDid("issuer"));
-        thirdPartyDid = parseDid("thirdparty");
+        var did3p = configuration.getPropertyAsString(TCK_PREFIX + ".did.thirdparty", null);
+        this.thirdPartyDid = Objects.requireNonNullElseGet(did3p, () -> parseDid("thirdparty"));
         issuerKeyService = new KeyServiceImpl(Keys.generateEcKey());
         issuerDidService = new IssuerDidService(issuerDid, address, issuerKeyService);
         issuerTokenService = new TokenValidationServiceImpl(issuerDid);

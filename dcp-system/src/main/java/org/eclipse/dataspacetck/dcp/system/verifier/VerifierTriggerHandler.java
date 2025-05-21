@@ -1,5 +1,6 @@
 package org.eclipse.dataspacetck.dcp.system.verifier;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import okhttp3.MediaType;
@@ -8,12 +9,13 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.eclipse.dataspacetck.core.api.system.HandlerResponse;
-import org.eclipse.dataspacetck.core.api.system.ProtocolHandler;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.cs.TokenValidationService;
 import org.eclipse.dataspacetck.dcp.system.did.DidClient;
+import org.eclipse.dataspacetck.dcp.system.handler.AbstractProtocolHandler;
 import org.eclipse.dataspacetck.dcp.system.message.DcpConstants;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
+import org.eclipse.dataspacetck.dcp.system.model.vc.MetadataReference;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
 import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationService;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
@@ -22,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +47,7 @@ import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP
 import static org.eclipse.dataspacetck.dcp.system.util.Parsers.parseBearerToken;
 import static org.eclipse.dataspacetck.dcp.system.util.Validators.validateBearerTokenHeader;
 
-public class VerifierTriggerHandler implements ProtocolHandler {
+public class VerifierTriggerHandler extends AbstractProtocolHandler {
     private final TokenValidationService tokenService;
     private final ObjectMapper objectMapper;
     private final OkHttpClient httpClient;
@@ -56,6 +59,7 @@ public class VerifierTriggerHandler implements ProtocolHandler {
     public VerifierTriggerHandler(TokenValidationService tokenService, ObjectMapper objectMapper,
                                   KeyService keyService, String verifierDid,
                                   TokenValidationService credentialValidationService, CredentialRevocationService credentialRevocationService) {
+        super("/credential-schemas/membership-credential-schema.json");
         this.tokenService = tokenService;
         this.objectMapper = objectMapper;
         this.keyService = keyService;
@@ -176,6 +180,16 @@ public class VerifierTriggerHandler implements ProtocolHandler {
                 return Result.failure("Not all credential subject IDs match the holder ID");
             }
 
+            if (vc.getExpirationDate() != null && Instant.parse(vc.getExpirationDate()).isBefore(now())) {
+                return Result.failure("Credential is expired");
+            }
+
+            if (Instant.parse(vc.getIssuanceDate()).isAfter(now())) {
+                return Result.failure("Credential is not yet valid");
+            }
+
+            // validate schema
+
             // check revocation - this is a shortcut, bypassing credential resolution through HTTP
             if (vc.getCredentialStatus() != null) {
                 var index = vc.getCredentialStatus().getExtensibleProperties().get("statusListIndex");
@@ -186,7 +200,17 @@ public class VerifierTriggerHandler implements ProtocolHandler {
                 }
             }
 
+            var isValidSchema = ofNullable(vc.getCredentialSchema())
+                    .map(MetadataReference::getId)
+                    .map(credentialSchemaUrl -> {
+                        var validationMessages = schema.validate(objectMapper.convertValue(vc.getCredentialSubject(), JsonNode.class));
+                        return validationMessages.isEmpty();
+                    })
+                    .orElse(true);
 
+            if (!isValidSchema) {
+                return Result.failure("Credential schema validation failed");
+            }
         } catch (ParseException e) {
             return Result.failure(e.getMessage());
         }

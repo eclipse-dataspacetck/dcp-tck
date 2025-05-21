@@ -34,6 +34,7 @@ import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.eclipse.dataspacetck.dcp.system.did.DidDocumentHandler;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtPresentationGenerator;
+import org.eclipse.dataspacetck.dcp.system.handler.SchemaProvider;
 import org.eclipse.dataspacetck.dcp.system.issuer.CredentialRequestHandler;
 import org.eclipse.dataspacetck.dcp.system.issuer.IssuerService;
 import org.eclipse.dataspacetck.dcp.system.issuer.IssuerServiceImpl;
@@ -83,7 +84,7 @@ public class ServiceAssembly {
         secureTokenServer = new SecureTokenServerImpl(configuration);
         credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer, baseAssembly.getHolderTokenService(), mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
         issuerService = new IssuerServiceImpl(baseAssembly.getIssuerKeyService(), baseAssembly.getIssuerTokenService());
-        revocationService = new BitstringStatusListService(baseAssembly.getIssuerDid());
+        revocationService = new BitstringStatusListService(baseAssembly.getIssuerDid(), baseAssembly.getAddress());
 
         var endpoint = (CallbackEndpoint) requireNonNull(resolver.resolve(CallbackEndpoint.class, configuration));
         var monitor = configuration.getMonitor();
@@ -114,6 +115,8 @@ public class ServiceAssembly {
 
         // ... for revocation
         endpoint.registerHandler("/statuslist/.*", new CredentialRevocationHandler(revocationService, mapper));
+        // ... schema validation
+        endpoint.registerProtocolHandler("/schema/.*", new SchemaProvider());
     }
 
     public CredentialService getCredentialService() {

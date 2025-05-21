@@ -25,7 +25,6 @@ import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.TriggerEndpoint;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 
 import java.util.Date;
@@ -33,9 +32,11 @@ import java.util.Date;
 import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.THIRD_PARTY;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TOKEN;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_SCOPE;
+import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_SCOPE;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
 
 
@@ -61,9 +62,9 @@ public class PresentationFlowSection4Test extends AbstractVerifierPresentationFl
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - auth token bound to a different iss/sub")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idTokenInvalidIssuerSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
+    public void verifier_04_03_03_idTokenInvalidIssuerSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
                                                     @TriggerEndpoint String triggerEndpoint,
-                                                    @Did(RoleType.THIRD_PARTY) String thirdPartyDid) {
+                                                    @Did(THIRD_PARTY) String thirdPartyDid) {
         var claimSet = new JWTClaimsSet.Builder()
                 .issuer(thirdPartyDid)     // iss and sub diff than the auth token binding to the verifier
                 .subject(thirdPartyDid)
@@ -84,11 +85,11 @@ public class PresentationFlowSection4Test extends AbstractVerifierPresentationFl
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - iss and sub different")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idTokenInvalidSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
+    public void verifier_04_03_03_idTokenInvalidSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint, @Did(THIRD_PARTY) String thirdPartyDid) {
         var claimSet = new JWTClaimsSet.Builder()
-                .issuer(verifierDid)
-                .subject("did:web:another.com:subject")    // invalid subject
-                .audience(holderDid)
+                .issuer(holderDid)
+                .subject(thirdPartyDid)  // invalid subject
+                .audience(verifierDid)
                 .jwtID(randomUUID().toString())
                 .issueTime(new Date())
                 .expirationTime(Date.from(now().plusSeconds(600)))
@@ -102,11 +103,11 @@ public class PresentationFlowSection4Test extends AbstractVerifierPresentationFl
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - incorrect aud")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idTokenIncorrectAud(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
+    public void verifier_04_03_03_idTokenIncorrectAud(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint, @Did(THIRD_PARTY) String thirdPartyDid) {
         var claimSet = new JWTClaimsSet.Builder()
-                .issuer(verifierDid)
-                .subject(verifierDid)
-                .audience("did:web:invalid-audience")  // invalid audience
+                .issuer(holderDid)
+                .subject(holderDid)
+                .audience(thirdPartyDid)  // invalid audience
                 .jwtID(randomUUID().toString())
                 .issueTime(new Date())
                 .expirationTime(Date.from(now().plusSeconds(600)))
@@ -120,11 +121,13 @@ public class PresentationFlowSection4Test extends AbstractVerifierPresentationFl
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - sub does not match DID document id")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idTokenIncorrectSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
+    public void verifier_04_03_03_idTokenIncorrectSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
+                                                      @TriggerEndpoint String triggerEndpoint,
+                                                      @Did(THIRD_PARTY) String thirdPartyDid) {
         var claimSet = new JWTClaimsSet.Builder()
-                .issuer("did:web:another.com:subject")
-                .subject("did:web:another.com:subject")    // invalid subject
-                .audience(holderDid)
+                .issuer(holderDid)
+                .subject(thirdPartyDid)    // invalid subject
+                .audience(verifierDid)
                 .jwtID(randomUUID().toString())
                 .issueTime(new Date())
                 .expirationTime(Date.from(now().plusSeconds(600)))
@@ -138,11 +141,11 @@ public class PresentationFlowSection4Test extends AbstractVerifierPresentationFl
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - nbf in future")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idTokenNbfInFuture(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
+    public void verifier_04_03_03_idTokenNbfInFuture(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
         var claimSet = new JWTClaimsSet.Builder()
-                .issuer(verifierDid)
-                .subject(verifierDid)
-                .audience(holderDid)
+                .issuer(holderDid)
+                .subject(holderDid)
+                .audience(verifierDid)
                 .jwtID(randomUUID().toString())
                 .issueTime(new Date())
                 .notBeforeTime(Date.from(now().plusSeconds(1000000)))  // in future
@@ -157,7 +160,7 @@ public class PresentationFlowSection4Test extends AbstractVerifierPresentationFl
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - expired")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idTokenExpired(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
+    public void verifier_04_03_03_idTokenExpired(@AuthToken(MEMBERSHIP_SCOPE) String authToken, @TriggerEndpoint String triggerEndpoint) {
         var claimSet = new JWTClaimsSet.Builder()
                 .issuer(holderDid)
                 .subject(holderDid)
@@ -175,7 +178,7 @@ public class PresentationFlowSection4Test extends AbstractVerifierPresentationFl
     @MandatoryTest
     @DisplayName("4.3.3 Verify invalid access token - jti")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_04_03_03_idTokenJtiUsedTwice(@AuthToken(MEMBERSHIP_SCOPE) String authToken1,
+    public void verifier_04_03_03_idTokenJtiUsedTwice(@AuthToken(MEMBERSHIP_SCOPE) String authToken1,
                                                 @AuthToken(MEMBERSHIP_SCOPE) String authToken2,
                                                 @TriggerEndpoint String triggerEndpoint) {
         var jti = randomUUID().toString();
@@ -206,4 +209,10 @@ public class PresentationFlowSection4Test extends AbstractVerifierPresentationFl
         executeRequest(createRequest(triggerEndpoint, authHeader2, createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 
+    @DisplayName("4.3.1 Verifier should reject an ID token that does not contain an access token")
+    @MandatoryTest
+    @IssueCredentials({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE})
+    void verifier_04_03_01_presentationResponse_idTokenNoTokenClaim(@TriggerEndpoint String triggerEndpoint) {
+        executeRequest(createRequest(triggerEndpoint, "Bearer " + createIdToken(null), createTriggerMessage()), TestFixtures::assert4xxCode);
+    }
 }

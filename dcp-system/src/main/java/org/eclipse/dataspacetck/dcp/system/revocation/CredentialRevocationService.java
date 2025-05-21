@@ -11,4 +11,6 @@ public interface CredentialRevocationService {
     boolean isRevoked(int statusListIndex);
 
     String getCredentialId();
+
+    String getAddress();
 }

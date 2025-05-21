@@ -14,13 +14,15 @@ import java.util.zip.GZIPOutputStream;
 
 public class BitstringStatusListService implements CredentialRevocationService {
     public static final String REVOCATION = "revocation";
-    private final BitSet statusBits = new BitSet();
-    private static final int LENGTH = 16 * 1024;
+    private static final int LENGTH = 16 * 1024; // 16k bits
+    private final BitString bitstring = BitString.Builder.newInstance().size(LENGTH).build();
     private final String credentialId = UUID.randomUUID().toString();
     private final String issuerDid;
+    private final String address;
 
-    public BitstringStatusListService(String issuerDid) {
+    public BitstringStatusListService(String issuerDid, String address) {
         this.issuerDid = issuerDid;
+        this.address = address;
     }
 
     @Override
@@ -28,7 +30,7 @@ public class BitstringStatusListService implements CredentialRevocationService {
         if (statusListIndex >= LENGTH || statusListIndex < 0) {
             throw new IndexOutOfBoundsException("Index out of range: " + statusListIndex);
         }
-        statusBits.set(statusListIndex, true);
+        bitstring.set(statusListIndex, true);
     }
 
     @Override
@@ -56,20 +58,23 @@ public class BitstringStatusListService implements CredentialRevocationService {
 
     @Override
     public boolean isRevoked(int statusListIndex) {
-        return statusBits.get(statusListIndex);
+        return bitstring.get(statusListIndex);
     }
 
 
     /**
      * Generates the Base64-encoded, GZIP-compressed bitstring
      */
-    public String generateEncodedStatusList()  {
-        byte[] rawBytes = statusBits.toByteArray();
-        byte[] compressed = gzipCompress(rawBytes);
-        return Base64.getEncoder().encodeToString(compressed);
+    public String generateEncodedStatusList() {
+        return "u" + BitString.Writer.newInstance().encoder(Base64.getUrlEncoder().withoutPadding()).write(bitstring).getContent();
     }
 
-    private byte[] gzipCompress(byte[] data)  {
+    @Override
+    public String getAddress() {
+        return address;
+    }
+
+    private byte[] gzipCompress(byte[] data) {
         try (
                 var byteStream = new ByteArrayOutputStream();
                 var gzipStream = new GZIPOutputStream(byteStream)
