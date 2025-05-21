@@ -109,7 +109,11 @@ public class TestFixtures {
         // IDs can be relative (e.g. "#key-1") or absolute (e.g. "did:example:123#key-1").
         // if relative, they are resolved against the document ID. To make resolution easier, and because we have already
         // parsed anyway, we pass just the relative ID
-        return document.getVerificationMethod("#" + kidTokens[1]);
+        var vm = document.getVerificationMethod("#" + kidTokens[1]);
+        if (vm.failed()) {
+            throw new AssertionError("Key material could not be resolved: " + vm.getFailure());
+        }
+        return vm.getContent();
     }
 
     /**

@@ -11,7 +11,7 @@
  *       Metaform Systems, Inc. - initial API and implementation
  *
  */
-package org.eclipse.dataspacetck.dcp.verification.presentation;
+package org.eclipse.dataspacetck.dcp.verification.presentation.cs;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import okhttp3.MediaType;
@@ -21,6 +21,7 @@ import org.eclipse.dataspacetck.api.system.MandatoryTest;
 import org.eclipse.dataspacetck.dcp.system.annotation.AuthToken;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
 import org.eclipse.dataspacetck.dcp.system.did.DidClient;
+import org.eclipse.dataspacetck.dcp.system.message.DcpConstants;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.junit.jupiter.api.Disabled;
@@ -69,8 +70,8 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
         try {
             var request = new Request.Builder()
                     .url(endpoint + PRESENTATION_QUERY_PATH)
-                    .header(AUTHORIZATION, createIdToken(authToken))  // invalid auth header missing "Bearer" prefix
-                    .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(JSON_CONTENT_TYPE)))
+                    .header(DcpConstants.AUTHORIZATION, createIdToken(authToken))  // invalid auth header missing "Bearer" prefix
+                    .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(DcpConstants.JSON_CONTENT_TYPE)))
                     .build();
             executeRequest(request, TestFixtures::assert4xxCode);
         } catch (JsonProcessingException e) {

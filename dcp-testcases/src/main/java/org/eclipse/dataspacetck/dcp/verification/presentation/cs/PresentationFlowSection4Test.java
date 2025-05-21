@@ -12,7 +12,7 @@
  *
  */
 
-package org.eclipse.dataspacetck.dcp.verification.presentation;
+package org.eclipse.dataspacetck.dcp.verification.presentation.cs;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -22,6 +22,7 @@ import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.api.system.MandatoryTest;
 import org.eclipse.dataspacetck.dcp.system.annotation.AuthToken;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
+import org.eclipse.dataspacetck.dcp.system.message.DcpConstants;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.jetbrains.annotations.NotNull;
@@ -69,8 +70,8 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
             var endpoint = resolveCredentialServiceEndpoint(holderDid);
             var request = new Request.Builder()
                     .url(endpoint + PRESENTATION_QUERY_PATH)
-                    .header(AUTHORIZATION, "Bearer " + idToken)
-                    .post(RequestBody.create(mapper.writeValueAsString(createMessage()), MediaType.parse(JSON_CONTENT_TYPE)))
+                    .header(DcpConstants.AUTHORIZATION, "Bearer " + idToken)
+                    .post(RequestBody.create(mapper.writeValueAsString(createMessage()), MediaType.parse(DcpConstants.JSON_CONTENT_TYPE)))
                     .build();
             executeRequest(request, TestFixtures::assert4xxCode);
 
@@ -204,8 +205,8 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
             var endpoint = resolveCredentialServiceEndpoint(holderDid);
             return new Request.Builder()
                     .url(endpoint + PRESENTATION_QUERY_PATH)
-                    .header(AUTHORIZATION, "Bearer " + idToken)
-                    .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(JSON_CONTENT_TYPE)))
+                    .header(DcpConstants.AUTHORIZATION, "Bearer " + idToken)
+                    .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(DcpConstants.JSON_CONTENT_TYPE)))
                     .build();
         } catch (JsonProcessingException e) {
             throw new AssertionError(e);

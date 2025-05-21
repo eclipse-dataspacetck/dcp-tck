@@ -34,14 +34,21 @@ import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.eclipse.dataspacetck.dcp.system.did.DidDocumentHandler;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtPresentationGenerator;
+import org.eclipse.dataspacetck.dcp.system.handler.SchemaProvider;
 import org.eclipse.dataspacetck.dcp.system.issuer.CredentialRequestHandler;
 import org.eclipse.dataspacetck.dcp.system.issuer.IssuerService;
 import org.eclipse.dataspacetck.dcp.system.issuer.IssuerServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
+import org.eclipse.dataspacetck.dcp.system.revocation.BitstringStatusListService;
+import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationHandler;
+import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationService;
+import org.eclipse.dataspacetck.dcp.system.revocation.StatusList2021Service;
 import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
 import org.eclipse.dataspacetck.dcp.system.sts.StsClient;
+import org.eclipse.dataspacetck.dcp.system.verifier.BaseTokenValidationService;
+import org.eclipse.dataspacetck.dcp.system.verifier.VerifierTriggerHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -68,6 +75,7 @@ public class ServiceAssembly {
     private final CredentialService credentialService;
     private final SecureTokenServer secureTokenServer;
     private final IssuerService issuerService;
+    private final CredentialRevocationService revocationService;
 
     public ServiceAssembly(BaseAssembly baseAssembly, ServiceResolver resolver, ServiceConfiguration configuration) {
         var tokenService = baseAssembly.getHolderTokenService();
@@ -77,11 +85,13 @@ public class ServiceAssembly {
         secureTokenServer = new SecureTokenServerImpl(configuration);
         credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer, baseAssembly.getHolderTokenService(), mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
         issuerService = new IssuerServiceImpl(baseAssembly.getIssuerKeyService(), baseAssembly.getIssuerTokenService());
+        revocationService = createRevocationService(baseAssembly);
 
         var endpoint = (CallbackEndpoint) requireNonNull(resolver.resolve(CallbackEndpoint.class, configuration));
         var monitor = configuration.getMonitor();
 
         // register the handlers
+
         // ... for presentation query
         var presentationHandler = new PresentationHandler(credentialService, tokenService, mapper, monitor);
         endpoint.registerProtocolHandler("/presentations/query", presentationHandler);
@@ -96,10 +106,26 @@ public class ServiceAssembly {
         endpoint.registerHandler("/issuer/did.json", new DidDocumentHandler(baseAssembly.getIssuerDidService(), mapper));
         endpoint.registerHandler("/thirdparty/did.json", new DidDocumentHandler(baseAssembly.getThirdPartyDidService(), mapper));
 
+        // ... for the verifier's trigger endpoint
+        endpoint.registerProtocolHandler("/api/trigger", new VerifierTriggerHandler(baseAssembly.getVerifierTokenService(),
+                mapper,
+                baseAssembly.getVerifierKeyService(),
+                baseAssembly.getVerifierDid(),
+                new BaseTokenValidationService(),
+                revocationService));
+
+        // ... for revocation
+        endpoint.registerHandler("/statuslist/.*", new CredentialRevocationHandler(revocationService, mapper));
+        // ... schema validation
+        endpoint.registerProtocolHandler("/schema/.*", new SchemaProvider());
     }
 
     public CredentialService getCredentialService() {
         return credentialService;
+    }
+
+    public CredentialRevocationService getRevocationService() {
+        return revocationService;
     }
 
     public StsClient getStsClient() {
@@ -134,6 +160,25 @@ public class ServiceAssembly {
             throw new RuntimeException(e);
         }
 
+    }
+
+    @NotNull
+    public VcContainer createVcContainer(String issuerDid, String holderDid,
+                                         JwtCredentialGenerator credentialGenerator,
+                                         String credentialType) {
+        var credential = createCredential(issuerDid, holderDid, credentialType);
+        var result = credentialGenerator.generateCredential(credential);
+        return new VcContainer(result.getContent(), credential, VC1_0_JWT);
+    }
+
+    private CredentialRevocationService createRevocationService(BaseAssembly baseAssembly) {
+        return switch (baseAssembly.getRevocationListType().toLowerCase()) {
+            case "bitstringstatuslist" ->
+                    new BitstringStatusListService(baseAssembly.getIssuerDid(), baseAssembly.getAddress());
+            case "statuslist2021" -> new StatusList2021Service(baseAssembly.getIssuerDid(), baseAssembly.getAddress());
+            default ->
+                    throw new IllegalArgumentException("Unsupported revocation list type: " + baseAssembly.getRevocationListType());
+        };
     }
 
     private void sendCredentialMessage(BaseAssembly baseAssembly, String correlation, VcContainer membershipContainer, VcContainer sensitiveDataContainer, String token) throws JsonProcessingException {
@@ -189,18 +234,8 @@ public class ServiceAssembly {
         }
     }
 
-    @NotNull
-    public VcContainer createVcContainer(String issuerDid, String holderDid,
-                                         JwtCredentialGenerator credentialGenerator,
-                                         String credentialType) {
-        var credential = createCredential(issuerDid, holderDid, credentialType);
-        var result = credentialGenerator.generateCredential(credential);
-        return new VcContainer(result.getContent(), credential, VC1_0_JWT);
-    }
-
     private VerifiableCredential createCredential(String issuerDid, String holderDid, String credentialType) {
         return VerifiableCredential.Builder.newInstance()
-                .credentialSubject(Map.of("id", holderDid))
                 .id(randomUUID().toString())
                 .issuanceDate(Instant.now().toString())
                 .issuer(issuerDid)

@@ -55,6 +55,7 @@ class DidDocumentTest {
         assertThat(deserialized.getServices()).allMatch(s -> s.id().equals("TCK-Credential-Service"));
         assertThat(deserialized.getVerificationMethods()).allMatch(v -> v.getId().equals("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c"));
         assertThat(deserialized.getVerificationMethod("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c")).isNotNull();
+        assertThat(deserialized.getVerificationMethod("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c").succeeded()).isTrue();
         assertThat(deserialized.getServiceEntry("CredentialService")).isNotNull();
     }
 }

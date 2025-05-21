@@ -39,10 +39,11 @@ import static org.eclipse.dataspacetck.dcp.system.model.vc.CredentialConstants.C
 public class VerifiableCredential extends ExtensibleModel {
 
     private final List<String> type = new ArrayList<>();
-    private final Map<String, Object> credentialSubject = new LinkedHashMap<>();
+    private Map<String, Object> credentialSubject = new LinkedHashMap<>();
     private String id;
     private String issuer;
     private String issuanceDate;
+    private String expirationDate;
     private MetadataReference credentialSchema;
     private MetadataReference credentialStatus;
 
@@ -82,6 +83,7 @@ public class VerifiableCredential extends ExtensibleModel {
         map.put(TYPE, type);
         map.put("issuer", issuer);
         map.put("issuanceDate", issuanceDate);
+        map.put("expirationDate", expirationDate);
         if (credentialSchema != null) {
             map.put("credentialSchema", credentialSchema);
         }
@@ -93,6 +95,10 @@ public class VerifiableCredential extends ExtensibleModel {
         }
         map.put("credentialSubject", credentialSubject);
         return map;
+    }
+
+    public String getExpirationDate() {
+        return expirationDate;
     }
 
     @JsonPOJOBuilder(withPrefix = "")
@@ -129,6 +135,11 @@ public class VerifiableCredential extends ExtensibleModel {
             return this;
         }
 
+        public Builder expirationDate(String date) {
+            credential.expirationDate = date;
+            return this;
+        }
+
         public Builder credentialSchema(MetadataReference credentialSchema) {
             credential.credentialSchema = credentialSchema;
             return this;
@@ -140,7 +151,7 @@ public class VerifiableCredential extends ExtensibleModel {
         }
 
         public Builder credentialSubject(Map<String, Object> subject) {
-            credential.credentialSubject.putAll(subject);
+            credential.credentialSubject = subject;
             return this;
         }
 

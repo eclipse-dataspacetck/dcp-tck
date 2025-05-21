@@ -57,14 +57,18 @@ public class BaseAssembly {
     private final DidServiceImpl thirdPartyDidService;
     private final ObjectMapper mapper;
     private final String holderPid;
+    private final String verifierTriggerEndpoint;
+    private final String revocationListType;
 
     public BaseAssembly(SystemConfiguration configuration) {
         mapper = new ObjectMapper();
         address = configuration.getPropertyAsString(TCK_CALLBACK_ADDRESS, TCK_DEFAULT_CALLBACK_ADDRESS);
-        verifierDid = parseDid("verifier");
+        var verifierDid = configuration.getPropertyAsString(TCK_PREFIX + ".did.verifier", null);
+        this.verifierDid = Objects.requireNonNullElseGet(verifierDid, () -> parseDid("verifier"));
         var id = configuration.getPropertyAsString(TCK_PREFIX + ".did.issuer", null);
         issuerDid = Objects.requireNonNullElseGet(id, () -> parseDid("issuer"));
-        thirdPartyDid = parseDid("thirdparty");
+        var did3p = configuration.getPropertyAsString(TCK_PREFIX + ".did.thirdparty", null);
+        this.thirdPartyDid = Objects.requireNonNullElseGet(did3p, () -> parseDid("thirdparty"));
         issuerKeyService = new KeyServiceImpl(Keys.generateEcKey());
         issuerDidService = new IssuerDidService(issuerDid, address, issuerKeyService);
         issuerTokenService = new TokenValidationServiceImpl(issuerDid);
@@ -77,12 +81,19 @@ public class BaseAssembly {
 
         holderPid = ofNullable(configuration.getPropertyAsString(TCK_PREFIX + ".credentials.correlation.id", null)).orElseGet(() -> randomUUID().toString());
 
-        verifierTokenService = new TokenValidationServiceImpl(verifierDid);
+        verifierTokenService = new TokenValidationServiceImpl(this.verifierDid);
         verifierKeyService = new KeyServiceImpl(Keys.generateEcKey());
-        verifierDidService = new DidServiceImpl(verifierDid, address, verifierKeyService);
+        verifierDidService = new DidServiceImpl(this.verifierDid, address, verifierKeyService);
+        verifierTriggerEndpoint = Objects.requireNonNullElse(configuration.getPropertyAsString(TCK_PREFIX + ".vpp.trigger.endpoint", null), address + "/api/trigger");
 
         thirdPartyKeyService = new KeyServiceImpl(Keys.generateEcKey());
         thirdPartyDidService = new DidServiceImpl(thirdPartyDid, address, thirdPartyKeyService);
+
+        revocationListType = configuration.getPropertyAsString(TCK_PREFIX + ".revocation.type", "bitstringstatuslist");
+    }
+
+    public String getVerifierTriggerEndpoint() {
+        return verifierTriggerEndpoint;
     }
 
     public TokenValidationService getIssuerTokenService() {
@@ -153,14 +164,18 @@ public class BaseAssembly {
         return thirdPartyDidService;
     }
 
+    public String getHolderPid() {
+        return holderPid;
+    }
+
+    public String getRevocationListType() {
+        return revocationListType;
+    }
+
     private String parseDid(String discriminator) {
         var uri = URI.create(address);
         return uri.getPort() != 443 ? format("did:web:%s%%3A%s:%s", uri.getHost(), uri.getPort(), discriminator)
                 : format("did:web:%s:%s", uri.getHost(), discriminator);
-    }
-
-    public String getHolderPid() {
-        return holderPid;
     }
 
 }

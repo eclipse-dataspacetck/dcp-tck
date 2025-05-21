@@ -18,11 +18,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.ExtensibleModel;
+import org.eclipse.dataspacetck.dcp.system.service.Result;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
+import static org.eclipse.dataspacetck.dcp.system.service.Result.failure;
 
 /**
  * Models a DID document.
@@ -59,12 +61,13 @@ public class DidDocument extends ExtensibleModel {
                 .orElseThrow(() -> new IllegalArgumentException("No service found for type " + type));
     }
 
-    public VerificationMethod getVerificationMethod(String id) {
+    public Result<VerificationMethod> getVerificationMethod(String id) {
 
         return verificationMethods.stream()
                 .filter(m -> m.getId().equals(id) || m.getId().equals(this.id + id) || m.getId().equals(this.id + "#" + id))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No verification method found for id " + id));
+                .map(Result::success)
+                .orElseGet(() -> failure("No verification method found for id " + id));
     }
 
     @JsonPOJOBuilder(withPrefix = "")

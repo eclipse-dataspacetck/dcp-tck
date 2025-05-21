@@ -66,7 +66,12 @@ public class DcpTckSuite {
 
         if (!result.getFailures().isEmpty()) {
             var failures = result.getFailures().stream()
-                    .map(f -> "- " + f.getTestIdentifier().getDisplayName() + " (" + f.getException() + ")")
+                    .map(f -> {
+                        var sw = new java.io.StringWriter();
+                        var pw = new java.io.PrintWriter(sw);
+                        f.getException().printStackTrace(pw);
+                        return "- " + f.getTestIdentifier().getDisplayName() + " (" + f.getException() + ")\n" + sw;
+                    })
                     .collect(Collectors.joining("\n"));
             monitor.enableError().message("There were failing tests:\n" + failures);
         }

@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
@@ -34,7 +33,7 @@ import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TYPE;
 public class MetadataReference {
     private String id;
     private String type;
-    private Map<String, Object> extensibleProperties = new LinkedHashMap<>();
+    private final Map<String, Object> extensibleProperties = new LinkedHashMap<>();
 
     public String getId() {
         return id;
@@ -51,7 +50,7 @@ public class MetadataReference {
     public Map<String, Object> toMap() {
         var map = new LinkedHashMap<String, Object>();
         map.put(ID, id);
-        map.put(TYPE, List.of(type));
+        map.put(TYPE, type);
         map.putAll(extensibleProperties);
         return map;
     }
@@ -61,7 +60,7 @@ public class MetadataReference {
 
     @JsonPOJOBuilder(withPrefix = "")
     public static class Builder {
-        private MetadataReference reference;
+        private final MetadataReference reference;
 
 
         @JsonCreator

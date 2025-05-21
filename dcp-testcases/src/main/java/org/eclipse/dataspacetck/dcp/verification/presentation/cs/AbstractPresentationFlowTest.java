@@ -12,7 +12,7 @@
  *
  */
 
-package org.eclipse.dataspacetck.dcp.verification.presentation;
+package org.eclipse.dataspacetck.dcp.verification.presentation.cs;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,6 +33,7 @@ import org.eclipse.dataspacetck.dcp.system.annotation.PresentationFlow;
 import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
+import org.eclipse.dataspacetck.dcp.system.message.DcpConstants;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -63,8 +64,6 @@ import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.re
 @PresentationFlow
 @ExtendWith(SystemBootstrapExtension.class)
 public class AbstractPresentationFlowTest {
-    protected static final String AUTHORIZATION = "Authorization";
-    protected static final String JSON_CONTENT_TYPE = "application/json";
     protected static final String PRESENTATION_EXCHANGE_PREFIX = "https://identity.foundation/";
     protected static final String CLASSPATH_SCHEMA = "classpath:/";
 
@@ -111,8 +110,8 @@ public class AbstractPresentationFlowTest {
         try {
             return new Request.Builder()
                     .url(endpoint + PRESENTATION_QUERY_PATH)
-                    .header(AUTHORIZATION, "Bearer " + createIdToken(authToken))
-                    .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(JSON_CONTENT_TYPE)))
+                    .header(DcpConstants.AUTHORIZATION, "Bearer " + createIdToken(authToken))
+                    .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(DcpConstants.JSON_CONTENT_TYPE)))
                     .build();
         } catch (JsonProcessingException e) {
             throw new AssertionError(e);

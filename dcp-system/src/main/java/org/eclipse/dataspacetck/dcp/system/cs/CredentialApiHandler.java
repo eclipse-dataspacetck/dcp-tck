@@ -37,18 +37,10 @@ import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TYPE;
  * CredentialsMessages and CredentialRequestMessages.
  * Therefor, upon receiving a message, this handler delegates based on the message type.
  */
-public class CredentialApiHandler implements ProtocolHandler {
+public record CredentialApiHandler(CredentialService credentialService, ObjectMapper mapper,
+                                   IssuerService issuerService) implements ProtocolHandler {
     private static final TypeReference<Map<String, Object>> MAP_REF = new TypeReference<>() {
     };
-    private final CredentialService credentialService;
-    private final ObjectMapper mapper;
-    private final IssuerService issuerService;
-
-    public CredentialApiHandler(CredentialService credentialService, ObjectMapper mapper, IssuerService issuerService) {
-        this.credentialService = credentialService;
-        this.mapper = mapper;
-        this.issuerService = issuerService;
-    }
 
     @Override
     public HandlerResponse apply(Map<String, List<String>> headers, InputStream body) {

@@ -47,4 +47,11 @@ public interface CredentialService {
      * @return A collection of {@link VcContainer} objects representing the issued credentials.
      */
     Collection<VcContainer> getCredentials();
+
+    /**
+     * Sets a delegate, which could be a mock, and which is used in place of the real credential service until set to null
+     *
+     * @param delegate a delegate
+     */
+    void withDelegate(CredentialService delegate);
 }
