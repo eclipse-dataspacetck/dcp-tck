@@ -95,9 +95,9 @@ public class IssuerServiceImpl implements IssuerService {
         var correlation = credentialRequest.getHolderPid();
         var credentials = credentialRequest.getCredentials().stream()
                 .map(cred -> {
-                    var descriptor = metadata.get(cred.getId());
+                    var descriptor = metadata.get(cred.id());
                     if (descriptor == null) {
-                        throw new IllegalArgumentException("No CredentialObject found for id: " + cred.getId());
+                        throw new IllegalArgumentException("No CredentialObject found for id: " + cred.id());
                     }
                     return new CredentialMessage.CredentialContainer(descriptor.credentialType(), generateJwtCredential(descriptor.credentialType(), gen, holderDid, issuerDid).getContent(), descriptor.format());
                 }).toList();
@@ -183,5 +183,8 @@ public class IssuerServiceImpl implements IssuerService {
     }
 
     private record RequestStatus(CredentialRequestMessage credentialRequest, String status) {
+    }
+
+    public record CredentialDescriptor(String credentialType, String format) {
     }
 }

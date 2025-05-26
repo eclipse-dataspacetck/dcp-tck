@@ -65,10 +65,12 @@ public abstract class AbstractCredentialIssuanceTest {
                 .property("holderPid", holderPid)
                 .property("credentials", List.of(
                         Map.of(
-                                "id", "credential-object-id1"
+                                "id", "credential-object-id1",
+                                "format", "VC1_0_JWT"
                         ),
                         Map.of(
-                                "id", "credential-object-id2"
+                                "id", "credential-object-id2",
+                                "format", "VC1_0_JWT"
                         )
                 ));
     }

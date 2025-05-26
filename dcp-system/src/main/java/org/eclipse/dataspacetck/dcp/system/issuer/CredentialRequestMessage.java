@@ -15,7 +15,6 @@
 package org.eclipse.dataspacetck.dcp.system.issuer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.eclipse.dataspacetck.dcp.system.cs.CredentialObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,7 +27,7 @@ public class CredentialRequestMessage {
     private String holderPid;
 
     @JsonProperty("credentials")
-    private Collection<CredentialObject> credentials = new ArrayList<>();
+    private Collection<CredentialObjectReference> credentials = new ArrayList<>();
 
     public String getType() {
         return type;
@@ -38,12 +37,12 @@ public class CredentialRequestMessage {
         return holderPid;
     }
 
-    public Collection<CredentialObject> getCredentials() {
+    public Collection<CredentialObjectReference> getCredentials() {
         return credentials;
     }
 
     public boolean validate() {
-        return type != null && holderPid != null && credentials != null && !credentials.isEmpty() && credentials.stream().allMatch(CredentialObject::validate);
+        return type != null && holderPid != null && credentials != null && !credentials.isEmpty() && credentials.stream().allMatch(CredentialObjectReference::validate);
     }
 
 }

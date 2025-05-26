@@ -14,5 +14,8 @@
 
 package org.eclipse.dataspacetck.dcp.system.issuer;
 
-public record CredentialDescriptor(String credentialType, String format) {
+public record CredentialObjectReference(String id, String format) {
+    public boolean validate() {
+        return id != null && format != null;
+    }
 }
