@@ -42,8 +42,6 @@ import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.HOLDER;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.AUTHORIZATION;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_REQUEST_MESSAGE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_REQUEST_PATH;
-import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
-import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveIssuerServiceEndpoint;
 
 @IssuerService
@@ -67,12 +65,10 @@ public abstract class AbstractCredentialIssuanceTest {
                 .property("holderPid", holderPid)
                 .property("credentials", List.of(
                         Map.of(
-                                "credentialType", MEMBERSHIP_CREDENTIAL_TYPE,
-                                "format", "VC1_0_JWT"
+                                "id", "credential-object-id1"
                         ),
                         Map.of(
-                                "credentialType", SENSITIVE_DATA_CREDENTIAL_TYPE,
-                                "format", "VC1_0_JWT"
+                                "id", "credential-object-id2"
                         )
                 ));
     }
