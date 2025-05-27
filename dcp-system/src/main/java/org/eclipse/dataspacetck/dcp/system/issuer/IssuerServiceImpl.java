@@ -24,6 +24,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialMessage;
+import org.eclipse.dataspacetck.dcp.system.cs.CredentialObject;
 import org.eclipse.dataspacetck.dcp.system.cs.TokenValidationService;
 import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
@@ -44,8 +45,6 @@ import static java.time.Instant.now;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_SERVICE_TYPE;
-import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
-import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.failure;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
 
@@ -54,14 +53,15 @@ public class IssuerServiceImpl implements IssuerService {
     private final TokenValidationService issuerTokenValidationService;
     private final ObjectMapper objectMapper;
     private final Map<String, RequestStatus> credentialRequests = new java.util.HashMap<>();
-    private final Map<String, CredentialDescriptor> supportedCredentials;
+    private final Map<String, CredentialObject> supportedCredentials;
+    private final Map<String, CredentialFormat> supportedCredentialFormats = Map.of("vc11-sl2021/jwt", CredentialFormat.VC1_0_JWT,
+            "vc20-bssl/jwt", CredentialFormat.VC2_0_JOSE);
 
-    public IssuerServiceImpl(KeyService issuerKeyService, TokenValidationService issuerTokenValidationService) {
+    public IssuerServiceImpl(KeyService issuerKeyService, TokenValidationService issuerTokenValidationService, Map<String, CredentialObject> supportedCredentials) {
         this.issuerKeyService = issuerKeyService;
         this.issuerTokenValidationService = issuerTokenValidationService;
+        this.supportedCredentials = supportedCredentials;
         objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        supportedCredentials = Map.of("credential-object-id1", new CredentialDescriptor(MEMBERSHIP_CREDENTIAL_TYPE, CredentialFormat.VC1_0_JWT.name()),
-                "credential-object-id2", new CredentialDescriptor(SENSITIVE_DATA_CREDENTIAL_TYPE, CredentialFormat.VC1_0_JWT.name()));
     }
 
     @Override
@@ -99,7 +99,8 @@ public class IssuerServiceImpl implements IssuerService {
                     if (descriptor == null) {
                         throw new IllegalArgumentException("No CredentialObject found for id: " + cred.id());
                     }
-                    return new CredentialMessage.CredentialContainer(descriptor.credentialType(), generateJwtCredential(descriptor.credentialType(), gen, holderDid, issuerDid).getContent(), descriptor.format());
+                    var format = supportedCredentialFormats.get(descriptor.getProfile());
+                    return new CredentialMessage.CredentialContainer(descriptor.getCredentialType(), generateJwtCredential(descriptor.getCredentialType(), gen, holderDid, issuerDid).getContent(), format.name());
                 }).toList();
         var issuerPid = randomUUID().toString();
         var credentialsMessage = CredentialMessage.Builder.newInstance()
@@ -185,6 +186,4 @@ public class IssuerServiceImpl implements IssuerService {
     private record RequestStatus(CredentialRequestMessage credentialRequest, String status) {
     }
 
-    public record CredentialDescriptor(String credentialType, String format) {
-    }
 }

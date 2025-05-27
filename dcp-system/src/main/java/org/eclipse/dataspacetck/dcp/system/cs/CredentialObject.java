@@ -77,4 +77,60 @@ public class CredentialObject {
         }
         return type != null && credentialType != null && id != null;
     }
+
+    public static class Builder {
+        private final CredentialObject credentialObject;
+
+        private Builder() {
+            credentialObject = new CredentialObject();
+        }
+
+        public static Builder newInstance() {
+            return new Builder();
+        }
+
+        public Builder bindingMethods(List<String> bindingMethods) {
+            credentialObject.bindingMethods.addAll(bindingMethods);
+            return this;
+        }
+
+        public Builder profile(String profile) {
+            credentialObject.profile = profile;
+            return this;
+        }
+
+        public Builder issuancePolicy(Map<String, Object> issuancePolicy) {
+            credentialObject.issuancePolicy.putAll(issuancePolicy);
+            return this;
+        }
+
+        public Builder id(String id) {
+            credentialObject.id = id;
+            return this;
+        }
+
+        public Builder type(String type) {
+            credentialObject.type = type;
+            return this;
+        }
+
+        public Builder credentialType(String credentialType) {
+            credentialObject.credentialType = credentialType;
+            return this;
+        }
+
+        public Builder offerReason(String offerReason) {
+            credentialObject.offerReason = offerReason;
+            return this;
+        }
+
+        public Builder credentialSchema(String credentialSchema) {
+            credentialObject.credentialSchema = credentialSchema;
+            return this;
+        }
+
+        public CredentialObject build() {
+            return credentialObject;
+        }
+    }
 }

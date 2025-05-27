@@ -25,6 +25,7 @@ import org.eclipse.dataspacetck.core.api.system.CallbackEndpoint;
 import org.eclipse.dataspacetck.core.spi.system.ServiceConfiguration;
 import org.eclipse.dataspacetck.core.spi.system.ServiceResolver;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialApiHandler;
+import org.eclipse.dataspacetck.dcp.system.cs.CredentialObject;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialOfferHandler;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialServiceImpl;
@@ -36,6 +37,7 @@ import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtPresentationGenerator;
 import org.eclipse.dataspacetck.dcp.system.handler.SchemaProvider;
 import org.eclipse.dataspacetck.dcp.system.issuer.CredentialRequestHandler;
+import org.eclipse.dataspacetck.dcp.system.issuer.IssuerMetadataHandler;
 import org.eclipse.dataspacetck.dcp.system.issuer.IssuerService;
 import org.eclipse.dataspacetck.dcp.system.issuer.IssuerServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
@@ -55,9 +57,11 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static java.time.Instant.now;
 import static java.util.Objects.requireNonNull;
@@ -76,14 +80,16 @@ public class ServiceAssembly {
     private final SecureTokenServer secureTokenServer;
     private final IssuerService issuerService;
     private final CredentialRevocationService revocationService;
+
     public ServiceAssembly(BaseAssembly baseAssembly, ServiceResolver resolver, ServiceConfiguration configuration) {
         var tokenService = baseAssembly.getHolderTokenService();
         var generator = new JwtPresentationGenerator(baseAssembly.getHolderDid(), baseAssembly.getHolderKeyService());
         var mapper = baseAssembly.getMapper();
 
+        var supportedCredentials = buildSupportedCredentials();
         secureTokenServer = new SecureTokenServerImpl(configuration);
         credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer, baseAssembly.getHolderTokenService(), mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
-        issuerService = new IssuerServiceImpl(baseAssembly.getIssuerKeyService(), baseAssembly.getIssuerTokenService());
+        issuerService = new IssuerServiceImpl(baseAssembly.getIssuerKeyService(), baseAssembly.getIssuerTokenService(), supportedCredentials);
         revocationService = createRevocationService(baseAssembly);
 
         var endpoint = (CallbackEndpoint) requireNonNull(resolver.resolve(CallbackEndpoint.class, configuration));
@@ -99,6 +105,7 @@ public class ServiceAssembly {
         endpoint.registerProtocolHandler("/credentials", new CredentialApiHandler(credentialService, mapper, issuerService));
         endpoint.registerProtocolHandler("/offers", new CredentialOfferHandler(credentialService));
         endpoint.registerProtocolHandler("/requests/.*", new CredentialRequestHandler(issuerService, mapper));
+        endpoint.registerProtocolHandler("/metadata", new IssuerMetadataHandler(supportedCredentials, mapper, baseAssembly.getIssuerDid()));
 
         endpoint.registerHandler("/holder/did.json", new DidDocumentHandler(baseAssembly.getHolderDidService(), mapper));
         endpoint.registerHandler("/verifier/did.json", new DidDocumentHandler(baseAssembly.getVerifierDidService(), mapper));
@@ -168,6 +175,34 @@ public class ServiceAssembly {
         var credential = createCredential(issuerDid, holderDid, credentialType);
         var result = credentialGenerator.generateCredential(credential);
         return new VcContainer(result.getContent(), credential, VC1_0_JWT);
+    }
+
+    private Map<String, CredentialObject> buildSupportedCredentials() {
+        var map = new HashMap<String, CredentialObject>();
+
+        Stream.of("vc11-sl2021/jwt", "vc20-bssl/jwt").forEach(profile -> {
+            var membershipCredential = CredentialObject.Builder.newInstance()
+                    .id(UUID.randomUUID().toString())
+                    .type("CredentialObject")
+                    .credentialType(MEMBERSHIP_CREDENTIAL_TYPE)
+                    .offerReason("issuance")
+                    .bindingMethods(Collections.singletonList("did:web"))
+                    .profile(profile)
+                    .build();
+            map.put(membershipCredential.getId(), membershipCredential);
+
+            var sensitiveDataCredential = CredentialObject.Builder.newInstance()
+                    .id(UUID.randomUUID().toString())
+                    .type("CredentialObject")
+                    .credentialType(SENSITIVE_DATA_CREDENTIAL_TYPE)
+                    .offerReason("issuance")
+                    .bindingMethods(Collections.singletonList("did:web"))
+                    .profile(profile)
+                    .build();
+            map.put(sensitiveDataCredential.getId(), sensitiveDataCredential);
+        });
+
+        return Collections.unmodifiableMap(map);
     }
 
     private CredentialRevocationService createRevocationService(BaseAssembly baseAssembly) {
