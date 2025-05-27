@@ -14,8 +14,8 @@
 
 package org.eclipse.dataspacetck.dcp.system.issuer;
 
-public record CredentialObjectReference(String id, String format) {
+public record CredentialObjectReference(String id) {
     public boolean validate() {
-        return id != null && format != null;
+        return id != null;
     }
 }

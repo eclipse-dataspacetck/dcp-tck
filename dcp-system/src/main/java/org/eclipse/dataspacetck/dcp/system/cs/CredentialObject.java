@@ -17,7 +17,6 @@ package org.eclipse.dataspacetck.dcp.system.cs;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,12 +24,12 @@ import java.util.Map;
 public class CredentialObject {
     @JsonProperty(value = "bindingMethods")
     private final List<String> bindingMethods = new ArrayList<>();
-    @JsonProperty(value = "profiles")
-    private final Collection<String> profiles = new ArrayList<>();
+    @JsonProperty(value = "profile")
+    private String profile;
     @JsonProperty(value = "issuancePolicy")
     private final Map<String, Object> issuancePolicy = new HashMap<>();
     @JsonProperty(value = "id", required = true)
-    private String id; // re-declare to assign new JSON property name
+    private String id;
     @JsonProperty(value = "type")
     private String type;
     @JsonProperty(value = "credentialType")
@@ -44,8 +43,8 @@ public class CredentialObject {
         return bindingMethods;
     }
 
-    public Collection<String> getProfiles() {
-        return profiles;
+    public String getProfile() {
+        return profile;
     }
 
     public Map<String, Object> getIssuancePolicy() {

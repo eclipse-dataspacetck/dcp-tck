@@ -76,7 +76,6 @@ public class ServiceAssembly {
     private final SecureTokenServer secureTokenServer;
     private final IssuerService issuerService;
     private final CredentialRevocationService revocationService;
-
     public ServiceAssembly(BaseAssembly baseAssembly, ServiceResolver resolver, ServiceConfiguration configuration) {
         var tokenService = baseAssembly.getHolderTokenService();
         var generator = new JwtPresentationGenerator(baseAssembly.getHolderDid(), baseAssembly.getHolderKeyService());

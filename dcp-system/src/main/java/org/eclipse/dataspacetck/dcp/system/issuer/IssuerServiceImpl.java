@@ -54,13 +54,13 @@ public class IssuerServiceImpl implements IssuerService {
     private final TokenValidationService issuerTokenValidationService;
     private final ObjectMapper objectMapper;
     private final Map<String, RequestStatus> credentialRequests = new java.util.HashMap<>();
-    private final Map<String, CredentialDescriptor> metadata;
+    private final Map<String, CredentialDescriptor> supportedCredentials;
 
     public IssuerServiceImpl(KeyService issuerKeyService, TokenValidationService issuerTokenValidationService) {
         this.issuerKeyService = issuerKeyService;
         this.issuerTokenValidationService = issuerTokenValidationService;
         objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        metadata = Map.of("credential-object-id1", new CredentialDescriptor(MEMBERSHIP_CREDENTIAL_TYPE, CredentialFormat.VC1_0_JWT.name()),
+        supportedCredentials = Map.of("credential-object-id1", new CredentialDescriptor(MEMBERSHIP_CREDENTIAL_TYPE, CredentialFormat.VC1_0_JWT.name()),
                 "credential-object-id2", new CredentialDescriptor(SENSITIVE_DATA_CREDENTIAL_TYPE, CredentialFormat.VC1_0_JWT.name()));
     }
 
@@ -95,7 +95,7 @@ public class IssuerServiceImpl implements IssuerService {
         var correlation = credentialRequest.getHolderPid();
         var credentials = credentialRequest.getCredentials().stream()
                 .map(cred -> {
-                    var descriptor = metadata.get(cred.id());
+                    var descriptor = supportedCredentials.get(cred.id());
                     if (descriptor == null) {
                         throw new IllegalArgumentException("No CredentialObject found for id: " + cred.id());
                     }
