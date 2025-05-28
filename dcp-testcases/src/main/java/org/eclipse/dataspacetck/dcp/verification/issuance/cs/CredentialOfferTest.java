@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.nimbusds.jose.JOSEObjectType.JWT;
 import static com.nimbusds.jose.JWSAlgorithm.ES256;
@@ -55,7 +56,7 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
 
     @MandatoryTest
     @DisplayName("6.6.1 CredentialService should accept CredentialOfferMessage")
-    void cs_06_06_01_credentialMessage() {
+    void cs_06_06_01_credentialOfferMessage() {
         var msg = createCredentialOfferMessage().build();
 
         var token = createToken(createClaims().build());
@@ -64,21 +65,36 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.6.1 CredentialService rejects a CredentialOfferMessage with no auth header")
-    void cs_06_06_01_credentialMessage_noAuthHeader() {
-        var credentialMessage = createCredentialOfferMessage().build();
+    @DisplayName("6.6.1 CredentialService should accept CredentialOfferMessage (only IDs)")
+    void cs_06_06_01_credentialOfferMessage_onlyIds() {
+        var msg = createCredentialOfferMessage()
+                .property("credentials", List.of(
+                        Map.of("id", UUID.randomUUID().toString()),
+                        Map.of("id", UUID.randomUUID().toString())
+                ))
+                .build();
 
-        var request = createCredentialOfferMessageRequest(null, credentialMessage).build();
+        var token = createToken(createClaims().build());
+        var request = createCredentialOfferMessageRequest(token, msg).build();
+        executeRequest(request, TestFixtures::assert2xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("6.6.1 CredentialService rejects a CredentialOfferMessage with no auth header")
+    void cs_06_06_01_credentialOfferMessage_noAuthHeader() {
+        var credentialOfferMessage = createCredentialOfferMessage().build();
+
+        var request = createCredentialOfferMessageRequest(null, credentialOfferMessage).build();
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("6.6.1 CredentialService rejects a CredentialOfferMessage where the auth header has no bearer prefix")
-    void cs_06_06_01_credentialMessage_missingBearerPrefix() {
-        var credentialMessage = createCredentialOfferMessage().build();
+    void cs_06_06_01_credentialOfferMessage_missingBearerPrefix() {
+        var credentialOfferMessage = createCredentialOfferMessage().build();
         var token = createToken(createClaims().build());
 
-        var request = createCredentialOfferMessageRequest(null, credentialMessage)
+        var request = createCredentialOfferMessageRequest(null, credentialOfferMessage)
                 .header("Authorization", token)
                 .build();
         executeRequest(request, TestFixtures::assert4xxCode);
@@ -86,7 +102,7 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
 
     @MandatoryTest
     @DisplayName("6.6.1 CredentialService rejects a CredentialOfferMessage with an invalid message body")
-    void cs_06_06_01_credentialMessage_invalidBody() {
+    void cs_06_06_01_credentialOfferMessage_invalidBody() {
         var message = createCredentialOfferMessage()
                 .property("issuer", null)
                 .build();
@@ -101,7 +117,7 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
 
     @MandatoryTest
     @DisplayName("6.6.1 CredentialService rejects an invalid auth token - wrong signing key")
-    void cs_06_06_01_credentialMessage_tokenSignedWithWrongKey() throws JOSEException {
+    void cs_06_06_01_credentialOfferMessage_tokenSignedWithWrongKey() throws JOSEException {
         var msg = createCredentialOfferMessage().build();
 
         var claims = createClaims().build();
@@ -124,69 +140,69 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
 
     @MandatoryTest
     @DisplayName("6.6.1 CredentialService rejects an invalid auth token - token expired")
-    void cs_06_06_01_credentialMessage_tokenExpired() {
-        var credentialMessage = createCredentialOfferMessage().build();
+    void cs_06_06_01_credentialOfferMessage_tokenExpired() {
+        var credentialOfferMessage = createCredentialOfferMessage().build();
 
         var token = createToken(createClaims().expirationTime(Date.from(now().minus(1, ChronoUnit.HOURS))).build());
-        var request = createCredentialOfferMessageRequest(token, credentialMessage).build();
+        var request = createCredentialOfferMessageRequest(token, credentialOfferMessage).build();
 
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("6.6.1 CredentialService rejects an invalid auth token - iat in the future")
-    void cs_06_06_01_credentialMessage_iatInFuture() {
-        var credentialMessage = createCredentialOfferMessage().build();
+    void cs_06_06_01_credentialOfferMessage_iatInFuture() {
+        var credentialOfferMessage = createCredentialOfferMessage().build();
 
         var token = createToken(createClaims().issueTime(Date.from(now().plus(1, ChronoUnit.HOURS))).build());
-        var request = createCredentialOfferMessageRequest(token, credentialMessage).build();
+        var request = createCredentialOfferMessageRequest(token, credentialOfferMessage).build();
 
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("6.6.1 CredentialService rejects an invalid auth token - nbf")
-    void cs_06_06_01_credentialMessage_nbfViolated() {
-        var credentialMessage = createCredentialOfferMessage().build();
+    void cs_06_06_01_credentialOfferMessage_nbfViolated() {
+        var credentialOfferMessage = createCredentialOfferMessage().build();
 
         var token = createToken(createClaims().notBeforeTime(Date.from(now().plus(1, ChronoUnit.HOURS))).build());
-        var request = createCredentialOfferMessageRequest(token, credentialMessage).build();
+        var request = createCredentialOfferMessageRequest(token, credentialOfferMessage).build();
 
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("6.6.1 CredentialService rejects an invalid auth token - incorrect aud")
-    void cs_06_06_01_credentialMessage_incorrectAudience(@Did(THIRD_PARTY) String thirdPartyDid) {
-        var credentialMessage = createCredentialOfferMessage().build();
+    void cs_06_06_01_credentialOfferMessage_incorrectAudience(@Did(THIRD_PARTY) String thirdPartyDid) {
+        var credentialOfferMessage = createCredentialOfferMessage().build();
 
         var token = createToken(createClaims().audience(thirdPartyDid).build());
-        var request = createCredentialOfferMessageRequest(token, credentialMessage).build();
+        var request = createCredentialOfferMessageRequest(token, credentialOfferMessage).build();
 
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("6.6.1 CredentialService rejects an invalid auth token - iss != sub")
-    void cs_06_06_01_credentialMessage_issNotEqualToSub(@Did(THIRD_PARTY) String thirdPartyDid) {
-        var credentialMessage = createCredentialOfferMessage().build();
+    void cs_06_06_01_credentialOfferMessage_issNotEqualToSub(@Did(THIRD_PARTY) String thirdPartyDid) {
+        var credentialOfferMessage = createCredentialOfferMessage().build();
 
         var token = createToken(createClaims()
                 .issuer(issuerDid)
                 .subject(thirdPartyDid)
                 .build());
-        var request = createCredentialOfferMessageRequest(token, credentialMessage).build();
+        var request = createCredentialOfferMessageRequest(token, credentialOfferMessage).build();
 
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
     @DisplayName("6.6.1 CredentialService rejects an invalid auth token - jti used before")
-    void cs_06_06_01_credentialMessage_jtiAlreadyUsed() {
-        var credentialMessage = createCredentialOfferMessage().build();
+    void cs_06_06_01_credentialOfferMessage_jtiAlreadyUsed() {
+        var credentialOfferMessage = createCredentialOfferMessage().build();
 
         var token = createToken(createClaims().build());
-        var request = createCredentialOfferMessageRequest(token, credentialMessage).build();
+        var request = createCredentialOfferMessageRequest(token, credentialOfferMessage).build();
 
         executeRequest(request, response -> assertThat(response.isSuccessful()).isTrue());
         executeRequest(request, TestFixtures::assert4xxCode);
@@ -212,7 +228,8 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
                 .type(CREDENTIAL_OFFER_MESSAGE_TYPE)
                 .property("issuer", issuerDid)
                 .property("credentials", List.of(
-                        Map.of("type", "CredentialObject",
+                        Map.of("id", UUID.randomUUID().toString(),
+                                "type", "CredentialObject",
                                 "credentialType", "MembershipCredential",
                                 "offerReason", "reissue",
                                 "bindingMethods", List.of("did:web:"),

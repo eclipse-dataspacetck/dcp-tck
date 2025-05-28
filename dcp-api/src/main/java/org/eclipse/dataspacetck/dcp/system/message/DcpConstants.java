@@ -76,4 +76,8 @@ public interface DcpConstants {
     String NULL_BODY = "";
 
     String JSON_CONTENT_TYPE = "application/json";
+
+    String ISSUER_METADATA_MESSAGE_TYPE = "IssuerMetadata";
+
+    String ISSUER_METADATA_PATH = "/metadata";
 }

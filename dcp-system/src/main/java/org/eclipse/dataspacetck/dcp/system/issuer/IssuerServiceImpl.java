@@ -24,9 +24,11 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialMessage;
+import org.eclipse.dataspacetck.dcp.system.cs.CredentialObject;
 import org.eclipse.dataspacetck.dcp.system.cs.TokenValidationService;
 import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
+import org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 
@@ -51,23 +53,15 @@ public class IssuerServiceImpl implements IssuerService {
     private final TokenValidationService issuerTokenValidationService;
     private final ObjectMapper objectMapper;
     private final Map<String, RequestStatus> credentialRequests = new java.util.HashMap<>();
+    private final Map<String, CredentialObject> supportedCredentials;
+    private final Map<String, CredentialFormat> supportedCredentialFormats = Map.of("vc11-sl2021/jwt", CredentialFormat.VC1_0_JWT,
+            "vc20-bssl/jwt", CredentialFormat.VC2_0_JOSE);
 
-    public IssuerServiceImpl(KeyService issuerKeyService, TokenValidationService issuerTokenValidationService) {
+    public IssuerServiceImpl(KeyService issuerKeyService, TokenValidationService issuerTokenValidationService, Map<String, CredentialObject> supportedCredentials) {
         this.issuerKeyService = issuerKeyService;
         this.issuerTokenValidationService = issuerTokenValidationService;
+        this.supportedCredentials = supportedCredentials;
         objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-
-    }
-
-    private static Result<String> generateJwtCredential(CredentialRequestMessage.CredentialDescriptor cred, JwtCredentialGenerator gen, String holderDid, String issuerDid) {
-        return gen.generateCredential(VerifiableCredential.Builder.newInstance()
-                .credentialSubject(Map.of("id", holderDid))
-                .id(randomUUID().toString())
-                .issuanceDate(now().toString())
-                .issuer(issuerDid)
-                .type(List.of(cred.credentialType()))
-                .credentialSubject(Map.of("id", holderDid, "bar", "baz"))
-                .build());
     }
 
     @Override
@@ -97,13 +91,17 @@ public class IssuerServiceImpl implements IssuerService {
             return failure("Invalid credential request message", Result.ErrorType.BAD_REQUEST);
         }
 
-
         // generate CredentialMessage
         var correlation = credentialRequest.getHolderPid();
         var credentials = credentialRequest.getCredentials().stream()
-                .map(cred -> new CredentialMessage.CredentialContainer(cred.credentialType(),
-                        generateJwtCredential(cred, gen, holderDid, issuerDid).getContent(), cred.format()
-                )).toList();
+                .map(cred -> {
+                    var descriptor = supportedCredentials.get(cred.id());
+                    if (descriptor == null) {
+                        throw new IllegalArgumentException("No CredentialObject found for id: " + cred.id());
+                    }
+                    var format = supportedCredentialFormats.get(descriptor.getProfile());
+                    return new CredentialMessage.CredentialContainer(descriptor.getCredentialType(), generateJwtCredential(descriptor.getCredentialType(), gen, holderDid, issuerDid).getContent(), format.name());
+                }).toList();
         var issuerPid = randomUUID().toString();
         var credentialsMessage = CredentialMessage.Builder.newInstance()
                 .holderPid(correlation)
@@ -134,6 +132,17 @@ public class IssuerServiceImpl implements IssuerService {
                         "status", rqs.status.toUpperCase()
                 )))
                 .orElseGet(() -> failure("No credential request found", Result.ErrorType.NOT_FOUND));
+    }
+
+    private Result<String> generateJwtCredential(String type, JwtCredentialGenerator gen, String holderDid, String issuerDid) {
+        return gen.generateCredential(VerifiableCredential.Builder.newInstance()
+                .credentialSubject(Map.of("id", holderDid))
+                .id(randomUUID().toString())
+                .issuanceDate(now().toString())
+                .issuer(issuerDid)
+                .type(List.of(type))
+                .credentialSubject(Map.of("id", holderDid, "bar", "baz"))
+                .build());
     }
 
     private void sendBackCredentials(String holderDid, String issuerDid, CredentialMessage credentialsMsg) {
@@ -176,4 +185,5 @@ public class IssuerServiceImpl implements IssuerService {
 
     private record RequestStatus(CredentialRequestMessage credentialRequest, String status) {
     }
+
 }

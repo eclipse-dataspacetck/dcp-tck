@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.core.api.system.Inject;
@@ -28,11 +29,13 @@ import org.eclipse.dataspacetck.dcp.system.annotation.Holder;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssuerService;
 import org.eclipse.dataspacetck.dcp.system.annotation.RoleType;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
+import org.eclipse.dataspacetck.dcp.system.cs.CredentialObject;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import static java.time.Instant.now;
@@ -42,8 +45,7 @@ import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.HOLDER;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.AUTHORIZATION;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_REQUEST_MESSAGE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_REQUEST_PATH;
-import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
-import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_CREDENTIAL_TYPE;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.ISSUER_METADATA_PATH;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveIssuerServiceEndpoint;
 
 @IssuerService
@@ -62,19 +64,32 @@ public abstract class AbstractCredentialIssuanceTest {
     protected String issuerDid;
 
     protected DcpMessageBuilder createCredentialRequestMessage(String holderPid) {
-        return DcpMessageBuilder.newInstance()
-                .type(CREDENTIAL_REQUEST_MESSAGE_TYPE)
-                .property("holderPid", holderPid)
-                .property("credentials", List.of(
-                        Map.of(
-                                "credentialType", MEMBERSHIP_CREDENTIAL_TYPE,
-                                "format", "VC1_0_JWT"
-                        ),
-                        Map.of(
-                                "credentialType", SENSITIVE_DATA_CREDENTIAL_TYPE,
-                                "format", "VC1_0_JWT"
-                        )
-                ));
+        var endpoint = resolveIssuerServiceEndpoint(issuerDid);
+
+        var builder = new Request.Builder()
+                .header("Authorization", "Bearer " + createToken(createClaims().build()))
+                .url(endpoint + ISSUER_METADATA_PATH)
+                .get();
+
+        try (var response = new OkHttpClient().newCall(builder.build()).execute()) {
+            if (response.isSuccessful()) {
+                var stream = response.body().string();
+                var issuerMetadata = mapper.readValue(stream, IssuerMetadataMessage.class);
+
+                var ids = issuerMetadata.getCredentialsSupported().stream()
+                        .filter(co -> co.getProfile().equals("vc11-sl2021/jwt"))
+                        .map(CredentialObject::getId)
+                        .map(id -> Map.of("id", id))
+                        .toList();
+                return DcpMessageBuilder.newInstance()
+                        .type(CREDENTIAL_REQUEST_MESSAGE_TYPE)
+                        .property("holderPid", holderPid)
+                        .property("credentials", ids);
+            }
+            throw new AssertionError("Expected IssuerMetadata to return 200 OK, but got " + response.code());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -109,4 +124,21 @@ public abstract class AbstractCredentialIssuanceTest {
         return holderKeyService.sign(emptyMap(), claims);
     }
 
+    private static class IssuerMetadataMessage {
+        private String type;
+        private String issuer;
+        private Collection<CredentialObject> credentialsSupported;
+
+        public String getType() {
+            return type;
+        }
+
+        public String getIssuer() {
+            return issuer;
+        }
+
+        public Collection<CredentialObject> getCredentialsSupported() {
+            return credentialsSupported;
+        }
+    }
 }

@@ -86,7 +86,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
     public void cs_04_03_03_idTokenInvalidSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
         var claimSet = new JWTClaimsSet.Builder()
                 .issuer(verifierDid)
-                .subject("did:web:another.com:subject")    // invalid subject
+                .subject(thirdPartyDid)    // invalid subject
                 .audience(holderDid)
                 .jwtID(randomUUID().toString())
                 .issueTime(new Date())
@@ -119,8 +119,8 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
     public void cs_04_03_03_idtokenIncorrectSub(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
         var claimSet = new JWTClaimsSet.Builder()
-                .issuer("did:web:another.com:subject")
-                .subject("did:web:another.com:subject")    // invalid subject
+                .issuer(thirdPartyDid)
+                .subject(thirdPartyDid)    // invalid subject
                 .audience(verifierDid)
                 .jwtID(randomUUID().toString())
                 .issueTime(new Date())

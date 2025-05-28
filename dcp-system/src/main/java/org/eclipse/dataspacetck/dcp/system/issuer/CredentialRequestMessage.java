@@ -27,7 +27,7 @@ public class CredentialRequestMessage {
     private String holderPid;
 
     @JsonProperty("credentials")
-    private Collection<CredentialDescriptor> credentials = new ArrayList<>();
+    private Collection<CredentialObjectReference> credentials = new ArrayList<>();
 
     public String getType() {
         return type;
@@ -37,14 +37,12 @@ public class CredentialRequestMessage {
         return holderPid;
     }
 
-    public Collection<CredentialDescriptor> getCredentials() {
+    public Collection<CredentialObjectReference> getCredentials() {
         return credentials;
     }
 
     public boolean validate() {
-        return type != null && holderPid != null && credentials != null && !credentials.isEmpty();
+        return type != null && holderPid != null && credentials != null && !credentials.isEmpty() && credentials.stream().allMatch(CredentialObjectReference::validate);
     }
 
-    public record CredentialDescriptor(String credentialType, String format) {
-    }
 }
