@@ -150,9 +150,9 @@ public class TestFixtures {
 
                 // extract and flatmap all credentials from all presentations
                 var credentialJwts = presentationList.stream().map(pres -> pres.get(VERIFIABLE_CREDENTIAL_CLAIM))
-                        .map(o -> (List<String>) o)
-                        .flatMap(Collection::stream)
-                        .toList();
+                                             .map(o -> (List<String>) o)
+                                             .flatMap(Collection::stream)
+                                             .toList();
 
                 return parseAndVerifyCredentials(credentialJwts);
             } catch (ParseException e) {
@@ -215,6 +215,5 @@ public class TestFixtures {
             throw new RuntimeException(e);
         }
     }
-
 
 }
