@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_SERVICE_TYPE;
@@ -95,7 +96,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     @MandatoryTest
     @DisplayName("5.4.1.2 Verify Resolution API request does not contain a scope and presentation definition")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
-    public void cs_05_04_01_InvalidScopeAndPresentationRequest(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+    public void cs_05_04_01_invalidScopeAndPresentationRequest(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
         var message = DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
                 .property(SCOPE, List.of(MEMBERSHIP_SCOPE))
@@ -104,6 +105,43 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
 
         var request = createPresentationRequest(authToken, message);
         executeRequest(request, response -> assertThat(response.code()).isEqualTo(400));
+    }
+
+    @MandatoryTest
+    @DisplayName("5.4.1.1 Verify Resolution API rejects an empty 'presentationDefinition' object")
+    @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
+    public void cs_05_04_01_emptyPresentationDefinition(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+        var message = DcpMessageBuilder.newInstance()
+                              .type(PRESENTATION_QUERY_MESSAGE)
+                              .property(PRESENTATION_DEFINITION, Map.of())
+                              .build();
+
+        executeRequest(createPresentationRequest(authToken, message), TestFixtures::assert4xxCode);
+
+        var message2 = DcpMessageBuilder.newInstance()
+                              .type(PRESENTATION_QUERY_MESSAGE)
+                              .property(PRESENTATION_DEFINITION, null)
+                              .build();
+        executeRequest(createPresentationRequest(authToken, message2), TestFixtures::assert4xxCode);
+
+    }
+
+    @MandatoryTest
+    @DisplayName("5.4.1.2 Verify Resolution API rejects an empty (or absent) 'scope' array")
+    @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
+    public void cs_05_04_02_emptyScopeExpect4xx(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
+        var message = DcpMessageBuilder.newInstance()
+                              .type(PRESENTATION_QUERY_MESSAGE)
+                              .property(SCOPE, List.of())
+                              .build();
+
+        executeRequest(createPresentationRequest(authToken, message), response -> assertThat(response.code()).isEqualTo(400));
+
+        var message2 = DcpMessageBuilder.newInstance()
+                              .type(PRESENTATION_QUERY_MESSAGE)
+                              .build();
+
+        executeRequest(createPresentationRequest(authToken, message2), response -> assertThat(response.code()).isEqualTo(400));
     }
 
     @Disabled
