@@ -36,8 +36,8 @@ jobs:
       - uses: eclipse-dataspacetck/tck-common/.github/actions/publish-docker-image@main
         name: Publish DSP TCK Docker image (release)
         with:
-          rootDir: "dsp/dsp-tck"
-          imagename: "dsp-tck-runtime"
+          rootDir: "dcp-tck"
+          imagename: "dcp-tck-runtime"
           namespace: "eclipsedataspacetck"
           docker_user: ${{ secrets.DOCKER_HUB_USER }}
           docker_token: ${{ secrets.DOCKER_HUB_TOKEN }}
