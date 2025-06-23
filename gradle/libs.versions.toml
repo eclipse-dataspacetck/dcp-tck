@@ -16,7 +16,7 @@ nimbus = "10.3"
 restAssured = "5.5.5"
 schema-validator = "1.5.7"
 slf4j = "2.0.17"
-tck = "0.1.0"
+tck = "1.0.0-RC1-SNAPSHOT"
 titanium = "1.6.0"
 
 [libraries]
