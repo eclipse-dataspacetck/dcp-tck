@@ -340,3 +340,7 @@ java -Ddataspacetck.callback.address="http://localhost:8080" \
   -Ddataspacetck.credentials.correlation.id="my-correlation-id" \
   -jar dcp-tck/build/libs/dcp-tck-runtime.jar
 ```
+
+## 4. Filing Challenges
+
+If you believe there is a bug in the TCK or there is an invalid test assertion, please file a bug [here](https://github.com/eclipse-dataspacetck/dcp-tck/issues).
