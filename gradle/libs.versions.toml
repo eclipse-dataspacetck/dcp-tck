@@ -16,7 +16,7 @@ restAssured = "5.5.5"
 schema-validator = "1.5.9"
 slf4j = "2.0.17"
 tck = "1.0.0-SNAPSHOT"
-titanium = "1.6.0"
+titanium = "1.7.0"
 
 [libraries]
 
