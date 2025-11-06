@@ -17,10 +17,11 @@ package org.eclipse.dataspacetck.dcp.verification.presentation.cs;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaLocation;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.dialect.Dialects;
 import com.nimbusds.jwt.JWTClaimsSet;
 import okhttp3.MediaType;
 import okhttp3.Request;
@@ -43,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.networknt.schema.SpecVersion.VersionFlag.V202012;
 import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
@@ -67,7 +67,7 @@ public class AbstractPresentationFlowTest {
     protected static final String PRESENTATION_EXCHANGE_PREFIX = "https://identity.foundation/";
     protected static final String CLASSPATH_SCHEMA = "classpath:/";
 
-    protected static JsonSchema responseSchema;
+    protected static Schema responseSchema;
 
     @Inject
     @Did(VERIFIER)
@@ -93,9 +93,10 @@ public class AbstractPresentationFlowTest {
 
     @BeforeAll
     protected static void setUp() {
-        var schemaFactory = JsonSchemaFactory.getInstance(V202012, builder ->
-                builder.schemaMappers(schemaMappers ->
-                        schemaMappers.mapPrefix(DCP_NAMESPACE + "/", CLASSPATH_SCHEMA)
+        var dialects = List.of(Dialects.getDraft201909(), Dialects.getDraft7());
+        var schemaFactory = SchemaRegistry.withDialects(dialects, builder ->
+                builder.schemaIdResolvers(schemaIdResolvers ->
+                        schemaIdResolvers.mapPrefix(DCP_NAMESPACE + "/", CLASSPATH_SCHEMA)
                                 .mapPrefix(PRESENTATION_EXCHANGE_PREFIX, CLASSPATH_SCHEMA))
         );
 
@@ -145,7 +146,7 @@ public class AbstractPresentationFlowTest {
 
             var schemaResult = responseSchema.validate(mapper.convertValue(responseMessage, JsonNode.class));
             assertThat(schemaResult).withFailMessage(() -> "Schema validation failed: " + schemaResult.stream()
-                    .map(ValidationMessage::getMessage).collect(Collectors.joining())).isEmpty();
+                    .map(Error::getMessage).collect(Collectors.joining())).isEmpty();
 
             @SuppressWarnings("unchecked")
             var presentations = (List<String>) responseMessage.get(PRESENTATION);
