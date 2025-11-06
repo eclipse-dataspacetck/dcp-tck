@@ -34,7 +34,7 @@ public abstract class AbstractProtocolHandler implements ProtocolHandler {
     protected Schema schema;
 
     public AbstractProtocolHandler(String schemaFile) {
-        var dialects = List.of(Dialects.getDraft201909(), Dialects.getDraft7());
+        var dialects = List.of(Dialects.getDraft201909(), Dialects.getDraft202012(), Dialects.getDraft7(), Dialects.getDraft4());
         var schemaFactory = SchemaRegistry.withDialects(dialects, builder ->
                 builder.schemaIdResolvers(schemaIdResolvers ->
                         schemaIdResolvers.mapPrefix(DCP_NAMESPACE + "/", CLASSPATH_SCHEMA)
