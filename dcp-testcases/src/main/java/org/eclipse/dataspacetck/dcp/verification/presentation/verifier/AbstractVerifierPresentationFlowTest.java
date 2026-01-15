@@ -61,8 +61,8 @@ public class AbstractVerifierPresentationFlowTest {
     protected static String createTriggerMessage() {
         return """
                 {
-                    "@type":  "https://w3id.org/dspace/2024/1/CatalogRequestMessage",
-                    "https://w3id.org/dspace/v0.8/filter": {}
+                    "@type": "https://w3id.org/dspace/2025/1/CatalogRequestMessage",
+                    "https://w3id.org/dspace/2025/1/filter": {}
                 }
                 """;
     }
