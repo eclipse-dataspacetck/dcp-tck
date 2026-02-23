@@ -78,7 +78,7 @@ public class VerifiableCredential extends ExtensibleModel {
 
     public Map<String, Object> toMap() {
         var map = new LinkedHashMap<String, Object>();
-        map.put(CONTEXT, id);
+        map.put(CONTEXT, context);
         map.put(ID, id);
         map.put(TYPE, type);
         map.put("issuer", issuer);
@@ -157,7 +157,7 @@ public class VerifiableCredential extends ExtensibleModel {
 
         public VerifiableCredential build() {
             requireNonNull(credential.id, "id");
-            if (credential.context.contains(CONTEXT_V1) && !credential.context.contains(CONTEXT_V2)) {
+            if (!credential.context.contains(CONTEXT_V1) && !credential.context.contains(CONTEXT_V2)) {
                 credential.context.add(0, CONTEXT_V1);
             }
             return credential;
