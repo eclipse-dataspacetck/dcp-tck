@@ -69,7 +69,7 @@ public class JwtPresentationGenerator implements PresentationGenerator {
 
     private Map<String, Object> createVpToken(List<VcContainer> credentials) {
         return Map.of(
-                "context", List.of("https://www.w3.org/2018/credentials/v1", "https://identity.foundation/presentation-exchange/submission/v1"),
+                "@context", List.of("https://www.w3.org/2018/credentials/v1", "https://identity.foundation/presentation-exchange/submission/v1"),
                 "type", "VerifiablePresentation",
                 "verifiableCredential", credentials.stream().map(VcContainer::rawCredential).toList()
         );

@@ -41,6 +41,7 @@ import org.eclipse.dataspacetck.dcp.system.issuer.IssuerMetadataHandler;
 import org.eclipse.dataspacetck.dcp.system.issuer.IssuerService;
 import org.eclipse.dataspacetck.dcp.system.issuer.IssuerServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
+import org.eclipse.dataspacetck.dcp.system.model.vc.CredentialConstants;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
 import org.eclipse.dataspacetck.dcp.system.revocation.BitstringStatusListService;
@@ -274,6 +275,7 @@ public class ServiceAssembly {
                 .issuanceDate(Instant.now().toString())
                 .issuer(issuerDid)
                 .type(Stream.of("VerifiableCredential", credentialType).distinct().toList())
+                .context(List.of(CredentialConstants.CONTEXT_V1))
                 // credential subject cannot be empty
                 .credentialSubject(Map.of("id", holderDid, "foo", "bar"))
                 .build();
