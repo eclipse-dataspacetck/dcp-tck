@@ -39,10 +39,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
@@ -152,7 +154,8 @@ public class AbstractPresentationFlowTest {
             var presentations = (List<String>) responseMessage.get(PRESENTATION);
             var credentialTypes = parseAndVerifyPresentation(presentations, verifierDid);
 
-            assertThat(credentialTypes).containsOnly(expectedTypes);
+            assertThat(credentialTypes).containsOnly(Stream.concat(Stream.of("VerifiableCredential"), Arrays.stream(expectedTypes))
+                    .distinct().toArray(String[]::new));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
