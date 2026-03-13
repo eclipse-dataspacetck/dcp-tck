@@ -135,13 +135,13 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                               .property(SCOPE, List.of())
                               .build();
 
-        executeRequest(createPresentationRequest(authToken, message), response -> assertThat(response.code()).isEqualTo(400));
+        executeRequest(createPresentationRequest(authToken, message), TestFixtures::assert4xxCode);
 
         var message2 = DcpMessageBuilder.newInstance()
                               .type(PRESENTATION_QUERY_MESSAGE)
                               .build();
 
-        executeRequest(createPresentationRequest(authToken, message2), response -> assertThat(response.code()).isEqualTo(400));
+        executeRequest(createPresentationRequest(authToken, message2), TestFixtures::assert4xxCode);
     }
 
     @Disabled
