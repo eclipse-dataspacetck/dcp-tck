@@ -100,7 +100,7 @@ public class IssuerServiceImpl implements IssuerService {
                         throw new IllegalArgumentException("No CredentialObject found for id: " + cred.id());
                     }
                     var format = supportedCredentialFormats.get(descriptor.getProfile());
-                    return new CredentialMessage.CredentialContainer(descriptor.getCredentialType(), generateJwtCredential(descriptor.getCredentialType(), gen, holderDid, issuerDid).getContent(), format.name());
+                    return new CredentialMessage.CredentialContainer(descriptor.getCredentialType(), generateJwtCredential(descriptor.getCredentialType(), gen, holderDid, issuerDid).getContent(), format.profileString);
                 }).toList();
         var issuerPid = randomUUID().toString();
         var credentialsMessage = CredentialMessage.Builder.newInstance()

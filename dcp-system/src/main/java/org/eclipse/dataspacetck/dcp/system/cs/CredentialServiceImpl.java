@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -147,7 +148,11 @@ public class CredentialServiceImpl implements CredentialService {
         }
         message.getCredentials()
                 .forEach(cred -> {
-                    var container = new VcContainer(cred.payload(), createCredential(cred), CredentialFormat.valueOf(cred.format()));
+                    var format = Arrays.stream(CredentialFormat.values())
+                            .filter(f -> f.profileString.equals(cred.format()))
+                            .findFirst()
+                            .orElseThrow(() -> new IllegalArgumentException("Unknown format: " + cred.format()));
+                    var container = new VcContainer(cred.payload(), createCredential(cred), format);
                     credentialsByType.computeIfAbsent(cred.credentialType(), k -> new ArrayList<>()).add(container);
                 });
         return success();
