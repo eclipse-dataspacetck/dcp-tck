@@ -225,12 +225,12 @@ public class ServiceAssembly {
                 .property("credentials", List.of(
                         Map.of(
                                 "credentialType", MEMBERSHIP_CREDENTIAL_TYPE,
-                                "format", "VC1_0_JWT",
+                                "format", VC1_0_JWT.profileString,
                                 "payload", membershipContainer.rawCredential()
                         ),
                         Map.of(
                                 "credentialType", SENSITIVE_DATA_CREDENTIAL_TYPE,
-                                "format", "VC1_0_JWT",
+                                "format", VC1_0_JWT.profileString,
                                 "payload", sensitiveDataContainer.rawCredential()
                         )))
                 .property("status", "ISSUED");

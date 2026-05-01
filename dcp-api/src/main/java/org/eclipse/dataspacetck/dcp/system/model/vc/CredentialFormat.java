@@ -18,5 +18,12 @@ package org.eclipse.dataspacetck.dcp.system.model.vc;
  * Verifable credential formats.
  */
 public enum CredentialFormat {
-    VC1_0_JWT, VC2_0_JOSE
+    VC1_0_JWT("vc11-sl2021/jwt"),
+    VC2_0_JOSE("vc20-bssl/jwt");
+
+    public final String profileString;
+
+    CredentialFormat(String profileString) {
+        this.profileString = profileString;
+    }
 }
