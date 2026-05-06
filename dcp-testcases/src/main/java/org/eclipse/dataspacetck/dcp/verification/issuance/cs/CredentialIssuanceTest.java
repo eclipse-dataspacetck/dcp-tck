@@ -47,6 +47,7 @@ import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.THIRD_PART
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.AUTHORIZATION;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIALS_PATH;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_MESSAGE_TYPE;
+import static org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat.VC1_0_JWT;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
@@ -233,10 +234,10 @@ public class CredentialIssuanceTest extends AbstractCredentialIssuanceTest {
                 .property("status", "ISSUED")
                 .property("credentials", List.of(
                         Map.of("credentialType", MEMBERSHIP_CREDENTIAL_TYPE,
-                                "format", "VC1_0_JWT",
+                                "format", VC1_0_JWT.profileString,
                                 "payload", membershipCredential.rawCredential()),
                         Map.of("credentialType", SENSITIVE_DATA_CREDENTIAL_TYPE,
-                                "format", "VC1_0_JWT",
+                                "format", VC1_0_JWT.profileString,
                                 "payload", sensitiveDataCredential.rawCredential())
                 ));
     }
