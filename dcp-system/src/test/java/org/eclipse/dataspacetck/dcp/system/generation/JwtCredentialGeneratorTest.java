@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import static java.time.Instant.now;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.dataspacetck.dcp.system.crypto.Keys.createVerifier;
@@ -42,7 +43,8 @@ class JwtCredentialGeneratorTest {
         var credential = VerifiableCredential.Builder.newInstance()
                 .credentialSubject(Map.of("memberLevel", "gold"))
                 .id(randomUUID().toString())
-                .issuanceDate(new Date().toString())
+                .issuanceDate(now().toString())
+                .expirationDate(now().plusSeconds(600).toString())
                 .issuer(ISSUER_DID)
                 .type(List.of("VerifiableCredential"))
                 .context(List.of("https://www.w3.org/2018/credentials/v1"))

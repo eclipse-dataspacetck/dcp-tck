@@ -273,6 +273,7 @@ public class ServiceAssembly {
         return VerifiableCredential.Builder.newInstance()
                 .id(randomUUID().toString())
                 .issuanceDate(Instant.now().toString())
+                .expirationDate(Instant.now().plusSeconds(600).toString())
                 .issuer(issuerDid)
                 .type(Stream.of("VerifiableCredential", credentialType).distinct().toList())
                 .context(List.of(CredentialConstants.CONTEXT_V1))

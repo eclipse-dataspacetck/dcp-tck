@@ -139,6 +139,7 @@ public class IssuerServiceImpl implements IssuerService {
                 .credentialSubject(Map.of("id", holderDid))
                 .id(randomUUID().toString())
                 .issuanceDate(now().toString())
+                .expirationDate(now().plusSeconds(600).toString())
                 .issuer(issuerDid)
                 .type(List.of(type))
                 .credentialSubject(Map.of("id", holderDid, "bar", "baz"))
