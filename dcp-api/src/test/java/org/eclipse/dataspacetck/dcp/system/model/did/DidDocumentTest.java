@@ -42,7 +42,10 @@ class DidDocumentTest {
                     "x" : "izxXHDdzCpmt_Ivvn19qOZVhLDE29ViWPJENBJeEncA",
                     "y" : "dbn4rBSbYFbyUSbt0GzfKpxK4eODNRkWaI5LB36P9MY"
                   }
-                } ]
+                } ],
+                "authentication" : [ "43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c" ],
+                "assertionMethod" : [ "43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c" ],
+                "capabilityInvocation" : [ "43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c" ]
              }""";
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -56,6 +59,9 @@ class DidDocumentTest {
         assertThat(deserialized.getVerificationMethods()).allMatch(v -> v.getId().equals("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c"));
         assertThat(deserialized.getVerificationMethod("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c")).isNotNull();
         assertThat(deserialized.getVerificationMethod("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c").succeeded()).isTrue();
+        assertThat(deserialized.getAuthentication()).containsExactly("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c");
+        assertThat(deserialized.getAssertionMethod()).containsExactly("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c");
+        assertThat(deserialized.getCapabilityInvocation()).containsExactly("43cecd95-7a59-4a5f-b2d0-0ec73ae41a0c");
         assertThat(deserialized.getServiceEntry("CredentialService")).isNotNull();
     }
 }

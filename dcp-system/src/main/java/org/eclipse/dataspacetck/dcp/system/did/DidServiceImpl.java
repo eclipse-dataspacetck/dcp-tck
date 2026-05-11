@@ -48,16 +48,20 @@ public class DidServiceImpl implements DidService {
     }
 
     protected DidDocument.Builder createDocumentBuilder() {
+        var vmId = did + "#" + keyService.getPublicKey().getKeyID();
         return DidDocument.Builder.newInstance()
                 .id(did)
                 .context(List.of(DID_CONTEXT, DCP_NAMESPACE))
                 .service(List.of(new ServiceEntry("TCK-Credential-Service", CREDENTIAL_SERVICE_TYPE, baseEndpoint)))
                 .verificationMethod(List.of(VerificationMethod.Builder.newInstance()
-                        .id(did + "#" + keyService.getPublicKey().getKeyID())
+                        .id(vmId)
                         .type("JsonWebKey2020") // FIXME
                         .controller(did)
                         .publicKeyJwk(keyService.getPublicKey().toJSONObject())
-                        .build()));
+                        .build()))
+                .authentication(List.of(vmId))
+                .assertionMethod(List.of(vmId))
+                .capabilityInvocation(List.of(vmId));
     }
 
 }

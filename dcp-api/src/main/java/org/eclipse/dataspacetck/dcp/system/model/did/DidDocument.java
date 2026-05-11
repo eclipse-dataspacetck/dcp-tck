@@ -39,6 +39,15 @@ public class DidDocument extends ExtensibleModel {
     @JsonProperty("verificationMethod")
     private List<VerificationMethod> verificationMethods = new ArrayList<>();
 
+    @JsonProperty("authentication")
+    private List<String> authentication = new ArrayList<>();
+
+    @JsonProperty("assertionMethod")
+    private List<String> assertionMethod = new ArrayList<>();
+
+    @JsonProperty("capabilityInvocation")
+    private List<String> capabilityInvocation = new ArrayList<>();
+
     private DidDocument() {
     }
 
@@ -52,6 +61,18 @@ public class DidDocument extends ExtensibleModel {
 
     public List<VerificationMethod> getVerificationMethods() {
         return verificationMethods;
+    }
+
+    public List<String> getAuthentication() {
+        return authentication;
+    }
+
+    public List<String> getAssertionMethod() {
+        return assertionMethod;
+    }
+
+    public List<String> getCapabilityInvocation() {
+        return capabilityInvocation;
     }
 
     public ServiceEntry getServiceEntry(String type) {
@@ -96,6 +117,21 @@ public class DidDocument extends ExtensibleModel {
 
         public Builder verificationMethod(List<VerificationMethod> methods) {
             document.verificationMethods.addAll(methods);
+            return this;
+        }
+
+        public Builder authentication(List<String> refs) {
+            document.authentication.addAll(refs);
+            return this;
+        }
+
+        public Builder assertionMethod(List<String> refs) {
+            document.assertionMethod.addAll(refs);
+            return this;
+        }
+
+        public Builder capabilityInvocation(List<String> refs) {
+            document.capabilityInvocation.addAll(refs);
             return this;
         }
 
