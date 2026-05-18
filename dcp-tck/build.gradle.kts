@@ -29,8 +29,8 @@ plugins {
 }
 
 dependencies {
-    implementation(rootProject.libs.tck.dsp.core)
-    implementation(rootProject.libs.tck.dsp.tck.runtime)
+    implementation(rootProject.libs.tck.core)
+    implementation(rootProject.libs.tck.runtime)
     implementation(libs.junit.platform.launcher)
 
     implementation(project(":dcp-api"))
