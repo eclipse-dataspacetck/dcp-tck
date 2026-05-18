@@ -22,11 +22,10 @@ titanium = "1.7.0"
 
 # modules from tck-common
 tck-common-api = { module = "org.eclipse.dataspacetck.common:core-api", version.ref = "tck" }
-tck-dsp-core = { module = "org.eclipse.dataspacetck.dsp:core", version.ref = "tck" }
-tck-dsp-tck-runtime = { module = "org.eclipse.dataspacetck.dsp:tck-runtime", version.ref = "tck" }
+tck-core = { module = "org.eclipse.dataspacetck.common:core", version.ref = "tck" }
+tck-runtime = { module = "org.eclipse.dataspacetck.common:tck-runtime", version.ref = "tck" }
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
-bouncyCastle-bcpkixJdk18on = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncyCastle-jdk18on" }
 bouncyCastle-bcprovJdk18on = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncyCastle-jdk18on" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-jsonp = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jakarta-jsonp", version.ref = "jackson" }

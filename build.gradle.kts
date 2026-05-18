@@ -35,7 +35,6 @@ buildscript {
     }
 }
 
-
 allprojects {
 
     apply(plugin = "java-library")

@@ -18,7 +18,7 @@ plugins {
 }
 
 dependencies {
-    implementation(rootProject.libs.tck.dsp.core)
+    implementation(rootProject.libs.tck.core)
     implementation(rootProject.libs.okhttp)
     implementation(rootProject.libs.nimbus.jwt)
     implementation(rootProject.libs.assertj)
