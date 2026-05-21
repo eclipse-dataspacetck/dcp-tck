@@ -204,7 +204,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                 .build();
 
         var request = createPresentationRequest(authToken, message);
-        executeRequest(request, TestFixtures::assert4xxCode);
+        executeRequest(request, response -> verifyCredentials(response, MEMBERSHIP_CREDENTIAL_TYPE));
     }
 
 }
