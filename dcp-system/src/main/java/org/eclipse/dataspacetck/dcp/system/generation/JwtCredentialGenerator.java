@@ -51,9 +51,13 @@ public class JwtCredentialGenerator implements CredentialGenerator {
         if (!issuerDid.equals(credential.getIssuer())) {
             throw new RuntimeException(format("Credential issuer '%s' not equal to issuer DID: %s", credential.getIssuer(), issuerDid));
         }
+        var credentialSubjectId = (String) credential.getCredentialSubject().get("id");
+        if (credentialSubjectId == null) {
+            throw new RuntimeException("credentialSubject must contain an 'id' property");
+        }
         var claims = new JWTClaimsSet.Builder()
                 .issuer(issuerDid)
-                .subject(credential.getId())
+                .subject(credentialSubjectId)
                 .claim("jti", randomUUID())
                 .notBeforeTime(now)
                 .issueTime(now)
