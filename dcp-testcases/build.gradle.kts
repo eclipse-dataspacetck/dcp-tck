@@ -13,10 +13,6 @@
  *
  */
 
-plugins {
-    alias(libs.plugins.tck.generator)
-}
-
 dependencies {
     implementation(rootProject.libs.tck.core)
     implementation(rootProject.libs.okhttp)

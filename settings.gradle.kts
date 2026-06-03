@@ -19,9 +19,7 @@ rootProject.name = "dcp-tck"
 pluginManagement {
     repositories {
         mavenLocal()
-        maven {
-            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
-        }
+        maven("https://central.sonatype.com/repository/maven-snapshots/")
         mavenCentral()
         gradlePluginPortal()
     }
