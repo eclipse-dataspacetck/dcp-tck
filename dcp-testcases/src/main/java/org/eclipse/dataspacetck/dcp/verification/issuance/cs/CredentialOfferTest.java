@@ -233,7 +233,7 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
                                 "credentialType", "MembershipCredential",
                                 "offerReason", "reissue",
                                 "bindingMethods", List.of("did:web:"),
-                                "profiles", List.of("vc11-sl2021/jwt", "vc20-bssl/jwt"),
+                                "profile", "vc11-sl2021/jwt",
                                 "issuancePolicy", Map.of()) //fixme: add issuance policy
                 ));
     }
