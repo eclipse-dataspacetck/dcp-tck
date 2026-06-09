@@ -219,7 +219,6 @@ public class ServiceAssembly {
     private void sendCredentialMessage(BaseAssembly baseAssembly, String correlation, VcContainer membershipContainer, VcContainer sensitiveDataContainer, String token) throws JsonProcessingException {
         var credentialsObject = DcpMessageBuilder.newInstance()
                 .type(CREDENTIAL_MESSAGE_TYPE)
-                .property("requestId", correlation)
                 .property("issuerPid", UUID.randomUUID().toString())
                 .property("holderPid", correlation)
                 .property("credentials", List.of(
