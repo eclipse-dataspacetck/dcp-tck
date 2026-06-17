@@ -288,10 +288,7 @@ void runVppTests() {
 
 The following Maven dependencies are required:
 
-- `org.eclipse.dataspacetck.dcp:dcp-testcases:<VERSION>`: for the test cases
-- `org.eclipse.dataspacetck.dsp:tck-runtime:<VERSION>`: to launch the TCK from JUnit
-- `org.eclipse.dataspacetck.dsp:core:<VERSION>`: for the ConsoleMonitor
-- `org.eclipse.dataspacetck.dcp:dcp-system:<VERSION>`: for the launcher that runs the TCK test cases
+- `org.eclipse.dataspacetck.dcp:dcp-tck:<VERSION>`: brings in all the TCK dependencies needed to run the tests
 - `org.junit.platform:junit-platform-launcher:<JUNIT_VERSION>`
 
 ### 3.3 Using the command line

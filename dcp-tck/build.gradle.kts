@@ -29,13 +29,14 @@ plugins {
 }
 
 dependencies {
-    implementation(rootProject.libs.tck.core)
-    implementation(rootProject.libs.tck.runtime)
+    api(rootProject.libs.tck.core)
+    api(rootProject.libs.tck.runtime)
+
     implementation(libs.junit.platform.launcher)
 
-    implementation(project(":dcp-api"))
-    implementation(project(":dcp-system"))
-    implementation(project(":dcp-testcases"))
+    api(project(":dcp-api"))
+    api(project(":dcp-system"))
+    api(project(":dcp-testcases"))
 }
 
 
@@ -47,7 +48,6 @@ tasks.withType<ShadowJar> {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
     archiveFileName.set("${project.name}-runtime.jar") // should be something other than "dsp-tck.jar", to avoid erroneous task dependencies
-
 }
 
 application {
