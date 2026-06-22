@@ -14,9 +14,9 @@
 
 package org.eclipse.dataspacetck.dcp.system.cs;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Error;
+import com.networknt.schema.InputFormat;
 import org.eclipse.dataspacetck.core.api.system.HandlerResponse;
 import org.eclipse.dataspacetck.core.spi.boot.Monitor;
 import org.eclipse.dataspacetck.dcp.system.handler.AbstractProtocolHandler;
@@ -84,7 +84,7 @@ public class PresentationHandler extends AbstractProtocolHandler {
             var jwt = jwtResult.getContent();
             var accessToken = jwt.getJWTClaimsSet().getClaimAsString(TOKEN);
 
-            var schemaResult = schema.validate(mapper.convertValue(message, JsonNode.class));
+            var schemaResult = schema.validate(mapper.writeValueAsString(message), InputFormat.JSON);
             if (!schemaResult.isEmpty()) {
                 var error = format("Schema validation failed: %s", schemaResult.stream().map(Error::getMessage).collect(joining("\n")));
                 monitor.enableError().message(error).resetMode();
