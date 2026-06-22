@@ -15,9 +15,9 @@
 package org.eclipse.dataspacetck.dcp.verification.presentation.cs;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Error;
+import com.networknt.schema.InputFormat;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
@@ -146,7 +146,7 @@ public class AbstractPresentationFlowTest {
             assert response.body() != null;
             var responseMessage = mapper.readValue(response.body().bytes(), Map.class);
 
-            var schemaResult = responseSchema.validate(mapper.convertValue(responseMessage, JsonNode.class));
+            var schemaResult = responseSchema.validate(mapper.writeValueAsString(responseMessage), InputFormat.JSON);
             assertThat(schemaResult).withFailMessage(() -> "Schema validation failed: " + schemaResult.stream()
                     .map(Error::getMessage).collect(Collectors.joining())).isEmpty();
 

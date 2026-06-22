@@ -14,8 +14,8 @@
 
 package org.eclipse.dataspacetck.dcp.system.verifier;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.InputFormat;
 import com.nimbusds.jwt.JWTClaimsSet;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -214,18 +214,16 @@ public class VerifierTriggerHandler extends AbstractProtocolHandler {
                 }
             }
 
+            var credentialSubjectJson = objectMapper.writeValueAsString(vc.getCredentialSubject());
             var isValidSchema = ofNullable(vc.getCredentialSchema())
                     .map(MetadataReference::getId)
-                    .map(credentialSchemaUrl -> {
-                        var validationMessages = schema.validate(objectMapper.convertValue(vc.getCredentialSubject(), JsonNode.class));
-                        return validationMessages.isEmpty();
-                    })
+                    .map(credentialSchemaUrl -> schema.validate(credentialSubjectJson, InputFormat.JSON).isEmpty())
                     .orElse(true);
 
             if (!isValidSchema) {
                 return Result.failure("Credential schema validation failed");
             }
-        } catch (ParseException e) {
+        } catch (ParseException | IOException e) {
             return Result.failure(e.getMessage());
         }
 
