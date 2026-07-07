@@ -24,6 +24,10 @@ import java.util.function.Function;
  * Serves DID documents.
  */
 public record DidDocumentHandler(DidService didService, ObjectMapper mapper) implements Function<InputStream, String> {
+    
+    public DidDocumentHandler(DidService didService) {
+        this(didService, new ObjectMapper());
+    }
 
     @Override
     public String apply(InputStream inputStream) {
