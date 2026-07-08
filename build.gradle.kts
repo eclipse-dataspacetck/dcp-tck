@@ -23,7 +23,6 @@ plugins {
     jacoco
     `jacoco-report-aggregation`
     alias(libs.plugins.docker)
-    alias(libs.plugins.nexuspublishing)
     alias(libs.plugins.tck.build) apply false
 }
 
@@ -39,7 +38,6 @@ allprojects {
         pom {
             scmConnection = "https://github.com/eclipse-dataspacetck/dcp-tck.git"
             scmUrl = "scm:git:git@github.com:eclipse-dataspacetck/dcp-tck.git"
-            groupId = project.group.toString()
             projectName = project.name
             description = "DCP Technology Compatibility Kit"
             projectUrl = "https://projects.eclipse.org/projects/technology.dataspacetck"
