@@ -15,12 +15,11 @@ nimbus = "10.9"
 restAssured = "5.5.5"
 schema-validator = "3.0.5"
 slf4j = "2.0.18"
-tck = "1.0.0"
+tck = "1.2.2"
 titanium = "1.7.0"
 
 [libraries]
 
-# modules from tck-common
 tck-common-api = { module = "org.eclipse.dataspacetck.common:core-api", version.ref = "tck" }
 tck-core = { module = "org.eclipse.dataspacetck.common:core", version.ref = "tck" }
 tck-runtime = { module = "org.eclipse.dataspacetck.common:tck-runtime", version.ref = "tck" }
@@ -45,5 +44,4 @@ restAssured = { module = "io.rest-assured:rest-assured", version.ref = "restAssu
 [plugins]
 docker = { id = "com.bmuschko.docker-remote-api", version = "10.0.0" }
 shadow = { id = "com.gradleup.shadow", version = "9.5.1" }
-nexuspublishing = { id = "io.github.gradle-nexus.publish-plugin", version = "2.0.0" }
-tck-build = { id = "org.eclipse.dataspacetck.build.tck-build", version.ref = "tck" }
+tck-build = { id = "org.eclipse.dataspacetck.build.tck-build", version = "1.2.1" }
