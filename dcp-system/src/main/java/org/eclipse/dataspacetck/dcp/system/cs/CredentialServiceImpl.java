@@ -152,7 +152,7 @@ public class CredentialServiceImpl implements CredentialService {
                             .filter(f -> f.profileString.equals(cred.format()))
                             .findFirst()
                             .orElseThrow(() -> new IllegalArgumentException("Unknown format: " + cred.format()));
-                    var container = new VcContainer(cred.payload(), createCredential(cred), format);
+                    var container = new VcContainer(cred.credentialType(), cred.payload(), createCredential(cred), format);
                     credentialsByType.computeIfAbsent(cred.credentialType(), k -> new ArrayList<>()).add(container);
                 });
         return success();

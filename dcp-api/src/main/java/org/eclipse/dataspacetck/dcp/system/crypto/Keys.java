@@ -22,6 +22,7 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -35,6 +36,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.EdECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.EdECPoint;
+import java.text.ParseException;
 
 import static com.nimbusds.jose.util.Base64URL.encode;
 import static java.util.UUID.randomUUID;
@@ -70,6 +72,32 @@ public class Keys {
                     .generate();
         } catch (JOSEException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static ECKey parseEcKey(String encodedKey) {
+        try {
+            return ECKey.parse(encodedKey);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Creates a verifier for the given public JWK, supporting EC, OKP (Ed25519) and RSA keys.
+     */
+    public static JWSVerifier createVerifier(JWK jwk) {
+        try {
+            if (jwk instanceof OctetKeyPair okp) {
+                return new Ed25519Verifier(okp.toPublicJWK());
+            } else if (jwk instanceof ECKey ecKey) {
+                return createEcdsaVerifier(ecKey.toECPublicKey());
+            } else if (jwk instanceof RSAKey rsaKey) {
+                return new RSASSAVerifier(rsaKey.toRSAPublicKey());
+            }
+            throw new IllegalArgumentException("Unsupported key type: " + jwk.getKeyType());
+        } catch (JOSEException e) {
+            throw new RuntimeException("Error creating verifier for key type: " + jwk.getKeyType(), e);
         }
     }
 

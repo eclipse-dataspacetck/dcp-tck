@@ -5,6 +5,7 @@ format.version = "1.1"
 assertj = "3.27.7"
 awaitility = "4.3.0"
 bouncyCastle-jdk18on = "1.84"
+tink = "1.21.0"
 junit = "6.1.1"
 jackson = "2.22.1"
 jsonapi = "2.0.1"
@@ -39,7 +40,7 @@ schema-validator = { module = "com.networknt:json-schema-validator", version.ref
 slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 titanium = { module = "com.apicatalog:titanium-json-ld", version.ref = "titanium" }
 restAssured = { module = "io.rest-assured:rest-assured", version.ref = "restAssured" }
-
+tink = { module = "com.google.crypto.tink:tink", version.ref = "tink" }
 
 [plugins]
 docker = { id = "com.bmuschko.docker-remote-api", version = "10.0.0" }

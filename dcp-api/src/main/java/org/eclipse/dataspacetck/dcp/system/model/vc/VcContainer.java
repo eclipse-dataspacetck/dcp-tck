@@ -19,7 +19,8 @@ import static java.util.Objects.requireNonNull;
 /**
  * Holds a raw VC, its deserialized representation, and the format.
  */
-public record VcContainer(String rawCredential, VerifiableCredential credential, CredentialFormat format) {
+public record VcContainer(String credentialType, String rawCredential, VerifiableCredential credential,
+                          CredentialFormat format) {
     public VcContainer {
         requireNonNull(rawCredential, "rawCredential");
         requireNonNull(credential, "credential");
