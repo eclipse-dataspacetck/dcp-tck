@@ -30,6 +30,7 @@ import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.DCP_NAMES
 public abstract class AbstractProtocolHandler implements ProtocolHandler {
     protected static final String PRESENTATION_EXCHANGE_PREFIX = "https://identity.foundation/";
     protected static final String CLASSPATH_SCHEMA = "classpath:/";
+    protected static final String DCP_CLASSPATH_SCHEMA = "classpath:/dcp/";
 
     protected Schema schema;
 
@@ -37,7 +38,7 @@ public abstract class AbstractProtocolHandler implements ProtocolHandler {
         var dialects = List.of(Dialects.getDraft201909(), Dialects.getDraft202012(), Dialects.getDraft7(), Dialects.getDraft4());
         var schemaFactory = SchemaRegistry.withDialects(dialects, builder ->
                 builder.schemaIdResolvers(schemaIdResolvers ->
-                        schemaIdResolvers.mapPrefix(DCP_NAMESPACE + "/", CLASSPATH_SCHEMA)
+                        schemaIdResolvers.mapPrefix(DCP_NAMESPACE + "/", DCP_CLASSPATH_SCHEMA)
                                 .mapPrefix(PRESENTATION_EXCHANGE_PREFIX, CLASSPATH_SCHEMA))
         );
 

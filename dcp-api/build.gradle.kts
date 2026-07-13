@@ -16,4 +16,5 @@
 dependencies {
     implementation(rootProject.libs.nimbus.jwt)
     implementation(rootProject.libs.tck.core)
+    implementation(rootProject.libs.tink)
 }

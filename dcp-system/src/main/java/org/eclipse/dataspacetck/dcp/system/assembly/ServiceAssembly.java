@@ -61,6 +61,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -162,7 +163,7 @@ public class ServiceAssembly {
         var token = baseAssembly.getIssuerKeyService().sign(Collections.emptyMap(), claimSet);
 
         try {
-            sendCredentialMessage(baseAssembly, correlation, membershipContainer, sensitiveDataContainer, token);
+            sendCredentialMessage(baseAssembly, correlation, token, membershipContainer, sensitiveDataContainer);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -173,9 +174,17 @@ public class ServiceAssembly {
     public VcContainer createVcContainer(String issuerDid, String holderDid,
                                          JwtCredentialGenerator credentialGenerator,
                                          String credentialType) {
-        var credential = createCredential(issuerDid, holderDid, credentialType);
+        return createVcContainer(issuerDid, holderDid, credentialGenerator, credentialType, Map.of("id", holderDid, "foo", "bar"));
+    }
+
+    @NotNull
+    public VcContainer createVcContainer(String issuerDid, String holderDid,
+                                         JwtCredentialGenerator credentialGenerator,
+                                         String credentialType,
+                                         Map<String, Object> subjectProperties) {
+        var credential = createCredential(issuerDid, holderDid, credentialType, subjectProperties);
         var result = credentialGenerator.generateCredential(credential);
-        return new VcContainer(result.getContent(), credential, VC1_0_JWT);
+        return new VcContainer(credentialType, result.getContent(), credential, VC1_0_JWT);
     }
 
     private Map<String, CredentialObject> buildSupportedCredentials() {
@@ -216,22 +225,20 @@ public class ServiceAssembly {
         };
     }
 
-    private void sendCredentialMessage(BaseAssembly baseAssembly, String correlation, VcContainer membershipContainer, VcContainer sensitiveDataContainer, String token) throws JsonProcessingException {
+    protected void sendCredentialMessage(BaseAssembly baseAssembly, String correlation, String token, VcContainer... credentials) throws JsonProcessingException {
+
+
+        var credentialsPayload = Stream.of(credentials).map(vc -> Map.of(
+                "credentialType", vc.credentialType(),
+                "format", VC1_0_JWT.profileString,
+                "payload", vc.rawCredential()
+        )).toList();
+
         var credentialsObject = DcpMessageBuilder.newInstance()
                 .type(CREDENTIAL_MESSAGE_TYPE)
                 .property("issuerPid", UUID.randomUUID().toString())
                 .property("holderPid", correlation)
-                .property("credentials", List.of(
-                        Map.of(
-                                "credentialType", MEMBERSHIP_CREDENTIAL_TYPE,
-                                "format", VC1_0_JWT.profileString,
-                                "payload", membershipContainer.rawCredential()
-                        ),
-                        Map.of(
-                                "credentialType", SENSITIVE_DATA_CREDENTIAL_TYPE,
-                                "format", VC1_0_JWT.profileString,
-                                "payload", sensitiveDataContainer.rawCredential()
-                        )))
+                .property("credentials", credentialsPayload)
                 .property("status", "ISSUED");
 
         var msg = baseAssembly.getMapper().writeValueAsString(credentialsObject.build());
@@ -269,6 +276,10 @@ public class ServiceAssembly {
     }
 
     private VerifiableCredential createCredential(String issuerDid, String holderDid, String credentialType) {
+        return createCredential(issuerDid, holderDid, credentialType, Map.of("id", holderDid, "foo", "bar"));
+    }
+
+    private VerifiableCredential createCredential(String issuerDid, String holderDid, String credentialType, Map<String, Object> subjectProperties) {
         return VerifiableCredential.Builder.newInstance()
                 .id(randomUUID().toString())
                 .issuanceDate(Instant.now().toString())
@@ -277,7 +288,7 @@ public class ServiceAssembly {
                 .type(Stream.of("VerifiableCredential", credentialType).distinct().toList())
                 .context(List.of(CredentialConstants.CONTEXT_V1))
                 // credential subject cannot be empty
-                .credentialSubject(Map.of("id", holderDid, "foo", "bar"))
+                .credentialSubject(Optional.ofNullable(subjectProperties).orElse(Map.of("id", holderDid, "foo", "bar")))
                 .build();
 
     }

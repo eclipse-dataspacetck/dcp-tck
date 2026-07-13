@@ -27,6 +27,7 @@ import org.eclipse.dataspacetck.dcp.system.did.IssuerDidService;
 
 import java.net.URI;
 import java.util.Objects;
+import java.util.Optional;
 
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
@@ -67,15 +68,22 @@ public class BaseAssembly {
         this.verifierDid = Objects.requireNonNullElseGet(verifierDid, () -> parseDid("verifier"));
         var id = configuration.getPropertyAsString(TCK_PREFIX + ".did.issuer", null);
         issuerDid = Objects.requireNonNullElseGet(id, () -> parseDid("issuer"));
+        var issuerKey = Optional.ofNullable(configuration.getPropertyAsString(TCK_PREFIX + ".key.issuer", null))
+                .map(Keys::parseEcKey)
+                .orElseGet(Keys::generateEcKey);
+
         var did3p = configuration.getPropertyAsString(TCK_PREFIX + ".did.thirdparty", null);
         this.thirdPartyDid = Objects.requireNonNullElseGet(did3p, () -> parseDid("thirdparty"));
-        issuerKeyService = new KeyServiceImpl(Keys.generateEcKey());
+        issuerKeyService = new KeyServiceImpl(issuerKey);
         issuerDidService = new IssuerDidService(issuerDid, address, issuerKeyService);
         issuerTokenService = new TokenValidationServiceImpl(issuerDid);
 
         var hd = configuration.getPropertyAsString(TCK_PREFIX + ".did.holder", null);
+        var key = Optional.ofNullable(configuration.getPropertyAsString(TCK_PREFIX + ".key.holder", null))
+                .map(Keys::parseEcKey)
+                .orElseGet(Keys::generateEcKey);
         holderDid = Objects.requireNonNullElseGet(hd, () -> parseDid("holder"));
-        holderKeyService = new KeyServiceImpl(Keys.generateEcKey());
+        holderKeyService = new KeyServiceImpl(key);
         holderDidService = new DidServiceImpl(holderDid, address, holderKeyService);
         holderTokenService = new TokenValidationServiceImpl(holderDid);
 

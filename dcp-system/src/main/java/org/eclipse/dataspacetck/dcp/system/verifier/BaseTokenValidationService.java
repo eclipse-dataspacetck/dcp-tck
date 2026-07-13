@@ -122,7 +122,7 @@ public class BaseTokenValidationService implements TokenValidationService {
     @NotNull
     protected Result<JWT> verifySignature(SignedJWT jwt, VerificationMethod method) throws ParseException, JOSEException {
         var key = JWK.parse(method.getPublicKeyJwk());
-        var result = jwt.verify(createVerifier(key.toECKey().toPublicKey()));
+        var result = jwt.verify(createVerifier(key));
         return result ? success(jwt) : failure("JWT verification failed");
     }
 }

@@ -100,11 +100,10 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
     }
 
 
-
     @DisplayName("5.4.2.3 Verifier should reject an empty 'presentation' array")
     @MandatoryTest
     void verifier_05_04_02_03_presentationResponse_emptyPresentations(@AuthToken(SENSITIVE_DATA_SCOPE) String authToken,
-                                                 @Holder CredentialService holderCredentialService) {
+                                                                      @Holder CredentialService holderCredentialService) {
         var request = createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage());
 
         holderCredentialService.withDelegate(new PresentationProvider() {
@@ -122,7 +121,7 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
     @DisplayName("5.4.2.4 Verifier should reject an a presentation where a requested credential is missing")
     @MandatoryTest
     void verifier_05_04_02_04_presentationResponse_emptyCredentials(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
-                                               @Holder CredentialService holderCredentialService) {
+                                                                    @Holder CredentialService holderCredentialService) {
         var request = createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage());
 
         holderCredentialService.withDelegate(new PresentationProvider() {
@@ -137,8 +136,8 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
     @MandatoryTest
     @DisplayName("5.4.3 Verifier should reject Presentations where the holder does not match the credentialSubject.id")
     void verifier_05_04_03_presentationResponse_holderNotEqualSubjectId(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
-                                                      @Did(RoleType.THIRD_PARTY) String thirdPartyDid,
-                                                      @Holder CredentialService holderCredentialService) {
+                                                                        @Did(RoleType.THIRD_PARTY) String thirdPartyDid,
+                                                                        @Holder CredentialService holderCredentialService) {
 
         var request = createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage());
 
@@ -157,12 +156,11 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
     }
 
 
-
     @MandatoryTest
     @DisplayName("5.4.3.7 Verifier should reject an expired credential")
     void verifier_05_04_03_07_presentationResponse_expiredCredential(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
-                                                @TriggerEndpoint String triggerEndpoint,
-                                                @Holder CredentialService holderCredentialService) {
+                                                                     @TriggerEndpoint String triggerEndpoint,
+                                                                     @Holder CredentialService holderCredentialService) {
         holderCredentialService.withDelegate(new PresentationProvider() {
             @Override
             public Result<Map<String, Object>> presentationQueryMessage(String bearerDid, String accessToken, Map<String, Object> message) {
@@ -211,8 +209,8 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
     @MandatoryTest
     @DisplayName("5.4.3.6 Verifier should reject a credential that is not yet valid")
     void verifier_05_04_03_06_presentationResponse_notYetValidCredential(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
-                                                    @TriggerEndpoint String triggerEndpoint,
-                                                    @Holder CredentialService holderCredentialService) {
+                                                                         @TriggerEndpoint String triggerEndpoint,
+                                                                         @Holder CredentialService holderCredentialService) {
         holderCredentialService.withDelegate(new PresentationProvider() {
             @Override
             public Result<Map<String, Object>> presentationQueryMessage(String bearerDid, String accessToken, Map<String, Object> message) {
@@ -231,9 +229,9 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
     @MandatoryTest
     @DisplayName("X.X Verifier should reject Presentations where at least 1 credential schema is violated")
     void verifier_x_x_presentationResponse_invalidCredentialSchema(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
-                                                      @TriggerEndpoint String triggerEndpoint,
-                                                      @Holder CredentialService holderCredentialService,
-                                                      CredentialRevocationService srv) {
+                                                                   @TriggerEndpoint String triggerEndpoint,
+                                                                   @Holder CredentialService holderCredentialService,
+                                                                   CredentialRevocationService srv) {
         holderCredentialService.withDelegate(new PresentationProvider() {
             @Override
             public Result<Map<String, Object>> presentationQueryMessage(String bearerDid, String accessToken, Map<String, Object> message) {
@@ -269,7 +267,7 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
 
             var containers = Stream.of(credentials).map(cred -> {
                 var rawJwt = new JwtCredentialGenerator(issuerDid, issuerKeyService).generateCredential(cred);
-                return new VcContainer(rawJwt.getContent(), cred, CredentialFormat.VC1_0_JWT);
+                return new VcContainer(MEMBERSHIP_CREDENTIAL_TYPE, rawJwt.getContent(), cred, CredentialFormat.VC1_0_JWT);
             }).toList();
 
             // error: should be 'holderDid' instead!
