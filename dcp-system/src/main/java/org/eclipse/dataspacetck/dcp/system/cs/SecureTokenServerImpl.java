@@ -34,12 +34,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
 import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_PREFIX;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE_TYPE_ALIAS;
+import static org.eclipse.dataspacetck.dcp.system.cs.CredentialServiceImpl.DEFAULT_SCOPE_PATTERN;
+import static org.eclipse.dataspacetck.dcp.system.cs.CredentialServiceImpl.validateScopePattern;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.failure;
 import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
 
@@ -48,13 +50,19 @@ public class SecureTokenServerImpl implements SecureTokenServer {
     private final String stsUrl;
     private final String stsClientId;
     private final String stsClientSecret;
+    private final Pattern scopePattern;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
     public SecureTokenServerImpl(ServiceConfiguration configuration) {
+        this(configuration, DEFAULT_SCOPE_PATTERN);
+    }
+
+    public SecureTokenServerImpl(ServiceConfiguration configuration, Pattern scopePattern) {
         this.stsUrl = configuration.getPropertyAsString(TCK_PREFIX + ".sts.url", null);
         this.stsClientId = configuration.getPropertyAsString(TCK_PREFIX + ".sts.client.id", null);
         this.stsClientSecret = configuration.getPropertyAsString(TCK_PREFIX + ".sts.client.secret", null);
+        this.scopePattern = validateScopePattern(scopePattern);
     }
 
     @Override
@@ -120,10 +128,11 @@ public class SecureTokenServerImpl implements SecureTokenServer {
     @NotNull
     private String transformScopes(List<String> scopes) {
         return scopes.stream().map(scope -> {
-            if (!scope.startsWith(SCOPE_TYPE_ALIAS)) {
+            var matcher = scopePattern.matcher(scope);
+            if (!matcher.matches()) {
                 throw new IllegalArgumentException("Invalid scope: " + scope);
             }
-            return scope.substring(SCOPE_TYPE_ALIAS.length());
+            return matcher.group("type");
         }).collect(Collectors.joining(","));
     }
 

@@ -54,13 +54,14 @@ import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
  * Implementation used for test verification.
  */
 public class CredentialServiceImpl implements CredentialService {
-    public static final Pattern SCOPE_PATTERN = Pattern.compile("(org.eclipse.dspace.dcp.vc.type):(?<type>.*):(.*)");
+    public static final Pattern DEFAULT_SCOPE_PATTERN = Pattern.compile("(org.eclipse.dspace.dcp.vc.type):(?<type>.*):(.*)");
     private final SecureTokenServer secureTokenServer;
     private final String holderDid;
     private final Map<PresentationGenerator.PresentationFormat, PresentationGenerator> generators;
     private final Map<String, List<VcContainer>> credentialsByType = new ConcurrentHashMap<>();
     private final TokenValidationService tokenService;
     private final ObjectMapper mapper;
+    private final Pattern scopePattern;
     private CredentialService delegate;
 
     public CredentialServiceImpl(String holderDid,
@@ -68,11 +69,31 @@ public class CredentialServiceImpl implements CredentialService {
                                  SecureTokenServer secureTokenServer,
                                  TokenValidationService tokenService,
                                  ObjectMapper mapper) {
+        this(holderDid, generators, secureTokenServer, tokenService, mapper, DEFAULT_SCOPE_PATTERN);
+    }
+
+    public CredentialServiceImpl(String holderDid,
+                                 List<PresentationGenerator> generators,
+                                 SecureTokenServer secureTokenServer,
+                                 TokenValidationService tokenService,
+                                 ObjectMapper mapper,
+                                 Pattern scopePattern) {
         this.generators = generators.stream().collect(toMap(PresentationGenerator::getFormat, v -> v));
         this.holderDid = holderDid;
         this.secureTokenServer = secureTokenServer;
         this.tokenService = tokenService;
         this.mapper = mapper;
+        this.scopePattern = validateScopePattern(scopePattern);
+    }
+
+    /**
+     * The credential type is read from the {@code type} group, so a custom pattern must declare it.
+     */
+    static Pattern validateScopePattern(Pattern scopePattern) {
+        if (!scopePattern.pattern().contains("(?<type>")) {
+            throw new IllegalArgumentException("Scope pattern must declare a named group 'type': " + scopePattern.pattern());
+        }
+        return scopePattern;
     }
 
     @Override
@@ -173,7 +194,7 @@ public class CredentialServiceImpl implements CredentialService {
         var requestedScopes = (List<String>) message.get(SCOPE);
         var scopeTypes = new ArrayList<String>();
         for (var requestedScope : requestedScopes) {
-            var matcher = SCOPE_PATTERN.matcher(requestedScope);
+            var matcher = scopePattern.matcher(requestedScope);
             if (!matcher.matches()) {
                 return failure("Invalid scope type: " + requestedScope);
             }

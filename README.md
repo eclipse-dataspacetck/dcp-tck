@@ -183,6 +183,7 @@ The TCK supports the following configuration values:
 | `dataspacetck.did.thirdparty`       | the DID of the third-party, i.e. an unauthorized/invalid entity.<br>This DID document must be [resolvable](https://w3c-ccg.github.io/did-method-web/#read-resolve) at this URL | `did:web:localhost%3A4711:verifier`                         | for VPP tests   |
 | `dataspacetck.vpp.trigger.endpoint` | A URL that the TCK can use to kick off the Presentation Flow.                                                                                                                  | `http://localhost:8083/api/protocol/2025/1/catalog/request` | yes             |
 | `dataspacetck.revocation.type`      | The type of revocation list to use. Must be either `"bitstringstatuslist"` (default) or `"revocationlist2020"`.                                                                | `bitstringstatuslist`                                       | no              |
+| `dataspacetck.vc.scope.pattern`     | The regular expression used to extract the credential type from a requested scope.<br/>Must declare a named group `type`. Defaults to the DCP scope grammar.                   | `(org.eclipse.dspace.dcp.vc.type):(?<type>.*):(.*)`         | no              |
 
 Test package: `"org.eclipse.dataspacetck.dcp.verification.presentation.verifier"`
 
