@@ -45,4 +45,4 @@ tink = { module = "com.google.crypto.tink:tink", version.ref = "tink" }
 [plugins]
 docker = { id = "com.bmuschko.docker-remote-api", version = "10.0.0" }
 shadow = { id = "com.gradleup.shadow", version = "9.6.0" }
-tck-build = { id = "org.eclipse.dataspacetck.build.tck-build", version = "1.2.1" }
+tck-build = { id = "org.eclipse.dataspacetck.build.tck-build", version = "1.2.2" }
