@@ -189,7 +189,16 @@ public class ServiceAssembly {
                                          JwtCredentialGenerator credentialGenerator,
                                          String credentialType,
                                          Map<String, Object> subjectProperties) {
-        var credential = createCredential(issuerDid, holderDid, credentialType, subjectProperties);
+        return createVcContainer(issuerDid, holderDid, credentialGenerator, List.of(), credentialType, subjectProperties);
+    }
+
+    @NotNull
+    public VcContainer createVcContainer(String issuerDid, String holderDid,
+                                         JwtCredentialGenerator credentialGenerator,
+                                         List<String> additionalContext,
+                                         String credentialType,
+                                         Map<String, Object> subjectProperties) {
+        var credential = createCredential(issuerDid, holderDid, additionalContext, credentialType, subjectProperties);
         var result = credentialGenerator.generateCredential(credential);
         return new VcContainer(credentialType, result.getContent(), credential, VC1_0_JWT);
     }
@@ -283,17 +292,18 @@ public class ServiceAssembly {
     }
 
     private VerifiableCredential createCredential(String issuerDid, String holderDid, String credentialType) {
-        return createCredential(issuerDid, holderDid, credentialType, Map.of("id", holderDid, "foo", "bar"));
+        return createCredential(issuerDid, holderDid, List.of(), credentialType, Map.of("id", holderDid, "foo", "bar"));
     }
 
-    private VerifiableCredential createCredential(String issuerDid, String holderDid, String credentialType, Map<String, Object> subjectProperties) {
+    private VerifiableCredential createCredential(String issuerDid, String holderDid, List<String> additionalContext, String credentialType, Map<String, Object> subjectProperties) {
+        var context = Stream.concat(Stream.of(CredentialConstants.CONTEXT_V1), additionalContext.stream()).distinct().toList();
         return VerifiableCredential.Builder.newInstance()
                 .id(randomUUID().toString())
                 .issuanceDate(Instant.now().toString())
                 .expirationDate(Instant.now().plusSeconds(600).toString())
                 .issuer(issuerDid)
                 .type(Stream.of("VerifiableCredential", credentialType).distinct().toList())
-                .context(List.of(CredentialConstants.CONTEXT_V1))
+                .context(context)
                 // credential subject cannot be empty
                 .credentialSubject(Optional.ofNullable(subjectProperties).orElse(Map.of("id", holderDid, "foo", "bar")))
                 .build();
