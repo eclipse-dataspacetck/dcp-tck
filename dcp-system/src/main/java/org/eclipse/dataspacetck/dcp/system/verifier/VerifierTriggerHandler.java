@@ -57,7 +57,6 @@ import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TOKEN;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VC;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VERIFIABLE_CREDENTIAL_CLAIM;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.VP;
-import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_SCOPE;
 import static org.eclipse.dataspacetck.dcp.system.util.Parsers.parseBearerToken;
 import static org.eclipse.dataspacetck.dcp.system.util.Validators.validateBearerTokenHeader;
 
@@ -69,10 +68,12 @@ public class VerifierTriggerHandler extends AbstractProtocolHandler {
     private final String verifierDid;
     private final TokenValidationService credentialValidationService;
     private final CredentialRevocationService credentialRevocationService;
+    private final String membershipScope;
 
     public VerifierTriggerHandler(TokenValidationService tokenService, ObjectMapper objectMapper,
                                   KeyService keyService, String verifierDid,
-                                  TokenValidationService credentialValidationService, CredentialRevocationService credentialRevocationService) {
+                                  TokenValidationService credentialValidationService, CredentialRevocationService credentialRevocationService,
+                                  String membershipScope) {
         super("/credential-schemas/membership-credential-schema.json");
         this.tokenService = tokenService;
         this.objectMapper = objectMapper;
@@ -80,6 +81,7 @@ public class VerifierTriggerHandler extends AbstractProtocolHandler {
         this.verifierDid = verifierDid;
         this.credentialValidationService = credentialValidationService;
         this.credentialRevocationService = credentialRevocationService;
+        this.membershipScope = membershipScope;
         this.httpClient = new OkHttpClient();
     }
 
@@ -255,7 +257,7 @@ public class VerifierTriggerHandler extends AbstractProtocolHandler {
     private Map<String, Object> createPresentationMessage() {
         return DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
-                .property(SCOPE, List.of(MEMBERSHIP_SCOPE))
+                .property(SCOPE, List.of(membershipScope))
                 .build();
     }
 

@@ -88,7 +88,7 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
     @DisplayName("5.4.2.1 Verifier should reject a presentation response message that contains a different credential than requested")
     @MandatoryTest
     @IssueCredentials({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE})
-    void verifier_05_04_02_01_presentationResponse_tooFewCredentials(@AuthToken("org.eclipse.dspace.dcp.vc.type:SomeOtherCredential:read") String authToken) {
+    void verifier_05_04_02_01_presentationResponse_tooFewCredentials(@AuthToken("org.eclipse.dspace.dcp.vc.type:SomeOtherCredential") String authToken) {
         executeRequest(createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 

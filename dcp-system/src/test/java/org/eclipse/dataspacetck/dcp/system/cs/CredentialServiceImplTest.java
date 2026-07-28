@@ -50,7 +50,8 @@ class CredentialServiceImplTest {
     private static final String HOLDER_DID = "did:web:localhost%3A8083:holder";
     private static final String VERIFIER_DID = "did:web:localhost%3A8083:verifier";
     private static final String CUSTOM_SCOPE = "my.scope:" + MEMBERSHIP_CREDENTIAL_TYPE + ":read";
-    private static final Pattern CUSTOM_SCOPE_PATTERN = Pattern.compile("my.scope:(?<type>.*):(.*)");
+    private static final Pattern CUSTOM_SCOPE_PATTERN = Pattern.compile(
+            "my\\.scope:(?<type>[^:]+)(?<suffix>:.+)?");
 
     private final SecureTokenServer secureTokenServer = mock();
     private final TokenValidationService tokenService = mock();

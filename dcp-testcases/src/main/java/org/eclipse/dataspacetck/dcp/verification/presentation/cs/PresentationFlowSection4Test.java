@@ -216,7 +216,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
     private Map<String, Object> createMessage() {
         return DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
-                .property(SCOPE, List.of(MEMBERSHIP_SCOPE))
+                .property(SCOPE, List.of(scopeFor(MEMBERSHIP_CREDENTIAL_TYPE)))
                 .build();
     }
 
