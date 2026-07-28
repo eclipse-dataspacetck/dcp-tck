@@ -44,7 +44,7 @@ class JwtCredentialGeneratorTest {
     void verifyGeneration() throws ParseException, JOSEException {
         var credential = VerifiableCredential.Builder.newInstance()
                 .credentialSubject(Map.of("id", SUBJECT_DID, "memberLevel", "gold"))
-                .id(randomUUID().toString())
+                .id("urn:uuid:" + randomUUID())
                 .issuanceDate(now().toString())
                 .expirationDate(now().plusSeconds(600).toString())
                 .issuer(ISSUER_DID)
@@ -68,7 +68,7 @@ class JwtCredentialGeneratorTest {
     void verifyGeneration_noSubjectId_throwsException() {
         var credential = VerifiableCredential.Builder.newInstance()
                 .credentialSubject(Map.of("memberLevel", "gold"))
-                .id(randomUUID().toString())
+                .id("urn:uuid:" + randomUUID())
                 .issuanceDate(now().toString())
                 .expirationDate(now().plusSeconds(600).toString())
                 .issuer(ISSUER_DID)

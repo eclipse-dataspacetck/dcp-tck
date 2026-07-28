@@ -133,7 +133,7 @@ class CredentialServiceImplTest {
 
     private void seedMembershipCredential(CredentialServiceImpl service) {
         var credential = VerifiableCredential.Builder.newInstance()
-                .id(randomUUID().toString())
+                .id("urn:uuid:" + randomUUID())
                 .issuanceDate(now().toString())
                 .expirationDate(now().plusSeconds(600).toString())
                 .issuer(ISSUER_DID)

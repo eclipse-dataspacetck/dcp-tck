@@ -298,7 +298,7 @@ public class ServiceAssembly {
     private VerifiableCredential createCredential(String issuerDid, String holderDid, List<String> additionalContext, String credentialType, Map<String, Object> subjectProperties) {
         var context = Stream.concat(Stream.of(CredentialConstants.CONTEXT_V1), additionalContext.stream()).distinct().toList();
         return VerifiableCredential.Builder.newInstance()
-                .id(randomUUID().toString())
+                .id("urn:uuid:" + randomUUID())
                 .issuanceDate(Instant.now().toString())
                 .expirationDate(Instant.now().plusSeconds(600).toString())
                 .issuer(issuerDid)

@@ -255,7 +255,7 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
 
         VerifiableCredential.Builder createCredential() {
             return VerifiableCredential.Builder.newInstance()
-                    .id(randomUUID().toString())
+                    .id("urn:uuid:" + randomUUID())
                     .issuanceDate(Instant.now().toString())
                     .issuer(issuerDid)
                     .type(List.of(MEMBERSHIP_CREDENTIAL_TYPE))
