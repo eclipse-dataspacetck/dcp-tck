@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2025 Metaform Systems, Inc.
+ *  Copyright (c) 2025 TNO
  *
  *  This program and the accompanying materials are made available under the
  *  terms of the Apache License, Version 2.0 which is available at
@@ -8,7 +8,7 @@
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Contributors:
- *       Metaform Systems, Inc. - initial API and implementation
+ *       TNO - initial API and implementation
  *
  */
 
@@ -66,14 +66,14 @@ class ScopeConfigurationTest {
                 .thenReturn(scope);
         var scopeConfiguration = new ScopeConfiguration(configuration, pattern);
 
-        assertThat(scopeConfiguration.resolveScope(SCOPE_TYPE + MEMBERSHIP_CREDENTIAL_TYPE)).isEqualTo(scope);
+        assertThat(scopeConfiguration.mapToConfiguredScope(SCOPE_TYPE + MEMBERSHIP_CREDENTIAL_TYPE)).isEqualTo(scope);
     }
 
     @Test
     void preservesLiteralScope() {
         var scopeConfiguration = new ScopeConfiguration(configuration, DEFAULT_SCOPE_PATTERN);
 
-        assertThat(scopeConfiguration.resolveScope("custom:literal:scope")).isEqualTo("custom:literal:scope");
+        assertThat(scopeConfiguration.mapToConfiguredScope("custom:literal:scope")).isEqualTo("custom:literal:scope");
     }
 
     @Test

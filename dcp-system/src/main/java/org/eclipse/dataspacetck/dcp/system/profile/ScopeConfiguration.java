@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2025 Metaform Systems, Inc.
+ *  Copyright (c) 2025 TNO
  *
  *  This program and the accompanying materials are made available under the
  *  terms of the Apache License, Version 2.0 which is available at
@@ -8,7 +8,7 @@
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Contributors:
- *       Metaform Systems, Inc. - initial API and implementation
+ *       TNO - initial API and implementation
  *
  */
 
@@ -28,13 +28,14 @@ import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE_TYP
  */
 public class ScopeConfiguration {
     private static final String SCOPE_PATTERN_PROPERTY = TCK_PREFIX + ".vc.scope.pattern";
+    private static final Pattern CANONICAL_SCOPE_PATTERN = DEFAULT_SCOPE_PATTERN;
 
     private final ServiceConfiguration configuration;
-    private final Pattern pattern;
+    private final Pattern configuredScopePattern;
 
-    public ScopeConfiguration(ServiceConfiguration configuration, Pattern pattern) {
+    public ScopeConfiguration(ServiceConfiguration configuration, Pattern configuredScopePattern) {
         this.configuration = configuration;
-        this.pattern = pattern;
+        this.configuredScopePattern = configuredScopePattern;
     }
 
     public static ScopeConfiguration from(ServiceConfiguration configuration) {
@@ -44,13 +45,13 @@ public class ScopeConfiguration {
     }
 
     public Pattern getPattern() {
-        return pattern;
+        return configuredScopePattern;
     }
 
     public String getScope(String credentialType) {
         var property = TCK_PREFIX + ".vc.scope." + credentialType.toLowerCase(Locale.ROOT);
         var scope = configuration.getPropertyAsString(property, SCOPE_TYPE + credentialType);
-        var matcher = pattern.matcher(scope);
+        var matcher = configuredScopePattern.matcher(scope);
         if (!matcher.matches()) {
             throw new IllegalArgumentException(
                     "Configured scope pattern does not match scope from '" + property + "': " + scope);
@@ -65,8 +66,8 @@ public class ScopeConfiguration {
     /**
      * Replaces a DCP credential type scope with its configured value. Other literal scopes are preserved.
      */
-    public String resolveScope(String scope) {
-        var matcher = DEFAULT_SCOPE_PATTERN.matcher(scope);
+    public String mapToConfiguredScope(String scope) {
+        var matcher = CANONICAL_SCOPE_PATTERN.matcher(scope);
         return matcher.matches() ? getScope(matcher.group("type")) : scope;
     }
 }

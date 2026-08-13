@@ -150,7 +150,7 @@ public class DcpSystemLauncher implements SystemLauncher {
 
     private <T> T createAuthToken(Class<T> type, ServiceConfiguration configuration, ServiceAssembly assembly) {
         var scopes = Arrays.stream(getAnnotation(AuthToken.class, configuration).orElseThrow().value())
-                .map(assembly.getScopeConfiguration()::resolveScope)
+                .map(assembly.getScopeConfiguration()::mapToConfiguredScope)
                 .toList();
         var tokenResult = assembly.getStsClient().obtainReadToken(baseAssembly.getVerifierDid(), scopes);
         if (tokenResult.failed()) {
