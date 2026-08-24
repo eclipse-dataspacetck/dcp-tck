@@ -16,6 +16,9 @@ package org.eclipse.dataspacetck.dcp.system.cs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.eclipse.dataspacetck.dcp.system.generation.PresentationGenerator;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat;
@@ -34,12 +37,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.eclipse.dataspacetck.dcp.system.generation.PresentationGenerator.PresentationFormat.JWT;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.ISSUER_METADATA_PATH;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.ISSUER_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_DEFINITION;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_RESPONSE_MESSAGE;
@@ -142,10 +149,51 @@ public class CredentialServiceImpl implements CredentialService {
                 return failure("Invalid message", BAD_REQUEST);
             }
 
-            return success();
+            return validateIdOnlyOffers(message);
         } catch (IOException e) {
             return failure("Invalid JSON: " + e.getMessage(), BAD_REQUEST);
         }
+    }
+
+    /**
+     * Credential objects that only contain an id reference must be resolvable against the issuer's metadata.
+     */
+    private Result<Void> validateIdOnlyOffers(CredentialOfferMessage message) {
+        var idOnlyOffers = message.getCredentials().stream()
+                .filter(credentialObject -> credentialObject.getType() == null && credentialObject.getCredentialType() == null)
+                .toList();
+        if (idOnlyOffers.isEmpty()) {
+            return success();
+        }
+        var supportedIds = resolveSupportedCredentialIds(message.getIssuer());
+        if (supportedIds.failed()) {
+            return failure(supportedIds.getFailure(), BAD_REQUEST);
+        }
+        var unknownIds = idOnlyOffers.stream()
+                .map(CredentialObject::getId)
+                .filter(id -> !supportedIds.getContent().contains(id))
+                .toList();
+        return unknownIds.isEmpty() ? success() : failure("Credential object ids not found in issuer metadata: " + unknownIds, BAD_REQUEST);
+    }
+
+    private Result<Set<String>> resolveSupportedCredentialIds(String issuerDid) {
+        try {
+            var didDocument = new DidClient(false).resolveDocument(issuerDid);
+            var serviceEntry = didDocument.getServiceEntry(ISSUER_SERVICE_TYPE);
+            var request = new Request.Builder().url(serviceEntry.serviceEndpoint() + ISSUER_METADATA_PATH).get().build();
+            try (var response = new OkHttpClient().newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    return failure("Error resolving issuer metadata: HTTP " + response.code());
+                }
+                var metadata = mapper.readValue(response.body().byteStream(), IssuerMetadata.class);
+                return success(metadata.credentialsSupported().stream().map(CredentialObject::getId).collect(toSet()));
+            }
+        } catch (Exception e) {
+            return failure("Error resolving issuer metadata: " + e.getMessage());
+        }
+    }
+
+    private record IssuerMetadata(Collection<CredentialObject> credentialsSupported) {
     }
 
     @Override
