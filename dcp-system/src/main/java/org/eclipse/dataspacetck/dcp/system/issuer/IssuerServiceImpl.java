@@ -137,7 +137,7 @@ public class IssuerServiceImpl implements IssuerService {
     private Result<String> generateJwtCredential(String type, JwtCredentialGenerator gen, String holderDid, String issuerDid) {
         return gen.generateCredential(VerifiableCredential.Builder.newInstance()
                 .credentialSubject(Map.of("id", holderDid))
-                .id(randomUUID().toString())
+                .id("urn:uuid:" + randomUUID())
                 .issuanceDate(now().toString())
                 .expirationDate(now().plusSeconds(600).toString())
                 .issuer(issuerDid)

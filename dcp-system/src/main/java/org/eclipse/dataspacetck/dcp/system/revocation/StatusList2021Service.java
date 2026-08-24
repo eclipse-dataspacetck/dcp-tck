@@ -26,7 +26,7 @@ public class StatusList2021Service implements CredentialRevocationService {
     public static final String REVOCATION = "revocation";
     private static final int LENGTH = 16 * 1024; // 16k bits
     private final BitString bitstring = BitString.Builder.newInstance().size(LENGTH).build();
-    private final String credentialId = UUID.randomUUID().toString();
+    private final String credentialId = "urn:uuid:" + UUID.randomUUID();
     private final String issuerDid;
     private final String address;
 
