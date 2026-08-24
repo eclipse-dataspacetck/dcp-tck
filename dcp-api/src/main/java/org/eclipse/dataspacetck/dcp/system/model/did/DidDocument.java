@@ -15,10 +15,10 @@ package org.eclipse.dataspacetck.dcp.system.model.did;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.ExtensibleModel;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonPOJOBuilder;
 
 import java.util.ArrayList;
 import java.util.List;

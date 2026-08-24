@@ -15,8 +15,8 @@
 package org.eclipse.dataspacetck.dcp.system.model.vc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.ExtensibleModel;
+import tools.jackson.databind.annotation.JsonPOJOBuilder;
 
 import java.util.List;
 

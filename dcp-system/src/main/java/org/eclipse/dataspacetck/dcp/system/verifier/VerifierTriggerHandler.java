@@ -14,7 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.system.verifier;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.InputFormat;
 import com.nimbusds.jwt.JWTClaimsSet;
 import okhttp3.MediaType;
@@ -34,6 +33,8 @@ import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
 import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationService;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.jetbrains.annotations.NotNull;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -223,7 +224,7 @@ public class VerifierTriggerHandler extends AbstractProtocolHandler {
             if (!isValidSchema) {
                 return Result.failure("Credential schema validation failed");
             }
-        } catch (ParseException | IOException e) {
+        } catch (ParseException | JacksonException e) {
             return Result.failure(e.getMessage());
         }
 

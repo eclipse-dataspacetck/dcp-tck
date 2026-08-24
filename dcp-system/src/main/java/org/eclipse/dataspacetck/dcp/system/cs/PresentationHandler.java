@@ -14,14 +14,14 @@
 
 package org.eclipse.dataspacetck.dcp.system.cs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Error;
 import com.networknt.schema.InputFormat;
 import org.eclipse.dataspacetck.core.api.system.HandlerResponse;
 import org.eclipse.dataspacetck.core.spi.boot.Monitor;
 import org.eclipse.dataspacetck.dcp.system.handler.AbstractProtocolHandler;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.List;
@@ -108,7 +108,7 @@ public class PresentationHandler extends AbstractProtocolHandler {
                 };
                 return new HandlerResponse(code, NULL_BODY);
             }
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new AssertionError(format("Error handling %s", PRESENTATION_QUERY_MESSAGE), e);
         } catch (ParseException e) {
             throw new AssertionError("Invalid access token", e);

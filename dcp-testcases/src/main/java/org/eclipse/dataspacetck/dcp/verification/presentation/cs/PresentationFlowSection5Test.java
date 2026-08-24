@@ -13,7 +13,6 @@
  */
 package org.eclipse.dataspacetck.dcp.verification.presentation.cs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -26,6 +25,7 @@ import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import tools.jackson.core.JacksonException;
 
 import java.util.List;
 import java.util.Map;
@@ -75,7 +75,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
                     .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(DcpConstants.JSON_CONTENT_TYPE)))
                     .build();
             executeRequest(request, TestFixtures::assert4xxCode);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new AssertionError(e);
         }
     }
