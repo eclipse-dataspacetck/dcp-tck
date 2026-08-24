@@ -16,6 +16,7 @@ package org.eclipse.dataspacetck.dcp.system.issuer;
 
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -26,4 +27,9 @@ public interface IssuerService {
     Result<String> processCredentialRequest(String idTokenJwt, Map<String, Object> credentialRequestMessage);
 
     Result<Map<String, String>> getCredentialStatus(String idTokenJwt, String id);
+
+    /**
+     * Returns the ids of the credential objects advertised in the issuer's metadata ({@code credentialsSupported}).
+     */
+    Collection<String> getSupportedCredentialIds();
 }

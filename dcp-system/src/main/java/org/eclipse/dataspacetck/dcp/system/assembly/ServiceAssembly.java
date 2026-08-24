@@ -139,6 +139,10 @@ public class ServiceAssembly {
         return credentialService;
     }
 
+    public IssuerService getIssuerService() {
+        return issuerService;
+    }
+
     public CredentialRevocationService getRevocationService() {
         return revocationService;
     }

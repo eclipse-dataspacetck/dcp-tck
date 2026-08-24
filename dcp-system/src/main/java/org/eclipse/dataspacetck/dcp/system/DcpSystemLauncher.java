@@ -34,6 +34,7 @@ import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialService;
 import org.eclipse.dataspacetck.dcp.system.did.DidService;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
+import org.eclipse.dataspacetck.dcp.system.issuer.IssuerService;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationService;
 import org.jetbrains.annotations.Nullable;
@@ -61,6 +62,7 @@ public class DcpSystemLauncher implements SystemLauncher {
     public <T> boolean providesService(Class<T> type) {
         return type.isAssignableFrom(CredentialService.class) ||
                 type.isAssignableFrom(CredentialRevocationService.class) ||
+                type.isAssignableFrom(IssuerService.class) ||
                 type.isAssignableFrom(DidService.class) ||
                 type.isAssignableFrom(String.class) ||
                 type.isAssignableFrom(KeyService.class) ||
@@ -76,6 +78,8 @@ public class DcpSystemLauncher implements SystemLauncher {
             return type.cast(assembly.getCredentialService());
         } else if (type.isAssignableFrom(CredentialRevocationService.class)) {
             return type.cast(assembly.getRevocationService());
+        } else if (type.isAssignableFrom(IssuerService.class)) {
+            return type.cast(assembly.getIssuerService());
         } else if (type.isAssignableFrom(VcContainer.class)) {
             if (hasAnnotation(Credential.class, configuration)) {
                 var gen = new JwtCredentialGenerator(baseAssembly.getIssuerDid(), baseAssembly.getIssuerKeyService());

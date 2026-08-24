@@ -34,6 +34,7 @@ import org.eclipse.dataspacetck.dcp.system.service.Result;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -62,6 +63,11 @@ public class IssuerServiceImpl implements IssuerService {
         this.issuerTokenValidationService = issuerTokenValidationService;
         this.supportedCredentials = supportedCredentials;
         objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
+
+    @Override
+    public Collection<String> getSupportedCredentialIds() {
+        return supportedCredentials.keySet();
     }
 
     @Override
