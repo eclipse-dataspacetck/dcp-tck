@@ -14,7 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.verification.issuance.cs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.ECDSASigner;
@@ -31,6 +30,7 @@ import org.eclipse.dataspacetck.dcp.system.annotation.HolderPid;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.junit.jupiter.api.DisplayName;
+import tools.jackson.core.JacksonException;
 
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -221,7 +221,7 @@ public class CredentialIssuanceTest extends AbstractCredentialIssuanceTest {
                 builder.addHeader(AUTHORIZATION, "Bearer " + authToken);
             }
             return builder;
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new AssertionError(e);
         }
     }

@@ -14,7 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.system.cs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.crypto.Keys;
@@ -25,6 +24,7 @@ import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 
 import java.text.ParseException;
 import java.util.List;
@@ -134,7 +134,7 @@ class CredentialServiceImplTest {
 
     private void seedMembershipCredential(CredentialServiceImpl service) {
         var credential = VerifiableCredential.Builder.newInstance()
-                .id(randomUUID().toString())
+                .id("urn:uuid:" + randomUUID())
                 .issuanceDate(now().toString())
                 .expirationDate(now().plusSeconds(600).toString())
                 .issuer(ISSUER_DID)

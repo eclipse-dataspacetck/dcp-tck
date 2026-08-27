@@ -14,10 +14,10 @@
 
 package org.eclipse.dataspacetck.dcp.system.issuer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.dataspacetck.core.api.system.HandlerResponse;
 import org.eclipse.dataspacetck.core.api.system.ProtocolHandler;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.InputStream;
 import java.util.List;
@@ -55,7 +55,7 @@ public class CredentialRequestHandler implements ProtocolHandler {
             try {
                 var json = objectMapper.writeValueAsString(result.getContent());
                 return new HandlerResponse(200, json);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 return new HandlerResponse(400, "Failed to serialize CredentialStatus");
             }
         }

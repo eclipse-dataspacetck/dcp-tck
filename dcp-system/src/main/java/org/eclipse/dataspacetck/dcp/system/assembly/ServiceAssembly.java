@@ -14,8 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.system.assembly;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.nimbusds.jwt.JWTClaimsSet;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -54,6 +52,8 @@ import org.eclipse.dataspacetck.dcp.system.sts.StsClient;
 import org.eclipse.dataspacetck.dcp.system.verifier.BaseTokenValidationService;
 import org.eclipse.dataspacetck.dcp.system.verifier.VerifierTriggerHandler;
 import org.jetbrains.annotations.NotNull;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -94,7 +94,8 @@ public class ServiceAssembly {
         scopeConfiguration = ScopeConfiguration.from(configuration);
         var scopePattern = scopeConfiguration.getPattern();
         secureTokenServer = new SecureTokenServerImpl(configuration, scopePattern);
-        credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer, baseAssembly.getHolderTokenService(), mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES), scopePattern);
+        var csMapper = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
+        credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer, baseAssembly.getHolderTokenService(), csMapper, scopePattern);
         issuerService = new IssuerServiceImpl(baseAssembly.getIssuerKeyService(), baseAssembly.getIssuerTokenService(), supportedCredentials);
         revocationService = createRevocationService(baseAssembly);
 
@@ -137,6 +138,10 @@ public class ServiceAssembly {
         return credentialService;
     }
 
+    public IssuerService getIssuerService() {
+        return issuerService;
+    }
+
     public CredentialRevocationService getRevocationService() {
         return revocationService;
     }
@@ -171,12 +176,7 @@ public class ServiceAssembly {
 
         var token = baseAssembly.getIssuerKeyService().sign(Collections.emptyMap(), claimSet);
 
-        try {
-            sendCredentialMessage(baseAssembly, correlation, token, membershipContainer, sensitiveDataContainer);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
+        sendCredentialMessage(baseAssembly, correlation, token, membershipContainer, sensitiveDataContainer);
     }
 
     @NotNull
@@ -243,7 +243,7 @@ public class ServiceAssembly {
         };
     }
 
-    protected void sendCredentialMessage(BaseAssembly baseAssembly, String correlation, String token, VcContainer... credentials) throws JsonProcessingException {
+    protected void sendCredentialMessage(BaseAssembly baseAssembly, String correlation, String token, VcContainer... credentials) {
 
 
         var credentialsPayload = Stream.of(credentials).map(vc -> Map.of(
@@ -300,7 +300,7 @@ public class ServiceAssembly {
     private VerifiableCredential createCredential(String issuerDid, String holderDid, List<String> additionalContext, String credentialType, Map<String, Object> subjectProperties) {
         var context = Stream.concat(Stream.of(CredentialConstants.CONTEXT_V1), additionalContext.stream()).distinct().toList();
         return VerifiableCredential.Builder.newInstance()
-                .id(randomUUID().toString())
+                .id("urn:uuid:" + randomUUID())
                 .issuanceDate(Instant.now().toString())
                 .expirationDate(Instant.now().plusSeconds(600).toString())
                 .issuer(issuerDid)

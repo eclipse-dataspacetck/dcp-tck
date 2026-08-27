@@ -14,7 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.verification.issuance.cs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.ECDSASigner;
@@ -26,10 +25,13 @@ import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.api.system.MandatoryTest;
+import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.dcp.system.annotation.Did;
+import org.eclipse.dataspacetck.dcp.system.issuer.IssuerService;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.junit.jupiter.api.DisplayName;
+import tools.jackson.core.JacksonException;
 
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -54,6 +56,9 @@ import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.re
  */
 public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
 
+    @Inject
+    protected IssuerService issuerService;
+
     @MandatoryTest
     @DisplayName("6.6.1 CredentialService should accept CredentialOfferMessage")
     void cs_06_06_01_credentialOfferMessage() {
@@ -65,8 +70,24 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.6.1 CredentialService should accept CredentialOfferMessage (only IDs)")
-    void cs_06_06_01_credentialOfferMessage_onlyIds() {
+    @DisplayName("6.6.1 CredentialService should accept sparse CredentialOfferMessage (only IDs)")
+    void cs_06_06_01_credentialOfferMessage_sparse() {
+        // reference credentials by id only - the ids must match entries in the issuer's metadata,
+        // because the CredentialService may resolve them against credentialsSupported
+        var msg = createCredentialOfferMessage()
+                .property("credentials", issuerService.getSupportedCredentialIds().stream()
+                        .map(id -> Map.of("id", id))
+                        .toList())
+                .build();
+
+        var token = createToken(createClaims().build());
+        var request = createCredentialOfferMessageRequest(token, msg).build();
+        executeRequest(request, TestFixtures::assert2xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("6.6.1 CredentialService should reject a sparse CredentialOfferMessage (only IDs) with invalid IDs")
+    void cs_06_06_01_credentialOfferMessage_sparse_randomIds_expect400() {
         var msg = createCredentialOfferMessage()
                 .property("credentials", List.of(
                         Map.of("id", UUID.randomUUID().toString()),
@@ -76,7 +97,7 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
 
         var token = createToken(createClaims().build());
         var request = createCredentialOfferMessageRequest(token, msg).build();
-        executeRequest(request, TestFixtures::assert2xxCode);
+        executeRequest(request, TestFixtures::assert4xxCode);
     }
 
     @MandatoryTest
@@ -218,7 +239,7 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
                 builder.addHeader(AUTHORIZATION, "Bearer " + authToken);
             }
             return builder;
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new AssertionError(e);
         }
     }

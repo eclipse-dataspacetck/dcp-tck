@@ -14,15 +14,15 @@
 
 package org.eclipse.dataspacetck.dcp.system.cs;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.dataspacetck.core.api.system.HandlerResponse;
 import org.eclipse.dataspacetck.core.api.system.ProtocolHandler;
 import org.eclipse.dataspacetck.dcp.system.issuer.IssuerService;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.jetbrains.annotations.NotNull;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +64,7 @@ public record CredentialApiHandler(CredentialService credentialService, ObjectMa
                         new HandlerResponse(400, "Invalid message type, expected either '%s' or '%s', got '%s'".formatted(CREDENTIAL_MESSAGE_TYPE, CREDENTIAL_REQUEST_MESSAGE_TYPE, msgType));
             };
 
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             return new HandlerResponse(400, "Invalid JSON");
         }
 

@@ -14,7 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.verification.presentation.cs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import okhttp3.MediaType;
 import okhttp3.Request;
@@ -27,6 +26,7 @@ import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
+import tools.jackson.core.JacksonException;
 
 import java.util.Date;
 import java.util.List;
@@ -75,7 +75,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                     .build();
             executeRequest(request, TestFixtures::assert4xxCode);
 
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new AssertionError(e);
         }
     }
@@ -208,7 +208,7 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                     .header(DcpConstants.AUTHORIZATION, "Bearer " + idToken)
                     .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(DcpConstants.JSON_CONTENT_TYPE)))
                     .build();
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new AssertionError(e);
         }
     }

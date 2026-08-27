@@ -14,8 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.verification.presentation.cs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Error;
 import com.networknt.schema.InputFormat;
 import com.networknt.schema.Schema;
@@ -38,6 +36,8 @@ import org.eclipse.dataspacetck.dcp.system.message.DcpConstants;
 import org.eclipse.dataspacetck.dcp.system.profile.ScopeConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -125,7 +125,7 @@ public class AbstractPresentationFlowTest {
                     .header(DcpConstants.AUTHORIZATION, "Bearer " + createIdToken(authToken))
                     .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(DcpConstants.JSON_CONTENT_TYPE)))
                     .build();
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new AssertionError(e);
         }
     }

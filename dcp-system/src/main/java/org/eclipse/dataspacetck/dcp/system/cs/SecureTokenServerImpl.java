@@ -14,7 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.system.cs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import okhttp3.FormBody;
@@ -25,6 +24,7 @@ import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
 import org.jetbrains.annotations.NotNull;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.text.ParseException;

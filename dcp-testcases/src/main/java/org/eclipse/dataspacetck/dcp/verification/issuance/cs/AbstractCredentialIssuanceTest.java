@@ -14,7 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.verification.issuance.cs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.core.system.SystemBootstrapExtension;
@@ -25,6 +24,7 @@ import org.eclipse.dataspacetck.dcp.system.annotation.Issuer;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Date;
 

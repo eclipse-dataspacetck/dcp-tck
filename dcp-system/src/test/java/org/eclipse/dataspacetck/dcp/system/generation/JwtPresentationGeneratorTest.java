@@ -57,7 +57,7 @@ class JwtPresentationGeneratorTest {
 
     @Test
     void verifyGeneration() throws ParseException, JOSEException {
-        var credential = VerifiableCredential.Builder.newInstance().id(randomUUID().toString()).build();
+        var credential = VerifiableCredential.Builder.newInstance().id("urn:uuid:" + randomUUID()).build();
         var container = new VcContainer("SampleType", SAMPLE_VC, credential, VC1_0_JWT);
         var jwt = generator.generatePresentation(VERIFIER_DID, HOLDER_DID, List.of(container));
         var parsed = SignedJWT.parse(jwt.getContent());

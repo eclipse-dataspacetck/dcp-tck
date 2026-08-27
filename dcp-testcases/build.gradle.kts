@@ -21,7 +21,7 @@ dependencies {
     implementation(rootProject.libs.restAssured)
     implementation(rootProject.libs.tck.common.api)
     implementation(rootProject.libs.schema.validator) {
-        exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml")
+        exclude("tools.jackson.dataformat", "jackson-dataformat-yaml")
     }
 
     implementation(rootProject.libs.slf4j.nop)
