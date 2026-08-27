@@ -36,6 +36,7 @@ import org.eclipse.dataspacetck.dcp.system.did.DidService;
 import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
 import org.eclipse.dataspacetck.dcp.system.issuer.IssuerService;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
+import org.eclipse.dataspacetck.dcp.system.profile.ScopeConfiguration;
 import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationService;
 import org.jetbrains.annotations.Nullable;
 
@@ -66,6 +67,7 @@ public class DcpSystemLauncher implements SystemLauncher {
                 type.isAssignableFrom(DidService.class) ||
                 type.isAssignableFrom(String.class) ||
                 type.isAssignableFrom(KeyService.class) ||
+                type.isAssignableFrom(ScopeConfiguration.class) ||
                 type.isAssignableFrom(VcContainer.class);
     }
 
@@ -78,6 +80,8 @@ public class DcpSystemLauncher implements SystemLauncher {
             return type.cast(assembly.getCredentialService());
         } else if (type.isAssignableFrom(CredentialRevocationService.class)) {
             return type.cast(assembly.getRevocationService());
+        } else if (type.isAssignableFrom(ScopeConfiguration.class)) {
+            return type.cast(assembly.getScopeConfiguration());
         } else if (type.isAssignableFrom(IssuerService.class)) {
             return type.cast(assembly.getIssuerService());
         } else if (type.isAssignableFrom(VcContainer.class)) {
@@ -149,7 +153,9 @@ public class DcpSystemLauncher implements SystemLauncher {
     }
 
     private <T> T createAuthToken(Class<T> type, ServiceConfiguration configuration, ServiceAssembly assembly) {
-        var scopes = Arrays.asList(getAnnotation(AuthToken.class, configuration).orElseThrow().value());
+        var scopes = Arrays.stream(getAnnotation(AuthToken.class, configuration).orElseThrow().value())
+                .map(assembly.getScopeConfiguration()::mapToConfiguredScope)
+                .toList();
         var tokenResult = assembly.getStsClient().obtainReadToken(baseAssembly.getVerifierDid(), scopes);
         if (tokenResult.failed()) {
             throw new AssertionError(tokenResult.getFailure());

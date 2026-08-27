@@ -61,7 +61,8 @@ import static org.eclipse.dataspacetck.dcp.system.service.Result.success;
  * Implementation used for test verification.
  */
 public class CredentialServiceImpl implements CredentialService {
-    public static final Pattern DEFAULT_SCOPE_PATTERN = Pattern.compile("(org.eclipse.dspace.dcp.vc.type):(?<type>.*):(.*)");
+    public static final Pattern DEFAULT_SCOPE_PATTERN = Pattern.compile(
+            "org[.]eclipse[.]dspace[.]dcp[.]vc[.]type:(?<type>[^:]+)(?<suffix>:.+)?");
     private final SecureTokenServer secureTokenServer;
     private final String holderDid;
     private final Map<PresentationGenerator.PresentationFormat, PresentationGenerator> generators;

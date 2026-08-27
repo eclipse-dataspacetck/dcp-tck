@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE_TYPE_ALIAS;
-import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.OPERATION_READ;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -37,9 +36,12 @@ import static org.mockito.Mockito.when;
 class SecureTokenServerImplTest {
     private static final String DID = "did:web:test";
     private static final String CREDENTIAL_1 = "Credential1";
-    private static final String SCOPE_1 = SCOPE_TYPE_ALIAS + CREDENTIAL_1 + OPERATION_READ;
+    private static final String SCOPE_1 = SCOPE_TYPE_ALIAS + CREDENTIAL_1;
     private static final String CREDENTIAL_2 = "Credential2";
-    private static final String SCOPE_2 = SCOPE_TYPE_ALIAS + CREDENTIAL_2 + OPERATION_READ;
+    private static final String SCOPE_2 = SCOPE_TYPE_ALIAS + CREDENTIAL_2;
+    private static final String CUSTOM_SCOPE = "custom:" + CREDENTIAL_1 + ":read";
+    private static final Pattern CUSTOM_SCOPE_PATTERN = Pattern.compile(
+            "custom:(?<type>[^:]+)(?<suffix>:.+)?");
     private static final String AUDIENCE = "did:web:audience";
     private final TokenValidationService holderTokenService = mock();
     private final KeyService issuerKeyService = mock();
@@ -59,9 +61,9 @@ class SecureTokenServerImplTest {
 
     @Test
     void obtainReadToken_whenCustomScopePattern() {
-        var server = new SecureTokenServerImpl(mock(), Pattern.compile("custom:(?<type>.*):(.*)"));
+        var server = new SecureTokenServerImpl(mock(), CUSTOM_SCOPE_PATTERN);
 
-        var token = server.obtainReadToken(DID, List.of("custom:" + CREDENTIAL_1 + OPERATION_READ));
+        var token = server.obtainReadToken(DID, List.of(CUSTOM_SCOPE));
 
         var result = server.validateReadToken(DID, token.getContent());
         assertThat(result.succeeded()).isTrue();

@@ -42,6 +42,7 @@ import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.system.model.vc.CredentialConstants;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VcContainer;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
+import org.eclipse.dataspacetck.dcp.system.profile.ScopeConfiguration;
 import org.eclipse.dataspacetck.dcp.system.revocation.BitstringStatusListService;
 import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationHandler;
 import org.eclipse.dataspacetck.dcp.system.revocation.CredentialRevocationService;
@@ -63,15 +64,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static java.time.Instant.now;
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 import static java.util.UUID.randomUUID;
-import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_PREFIX;
-import static org.eclipse.dataspacetck.dcp.system.cs.CredentialServiceImpl.DEFAULT_SCOPE_PATTERN;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_MESSAGE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_SERVICE_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat.VC1_0_JWT;
@@ -86,6 +83,7 @@ public class ServiceAssembly {
     private final SecureTokenServer secureTokenServer;
     private final IssuerService issuerService;
     private final CredentialRevocationService revocationService;
+    private final ScopeConfiguration scopeConfiguration;
 
     public ServiceAssembly(BaseAssembly baseAssembly, ServiceResolver resolver, ServiceConfiguration configuration) {
         var tokenService = baseAssembly.getHolderTokenService();
@@ -93,9 +91,8 @@ public class ServiceAssembly {
         var mapper = baseAssembly.getMapper();
 
         var supportedCredentials = buildSupportedCredentials();
-        var scopePattern = ofNullable(configuration.getPropertyAsString(TCK_PREFIX + ".vc.scope.pattern", null))
-                .map(Pattern::compile)
-                .orElse(DEFAULT_SCOPE_PATTERN);
+        scopeConfiguration = ScopeConfiguration.from(configuration);
+        var scopePattern = scopeConfiguration.getPattern();
         secureTokenServer = new SecureTokenServerImpl(configuration, scopePattern);
         var csMapper = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
         credentialService = new CredentialServiceImpl(baseAssembly.getHolderDid(), List.of(generator), secureTokenServer, baseAssembly.getHolderTokenService(), csMapper, scopePattern);
@@ -128,7 +125,8 @@ public class ServiceAssembly {
                 baseAssembly.getVerifierKeyService(),
                 baseAssembly.getVerifierDid(),
                 new BaseTokenValidationService(),
-                revocationService));
+                revocationService,
+                scopeConfiguration.getScope(MEMBERSHIP_CREDENTIAL_TYPE)));
 
         // ... for revocation
         endpoint.registerHandler("/statuslist/.*", new CredentialRevocationHandler(revocationService, mapper));
@@ -150,6 +148,10 @@ public class ServiceAssembly {
 
     public StsClient getStsClient() {
         return secureTokenServer;
+    }
+
+    public ScopeConfiguration getScopeConfiguration() {
+        return scopeConfiguration;
     }
 
     public void issueCredentials(BaseAssembly baseAssembly) {

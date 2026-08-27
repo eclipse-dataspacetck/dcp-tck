@@ -64,7 +64,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     public void cs_05_03_01_accessTokenInvalidHeader(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
         var message = DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
-                .property(SCOPE, List.of(MEMBERSHIP_SCOPE))
+                .property(SCOPE, List.of(scopeFor(MEMBERSHIP_CREDENTIAL_TYPE)))
                 .build();
 
         var endpoint = resolveCredentialServiceEndpoint(holderDid);
@@ -86,7 +86,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     public void cs_05_04_invalidTokenNotAuthorized() {
         var message = DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
-                .property(SCOPE, List.of(MEMBERSHIP_SCOPE))
+                .property(SCOPE, List.of(scopeFor(MEMBERSHIP_CREDENTIAL_TYPE)))
                 .build();
 
         var request = createPresentationRequest("faketoken", message);
@@ -99,7 +99,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     public void cs_05_04_01_invalidScopeAndPresentationRequest(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
         var message = DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
-                .property(SCOPE, List.of(MEMBERSHIP_SCOPE))
+                .property(SCOPE, List.of(scopeFor(MEMBERSHIP_CREDENTIAL_TYPE)))
                 .property(PRESENTATION_DEFINITION, createPresentationDefinition(MEMBERSHIP_CREDENTIAL_TYPE))
                 .build();
 
@@ -174,7 +174,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     public void cs_05_04_01_02_scopeByTypeRequest(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
         var message = DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
-                .property(SCOPE, List.of(MEMBERSHIP_SCOPE))
+                .property(SCOPE, List.of(scopeFor(MEMBERSHIP_CREDENTIAL_TYPE)))
                 .build();
 
         var request = createPresentationRequest(authToken, message);
@@ -187,7 +187,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     public void cs_05_04_01_02_lessScopesThanAuthorizedByTypeRequest(@AuthToken({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE}) String authToken) {
         var message = DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
-                .property(SCOPE, List.of(SENSITIVE_DATA_SCOPE))
+                .property(SCOPE, List.of(scopeFor(SENSITIVE_DATA_CREDENTIAL_TYPE)))
                 .build();
 
         var request = createPresentationRequest(authToken, message);
@@ -200,7 +200,7 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     public void cs_05_04_01_02_invalidScopeEscalationRequest(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
         var message = DcpMessageBuilder.newInstance()
                 .type(PRESENTATION_QUERY_MESSAGE)
-                .property(SCOPE, List.of(MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE)) // request more credentials than the token allows
+                .property(SCOPE, List.of(scopeFor(MEMBERSHIP_CREDENTIAL_TYPE), scopeFor(SENSITIVE_DATA_CREDENTIAL_TYPE))) // request more credentials than the token allows
                 .build();
 
         var request = createPresentationRequest(authToken, message);
@@ -208,4 +208,3 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     }
 
 }
-

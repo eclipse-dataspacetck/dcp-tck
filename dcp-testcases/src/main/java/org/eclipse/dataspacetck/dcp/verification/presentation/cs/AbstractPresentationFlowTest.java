@@ -33,6 +33,7 @@ import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.message.DcpConstants;
+import org.eclipse.dataspacetck.dcp.system.profile.ScopeConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tools.jackson.core.JacksonException;
@@ -92,7 +93,14 @@ public class AbstractPresentationFlowTest {
     @ThirdParty
     protected KeyService thirdPartyKeyService;
 
+    @Inject
+    protected ScopeConfiguration scopeConfiguration;
+
     protected ObjectMapper mapper = new ObjectMapper();
+
+    protected String scopeFor(String credentialType) {
+        return scopeConfiguration.getScope(credentialType);
+    }
 
     @BeforeAll
     protected static void setUp() {
