@@ -14,7 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.verification.fixtures;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jwt.SignedJWT;
@@ -25,6 +24,8 @@ import org.eclipse.dataspacetck.dcp.system.did.DidClient;
 import org.eclipse.dataspacetck.dcp.system.message.DcpConstants;
 import org.eclipse.dataspacetck.dcp.system.model.did.VerificationMethod;
 import org.jetbrains.annotations.NotNull;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -211,7 +212,7 @@ public class TestFixtures {
     public static <T> T bodyAs(Response response, Class<T> type, ObjectMapper objectMapper) {
         try {
             return objectMapper.readValue(response.body().byteStream(), type);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

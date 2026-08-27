@@ -14,9 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.system.issuer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -31,6 +28,10 @@ import org.eclipse.dataspacetck.dcp.system.generation.JwtCredentialGenerator;
 import org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat;
 import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -62,7 +63,7 @@ public class IssuerServiceImpl implements IssuerService {
         this.issuerKeyService = issuerKeyService;
         this.issuerTokenValidationService = issuerTokenValidationService;
         this.supportedCredentials = supportedCredentials;
-        objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        objectMapper = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
     }
 
     @Override
@@ -171,7 +172,7 @@ public class IssuerServiceImpl implements IssuerService {
                     String body;
                     try {
                         body = objectMapper.writeValueAsString(credentialsMsg);
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                         throw new RuntimeException(e);
                     }
                     var rq = new Request.Builder()

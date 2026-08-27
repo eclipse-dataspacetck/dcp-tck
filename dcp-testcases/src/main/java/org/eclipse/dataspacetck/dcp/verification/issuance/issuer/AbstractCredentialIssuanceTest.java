@@ -14,9 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.verification.issuance.issuer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -32,6 +29,10 @@ import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialObject;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -52,7 +53,7 @@ import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.re
 @ExtendWith(SystemBootstrapExtension.class)
 public abstract class AbstractCredentialIssuanceTest {
 
-    protected final ObjectMapper mapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    protected final ObjectMapper mapper = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
     @Inject
     @Did(HOLDER)
     protected String holderDid;
@@ -105,7 +106,7 @@ public abstract class AbstractCredentialIssuanceTest {
                 builder.addHeader(AUTHORIZATION, "Bearer " + authToken);
             }
             return builder;
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new AssertionError(e);
         }
     }

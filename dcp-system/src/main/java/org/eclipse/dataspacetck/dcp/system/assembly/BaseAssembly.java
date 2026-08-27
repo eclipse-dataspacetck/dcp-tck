@@ -14,7 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.system.assembly;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.dataspacetck.core.spi.system.SystemConfiguration;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyServiceImpl;
@@ -24,6 +23,7 @@ import org.eclipse.dataspacetck.dcp.system.cs.TokenValidationServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.did.DidService;
 import org.eclipse.dataspacetck.dcp.system.did.DidServiceImpl;
 import org.eclipse.dataspacetck.dcp.system.did.IssuerDidService;
+import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
 import java.util.Objects;

@@ -14,7 +14,6 @@
 
 package org.eclipse.dataspacetck.dcp.system.cs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -27,8 +26,9 @@ import org.eclipse.dataspacetck.dcp.system.model.vc.VerifiableCredential;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.eclipse.dataspacetck.dcp.system.sts.SecureTokenServer;
 import org.jetbrains.annotations.NotNull;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -150,7 +150,7 @@ public class CredentialServiceImpl implements CredentialService {
             }
 
             return validateIdOnlyOffers(message);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             return failure("Invalid JSON: " + e.getMessage(), BAD_REQUEST);
         }
     }
