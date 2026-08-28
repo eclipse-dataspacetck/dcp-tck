@@ -34,4 +34,9 @@ public interface KeyService {
      */
     String sign(Map<String, String> headers, JWTClaimsSet claims);
 
+    /**
+     * Signs the JWT without including a {@code kid} header parameter.
+     */
+    String signWithoutKid(JWTClaimsSet claims);
+
 }

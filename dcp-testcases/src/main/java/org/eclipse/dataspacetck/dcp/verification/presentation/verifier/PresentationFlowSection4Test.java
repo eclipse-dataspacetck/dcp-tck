@@ -20,6 +20,8 @@ import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.dcp.system.annotation.AuthToken;
 import org.eclipse.dataspacetck.dcp.system.annotation.Did;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
+import org.eclipse.dataspacetck.dcp.system.annotation.MultiVm;
+import org.eclipse.dataspacetck.dcp.system.annotation.NoCapability;
 import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.TriggerEndpoint;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
@@ -31,6 +33,8 @@ import java.util.Date;
 import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.MULTI_VM;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.NO_CAPABILITY;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.THIRD_PARTY;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TOKEN;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
@@ -213,5 +217,47 @@ public class PresentationFlowSection4Test extends AbstractVerifierPresentationFl
     @IssueCredentials({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE})
     void verifier_04_03_01_presentationResponse_idTokenNoTokenClaim(@TriggerEndpoint String triggerEndpoint) {
         executeRequest(createRequest(triggerEndpoint, "Bearer " + createIdToken(null), createTriggerMessage()), TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("4.3.3 Verify invalid access token - signing key not in capabilityInvocation")
+    @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
+    public void verifier_04_03_03_idTokenKidNoCapabilityInvocation(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
+                                                                    @TriggerEndpoint String triggerEndpoint,
+                                                                    @NoCapability KeyService noCapabilityKeyService,
+                                                                    @Did(NO_CAPABILITY) String noCapabilityDid) {
+        var claimSet = new JWTClaimsSet.Builder()
+                .issuer(noCapabilityDid)
+                .subject(noCapabilityDid)
+                .audience(verifierDid)
+                .jwtID(randomUUID().toString())
+                .issueTime(new Date())
+                .expirationTime(Date.from(now().plusSeconds(600)))
+                .claim(TOKEN, authToken)
+                .build();
+
+        var authHeader = "Bearer " + noCapabilityKeyService.sign(emptyMap(), claimSet);
+        executeRequest(createRequest(triggerEndpoint, authHeader, createTriggerMessage()), TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("4.3.3 Verify invalid access token - no kid and DID document has multiple verification methods")
+    @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
+    public void verifier_04_03_03_idTokenNoKidMultipleVms(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
+                                                           @TriggerEndpoint String triggerEndpoint,
+                                                           @MultiVm KeyService multiVmKeyService,
+                                                           @Did(MULTI_VM) String multiVmDid) {
+        var claimSet = new JWTClaimsSet.Builder()
+                .issuer(multiVmDid)
+                .subject(multiVmDid)
+                .audience(verifierDid)
+                .jwtID(randomUUID().toString())
+                .issueTime(new Date())
+                .expirationTime(Date.from(now().plusSeconds(600)))
+                .claim(TOKEN, authToken)
+                .build();
+
+        var authHeader = "Bearer " + multiVmKeyService.signWithoutKid(claimSet);
+        executeRequest(createRequest(triggerEndpoint, authHeader, createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 }

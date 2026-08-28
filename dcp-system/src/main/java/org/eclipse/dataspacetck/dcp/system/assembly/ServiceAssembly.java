@@ -118,6 +118,8 @@ public class ServiceAssembly {
         endpoint.registerHandler("/verifier/did.json", new DidDocumentHandler(baseAssembly.getVerifierDidService(), mapper));
         endpoint.registerHandler("/issuer/did.json", new DidDocumentHandler(baseAssembly.getIssuerDidService(), mapper));
         endpoint.registerHandler("/thirdparty/did.json", new DidDocumentHandler(baseAssembly.getThirdPartyDidService(), mapper));
+        endpoint.registerHandler("/nocapability/did.json", new DidDocumentHandler(baseAssembly.getNoCapabilityDidService(), mapper));
+        endpoint.registerHandler("/multivm/did.json", new DidDocumentHandler(baseAssembly.getMultiVmDidService(), mapper));
 
         // ... for the verifier's trigger endpoint
         endpoint.registerProtocolHandler("/api/trigger", new VerifierTriggerHandler(baseAssembly.getVerifierTokenService(),

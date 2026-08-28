@@ -22,6 +22,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.eclipse.dataspacetck.dcp.system.cs.TokenValidationService;
 import org.eclipse.dataspacetck.dcp.system.did.DidClient;
+import org.eclipse.dataspacetck.dcp.system.model.did.DidDocument;
 import org.eclipse.dataspacetck.dcp.system.model.did.VerificationMethod;
 import org.eclipse.dataspacetck.dcp.system.service.Result;
 import org.jetbrains.annotations.NotNull;
@@ -93,30 +94,49 @@ public class BaseTokenValidationService implements TokenValidationService {
         if (claims.getNotBeforeTime() != null && claims.getNotBeforeTime().after(new Date())) {
             return failure("Token used before start");
         }
-        var parts = kid.split("#");
-        if (parts.length != 1 && parts.length != 2) {
-            return failure("Invalid kid: " + kid);
-        }
-        var issuerDid = parts[0];
         var client = new DidClient(false);
-        var didDocument = client.resolveDocument(issuerDid);
-
         VerificationMethod method;
-        if (parts.length == 1) {
+
+        DidDocument didDocument;
+        if (kid == null) {
+            didDocument = client.resolveDocument(claims.getIssuer());
             if (didDocument.getVerificationMethods().size() != 1) {
-                return failure("Since no key id was specified, the DID document must have exactly one verification method");
+                return failure("No kid specified: DID document must have exactly one verification method");
             }
             method = didDocument.getVerificationMethods().get(0);
         } else {
-            var result = didDocument.getVerificationMethod("#" + parts[1]);
-            if (result.failed()) {
-                return failure(result.getFailure());
+            var parts = kid.split("#");
+            if (parts.length != 1 && parts.length != 2) {
+                return failure("Invalid kid: " + kid);
             }
-            method = result.getContent();
+            didDocument = client.resolveDocument(parts[0]);
+            if (parts.length == 1) {
+                if (didDocument.getVerificationMethods().size() != 1) {
+                    return failure("No key fragment in kid and DID document has multiple verification methods");
+                }
+                method = didDocument.getVerificationMethods().get(0);
+            } else {
+                var result = didDocument.getVerificationMethod("#" + parts[1]);
+                if (result.failed()) {
+                    return failure(result.getFailure());
+                }
+                method = result.getContent();
+            }
+        }
+
+        if (!hasCapabilityInvocation(didDocument, method)) {
+            return failure("Verification method " + method.getId() + " does not have capabilityInvocation relationship");
         }
 
         return success(method);
 
+    }
+
+    private boolean hasCapabilityInvocation(DidDocument document, VerificationMethod method) {
+        var methodId = method.getId();
+        var docId = document.getId();
+        return document.getCapabilityInvocation().stream()
+                .anyMatch(ref -> methodId.equals(ref) || methodId.equals(docId + ref) || methodId.equals(docId + "#" + ref));
     }
 
     @NotNull

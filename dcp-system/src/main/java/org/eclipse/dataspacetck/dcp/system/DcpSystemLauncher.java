@@ -25,6 +25,8 @@ import org.eclipse.dataspacetck.dcp.system.annotation.Holder;
 import org.eclipse.dataspacetck.dcp.system.annotation.HolderPid;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
 import org.eclipse.dataspacetck.dcp.system.annotation.Issuer;
+import org.eclipse.dataspacetck.dcp.system.annotation.MultiVm;
+import org.eclipse.dataspacetck.dcp.system.annotation.NoCapability;
 import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.TriggerEndpoint;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
@@ -101,6 +103,10 @@ public class DcpSystemLauncher implements SystemLauncher {
                 return type.cast(baseAssembly.getThirdPartyKeyService());
             } else if (hasAnnotation(Issuer.class, configuration)) {
                 return type.cast(baseAssembly.getIssuerKeyService());
+            } else if (hasAnnotation(NoCapability.class, configuration)) {
+                return type.cast(baseAssembly.getNoCapabilityKeyService());
+            } else if (hasAnnotation(MultiVm.class, configuration)) {
+                return type.cast(baseAssembly.getMultiVmKeyService());
             }
         } else if (type.isAssignableFrom(DidService.class)) {
             if (hasAnnotation(Verifier.class, configuration)) {
@@ -137,6 +143,12 @@ public class DcpSystemLauncher implements SystemLauncher {
                     }
                     case ISSUER -> {
                         return type.cast(baseAssembly.getIssuerDid());
+                    }
+                    case NO_CAPABILITY -> {
+                        return type.cast(baseAssembly.getNoCapabilityDid());
+                    }
+                    case MULTI_VM -> {
+                        return type.cast(baseAssembly.getMultiVmDid());
                     }
                     default -> throw new UnsupportedOperationException("Unsupported DID role: " + did.get().value());
                 }
