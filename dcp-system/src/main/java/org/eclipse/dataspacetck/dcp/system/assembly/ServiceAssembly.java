@@ -154,7 +154,14 @@ public class ServiceAssembly {
         return scopeConfiguration;
     }
 
-    public void issueCredentials(BaseAssembly baseAssembly) {
+    /**
+     * Loads the test credentials into the system under test.
+     *
+     * @param correlation the holder PID the credentials are delivered under. Passed in rather than read from the
+     *                    {@link BaseAssembly} so that a test overriding its holder PID seeds credentials under the
+     *                    same id it later sends messages with.
+     */
+    public void issueCredentials(BaseAssembly baseAssembly, String correlation) {
         var issuerDid = baseAssembly.getIssuerDid();
         var credentialGenerator = new JwtCredentialGenerator(issuerDid, baseAssembly.getIssuerKeyService());
 
@@ -162,8 +169,6 @@ public class ServiceAssembly {
 
         var membershipContainer = createVcContainer(issuerDid, holderDid, credentialGenerator, MEMBERSHIP_CREDENTIAL_TYPE);
         var sensitiveDataContainer = createVcContainer(issuerDid, holderDid, credentialGenerator, SENSITIVE_DATA_CREDENTIAL_TYPE);
-
-        var correlation = baseAssembly.getHolderPid();
 
         var claimSet = new JWTClaimsSet.Builder()
                 .issuer(issuerDid)

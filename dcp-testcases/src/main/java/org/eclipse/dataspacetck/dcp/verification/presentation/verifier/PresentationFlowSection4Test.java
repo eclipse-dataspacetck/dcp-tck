@@ -35,12 +35,12 @@ import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.THIRD_PART
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TOKEN;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_SCOPE;
-import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_SCOPE;
+import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
 
 
 /**
- * Verifies ID token validation for the Credential Service.
+ * Verifies ID token validation for the verifier.
  */
 public class PresentationFlowSection4Test extends AbstractVerifierPresentationFlowTest {
 
@@ -210,7 +210,7 @@ public class PresentationFlowSection4Test extends AbstractVerifierPresentationFl
 
     @DisplayName("4.3.1 Verifier should reject an ID token that does not contain an access token")
     @MandatoryTest
-    @IssueCredentials({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE})
+    @IssueCredentials({MEMBERSHIP_CREDENTIAL_TYPE, SENSITIVE_DATA_CREDENTIAL_TYPE})
     void verifier_04_03_01_presentationResponse_idTokenNoTokenClaim(@TriggerEndpoint String triggerEndpoint) {
         executeRequest(createRequest(triggerEndpoint, "Bearer " + createIdToken(null), createTriggerMessage()), TestFixtures::assert4xxCode);
     }

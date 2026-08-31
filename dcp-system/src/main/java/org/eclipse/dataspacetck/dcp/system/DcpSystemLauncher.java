@@ -43,14 +43,20 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.eclipse.dataspacetck.core.api.system.SystemsConstants.TCK_PREFIX;
+import static org.eclipse.dataspacetck.dcp.system.util.Parsers.parseTestMethodName;
 
 /**
  * Instantiates and bootstraps a DCP test fixture. The test fixture consists of immutable base services and services which
  * are instantiated per test.
  */
 public class DcpSystemLauncher implements SystemLauncher {
+    private static final String HOLDER_PID_PROPERTY = TCK_PREFIX + ".credentials.correlation.id";
+
     private final Map<String, ServiceAssembly> serviceAssemblies = new ConcurrentHashMap<>();
     private BaseAssembly baseAssembly;
 
@@ -117,7 +123,7 @@ public class DcpSystemLauncher implements SystemLauncher {
                 return createAuthToken(type, configuration, assembly);
             }
             if (hasAnnotation(HolderPid.class, configuration)) {
-                return type.cast(baseAssembly.getHolderPid());
+                return type.cast(resolveHolderPid(configuration, baseAssembly.getHolderPid()));
             }
             if (hasAnnotation(TriggerEndpoint.class, configuration)) {
                 return type.cast(baseAssembly.getVerifierTriggerEndpoint());
@@ -148,8 +154,26 @@ public class DcpSystemLauncher implements SystemLauncher {
     @Override
     public void beforeExecution(ServiceConfiguration configuration, ServiceResolver resolver) {
         if (hasAnnotation(IssueCredentials.class, configuration)) {
-            serviceAssemblies.get(configuration.getScopeId()).issueCredentials(baseAssembly);
+            var correlation = resolveHolderPid(configuration, baseAssembly.getHolderPid());
+            serviceAssemblies.get(configuration.getScopeId()).issueCredentials(baseAssembly, correlation);
         }
+    }
+
+    /**
+     * Resolves the holder PID for the test in scope, letting a single test override the run-wide correlation id via
+     * {@code dataspacetck.credentials.correlation.id.<testMethodName>}.
+     * <p>
+     * This exists because a holder PID is a correlation id the system under test must already know about, and an
+     * implementation that closes a request once it is fulfilled cannot serve every test from one id.
+     *
+     * @param configuration    the configuration of the injection point, whose scope id identifies the test.
+     * @param defaultHolderPid the run-wide value to use when the test declares no override.
+     */
+    static String resolveHolderPid(ServiceConfiguration configuration, String defaultHolderPid) {
+        return parseTestMethodName(configuration.getScopeId())
+                .map(name -> configuration.getPropertyAsString(HOLDER_PID_PROPERTY + "." + name, null))
+                .filter(Objects::nonNull)
+                .orElse(defaultHolderPid);
     }
 
     private <T> T createAuthToken(Class<T> type, ServiceConfiguration configuration, ServiceAssembly assembly) {

@@ -15,12 +15,6 @@
 package org.eclipse.dataspacetck.dcp.verification.issuance.cs;
 
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.crypto.ECDSASigner;
-import com.nimbusds.jose.jwk.Curve;
-import com.nimbusds.jose.jwk.KeyUse;
-import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
-import com.nimbusds.jwt.SignedJWT;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -39,14 +33,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.nimbusds.jose.JOSEObjectType.JWT;
-import static com.nimbusds.jose.JWSAlgorithm.ES256;
 import static java.time.Instant.now;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.THIRD_PARTY;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.AUTHORIZATION;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CONTEXT;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIALS_PATH;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_MESSAGE_TYPE;
+import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TYPE;
 import static org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat.VC1_0_JWT;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_CREDENTIAL_TYPE;
@@ -97,12 +92,18 @@ public class CredentialIssuanceTest extends AbstractCredentialIssuanceTest {
     void cs_06_05_01_credentialMessage_invalidBody(@HolderPid String holderPid) {
         var credentialMessage = createCredentialMessage(holderPid).build();
 
-        var invalidMessage = new HashMap<>(credentialMessage);
-        invalidMessage.remove("holderPid");
-        var token = createToken(createClaims().build());
+        // every property the spec marks as required must be enforced, not just one of them
+        for (var required : List.of(CONTEXT, TYPE, "issuerPid", "holderPid", "status")) {
+            var invalidMessage = new HashMap<>(credentialMessage);
+            invalidMessage.remove(required);
+            var token = createToken(createClaims().build());
 
-        var request = createCredentialMessageRequest(token, invalidMessage).build();
-        executeRequest(request, TestFixtures::assert4xxCode);
+            var request = createCredentialMessageRequest(token, invalidMessage).build();
+            executeRequest(request, response -> assertThat(response.code())
+                    .withFailMessage("Expected a 4xx client error for a CredentialMessage missing '%s' but got %s",
+                            required, response.code())
+                    .isBetween(400, 499));
+        }
     }
 
     @MandatoryTest
@@ -110,19 +111,7 @@ public class CredentialIssuanceTest extends AbstractCredentialIssuanceTest {
     void cs_06_05_01_credentialMessage_tokenSignedWithWrongKey(@HolderPid String holderPid) throws JOSEException {
         var msg = createCredentialMessage(holderPid).build();
 
-        var claims = createClaims().build();
-        var kid = issuerKeyService.getPublicKey().getKeyID();
-        var spoofedKey = new ECKeyGenerator(Curve.P_256)
-                .keyID(kid)
-                .keyUse(KeyUse.SIGNATURE)
-                .generate();
-
-        var header = new JWSHeader.Builder(ES256).type(JWT);
-        header.keyID(claims.getClaim("iss") + "#" + spoofedKey.getKeyID());
-
-        var signedJwt = new SignedJWT(header.build(), claims);
-        signedJwt.sign(new ECDSASigner(spoofedKey.toECPrivateKey()));
-        var token = signedJwt.serialize();
+        var token = createTokenWithUnknownKey(createClaims().build());
 
         var request = createCredentialMessageRequest(token, msg).build();
         executeRequest(request, TestFixtures::assert4xxCode);
@@ -210,6 +199,89 @@ public class CredentialIssuanceTest extends AbstractCredentialIssuanceTest {
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
+
+    @MandatoryTest
+    @DisplayName("4.3.3 CredentialService rejects an invalid auth token - kid resolves to no verification method")
+    void cs_06_05_01_credentialMessage_unknownKid(@HolderPid String holderPid) {
+        var credentialMessage = createCredentialMessage(holderPid).build();
+        var token = createTokenWithUnknownKid(createClaims().build());
+
+        executeRequest(createCredentialMessageRequest(token, credentialMessage).build(), TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("4.3.3 CredentialService rejects an invalid auth token - sub DID is not resolvable")
+    void cs_06_05_01_credentialMessage_unresolvableSubject(@HolderPid String holderPid) {
+        var credentialMessage = createCredentialMessage(holderPid).build();
+        var token = createTokenWithUnresolvableSubject(createClaims());
+
+        executeRequest(createCredentialMessageRequest(token, credentialMessage).build(), TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("6.5.1 CredentialService should accept an ISSUED CredentialMessage with an empty credentials array")
+    void cs_06_05_01_credentialMessage_emptyCredentials(@HolderPid String holderPid) {
+        var credentialMessage = createCredentialMessage(holderPid)
+                .property("credentials", List.of())
+                .build();
+
+        var token = createToken(createClaims().build());
+        executeRequest(createCredentialMessageRequest(token, credentialMessage).build(), TestFixtures::assert2xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("6.5 CredentialService rejects a CredentialMessage whose holderPid matches no pending request")
+    void cs_06_05_credentialMessage_unknownHolderPid() {
+        var credentialMessage = createCredentialMessage("unknown-" + UUID.randomUUID()).build();
+
+        var token = createToken(createClaims().build());
+        executeRequest(createCredentialMessageRequest(token, credentialMessage).build(), TestFixtures::assert4xxCode);
+
+    }
+
+    @MandatoryTest
+    @DisplayName("6.5.1 CredentialService rejects a CredentialMessage delivered by an untrusted issuer")
+    void cs_06_05_01_credentialMessage_untrustedIssuer(@HolderPid String holderPid) {
+        var credentialMessage = createCredentialMessage(holderPid).build();
+
+        // a valid, correctly signed self-issued token - but from a DID the holder never requested credentials from
+        var claims = createClaims()
+                .issuer(thirdPartyDid)
+                .subject(thirdPartyDid)
+                .build();
+        var token = thirdPartyKeyService.sign(emptyMap(), claims);
+
+        executeRequest(createCredentialMessageRequest(token, credentialMessage).build(), TestFixtures::assert4xxCode);
+
+    }
+
+    @MandatoryTest
+    @DisplayName("6.5.2 CredentialService rejects a credential whose proof does not verify")
+    void cs_06_05_02_credentialMessage_unverifiableProof(@HolderPid String holderPid) {
+        // claims the issuer DID, but is signed with a key that is not in the issuer's DID document
+        var forged = createCredential(MEMBERSHIP_CREDENTIAL_TYPE, holderDid, thirdPartyKeyService);
+
+        var credentialMessage = createCredentialMessage(holderPid)
+                .property("credentials", credentialContainers(forged))
+                .build();
+
+        var token = createToken(createClaims().build());
+        executeRequest(createCredentialMessageRequest(token, credentialMessage).build(), TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("6.5.2 CredentialService rejects a credential that is not bound to the holder")
+    void cs_06_05_02_credentialMessage_subjectNotHolder(@HolderPid String holderPid) {
+        var otherSubject = createCredential(MEMBERSHIP_CREDENTIAL_TYPE, thirdPartyDid, issuerKeyService);
+
+        var credentialMessage = createCredentialMessage(holderPid)
+                .property("credentials", credentialContainers(otherSubject))
+                .build();
+
+        var token = createToken(createClaims().build());
+        executeRequest(createCredentialMessageRequest(token, credentialMessage).build(), TestFixtures::assert4xxCode);
+
+    }
 
     private Request.Builder createCredentialMessageRequest(String authToken, Map<String, Object> credentialMessage) {
         var endpoint = resolveCredentialServiceEndpoint(holderDid);
