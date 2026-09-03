@@ -34,11 +34,19 @@ public class DidServiceImpl implements DidService {
     protected final String did;
     protected final String baseEndpoint;
     protected final KeyService keyService;
+    private final List<KeyService> keyServices;
+    private final boolean includeCapabilityInvocation;
 
     public DidServiceImpl(String did, String baseEndpoint, KeyService keyService) {
+        this(did, baseEndpoint, List.of(keyService), true);
+    }
+
+    public DidServiceImpl(String did, String baseEndpoint, List<KeyService> keyServices, boolean includeCapabilityInvocation) {
         this.did = did;
         this.baseEndpoint = baseEndpoint;
-        this.keyService = keyService;
+        this.keyService = keyServices.get(0);
+        this.keyServices = keyServices;
+        this.includeCapabilityInvocation = includeCapabilityInvocation;
     }
 
     @Override
@@ -48,20 +56,26 @@ public class DidServiceImpl implements DidService {
     }
 
     protected DidDocument.Builder createDocumentBuilder() {
-        var vmId = did + "#" + keyService.getPublicKey().getKeyID();
-        return DidDocument.Builder.newInstance()
+        var vms = keyServices.stream()
+                .map(ks -> VerificationMethod.Builder.newInstance()
+                        .id(did + "#" + ks.getPublicKey().getKeyID())
+                        .type("JsonWebKey2020") // FIXME
+                        .controller(did)
+                        .publicKeyJwk(ks.getPublicKey().toJSONObject())
+                        .build())
+                .toList();
+        var vmIds = vms.stream().map(VerificationMethod::getId).toList();
+        var builder = DidDocument.Builder.newInstance()
                 .id(did)
                 .context(List.of(DID_CONTEXT, DCP_NAMESPACE))
                 .service(List.of(new ServiceEntry("TCK-Credential-Service", CREDENTIAL_SERVICE_TYPE, baseEndpoint)))
-                .verificationMethod(List.of(VerificationMethod.Builder.newInstance()
-                        .id(vmId)
-                        .type("JsonWebKey2020") // FIXME
-                        .controller(did)
-                        .publicKeyJwk(keyService.getPublicKey().toJSONObject())
-                        .build()))
-                .authentication(List.of(vmId))
-                .assertionMethod(List.of(vmId))
-                .capabilityInvocation(List.of(vmId));
+                .verificationMethod(vms)
+                .authentication(vmIds)
+                .assertionMethod(vmIds);
+        if (includeCapabilityInvocation) {
+            builder.capabilityInvocation(vmIds);
+        }
+        return builder;
     }
 
 }

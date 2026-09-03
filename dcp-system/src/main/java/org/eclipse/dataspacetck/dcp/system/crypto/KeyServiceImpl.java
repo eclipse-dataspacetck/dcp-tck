@@ -43,6 +43,18 @@ public class KeyServiceImpl implements KeyService {
     }
 
     @Override
+    public String signWithoutKid(JWTClaimsSet claims) {
+        var header = new JWSHeader.Builder(ES256).type(JWT);
+        try {
+            var signedJwt = new SignedJWT(header.build(), claims);
+            signedJwt.sign(new ECDSASigner(key.toECPrivateKey()));
+            return signedJwt.serialize();
+        } catch (JOSEException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public String sign(Map<String, String> headers, JWTClaimsSet claims) {
         var header = new JWSHeader.Builder(ES256).type(JWT);
         if (!headers.containsKey("kid")) {

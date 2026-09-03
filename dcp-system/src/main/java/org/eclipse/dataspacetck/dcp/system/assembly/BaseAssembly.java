@@ -26,6 +26,7 @@ import org.eclipse.dataspacetck.dcp.system.did.IssuerDidService;
 import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -56,6 +57,13 @@ public class BaseAssembly {
     private final String thirdPartyDid;
     private final KeyServiceImpl thirdPartyKeyService;
     private final DidServiceImpl thirdPartyDidService;
+    private final String noCapabilityDid;
+    private final KeyServiceImpl noCapabilityKeyService;
+    private final DidServiceImpl noCapabilityDidService;
+    private final String multiVmDid;
+    private final KeyServiceImpl multiVmKeyService;
+    private final KeyServiceImpl multiVmSecondaryKeyService;
+    private final DidServiceImpl multiVmDidService;
     private final ObjectMapper mapper;
     private final String holderPid;
     private final String verifierTriggerEndpoint;
@@ -96,6 +104,17 @@ public class BaseAssembly {
 
         thirdPartyKeyService = new KeyServiceImpl(Keys.generateEcKey());
         thirdPartyDidService = new DidServiceImpl(thirdPartyDid, address, thirdPartyKeyService);
+
+        var did4nc = configuration.getPropertyAsString(TCK_PREFIX + ".did.nocapability", null);
+        noCapabilityDid = Objects.requireNonNullElseGet(did4nc, () -> parseDid("nocapability"));
+        noCapabilityKeyService = new KeyServiceImpl(Keys.generateEcKey());
+        noCapabilityDidService = new DidServiceImpl(noCapabilityDid, address, List.of(noCapabilityKeyService), false);
+
+        var did4mv = configuration.getPropertyAsString(TCK_PREFIX + ".did.multivm", null);
+        multiVmDid = Objects.requireNonNullElseGet(did4mv, () -> parseDid("multivm"));
+        multiVmKeyService = new KeyServiceImpl(Keys.generateEcKey());
+        multiVmSecondaryKeyService = new KeyServiceImpl(Keys.generateEcKey());
+        multiVmDidService = new DidServiceImpl(multiVmDid, address, List.of(multiVmKeyService, multiVmSecondaryKeyService), true);
 
         revocationListType = configuration.getPropertyAsString(TCK_PREFIX + ".revocation.type", "bitstringstatuslist");
     }
@@ -178,6 +197,30 @@ public class BaseAssembly {
 
     public String getRevocationListType() {
         return revocationListType;
+    }
+
+    public String getNoCapabilityDid() {
+        return noCapabilityDid;
+    }
+
+    public KeyServiceImpl getNoCapabilityKeyService() {
+        return noCapabilityKeyService;
+    }
+
+    public DidServiceImpl getNoCapabilityDidService() {
+        return noCapabilityDidService;
+    }
+
+    public String getMultiVmDid() {
+        return multiVmDid;
+    }
+
+    public KeyServiceImpl getMultiVmKeyService() {
+        return multiVmKeyService;
+    }
+
+    public DidServiceImpl getMultiVmDidService() {
+        return multiVmDidService;
     }
 
     private String parseDid(String discriminator) {

@@ -20,7 +20,11 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import org.eclipse.dataspacetck.api.system.MandatoryTest;
 import org.eclipse.dataspacetck.dcp.system.annotation.AuthToken;
+import org.eclipse.dataspacetck.dcp.system.annotation.Did;
 import org.eclipse.dataspacetck.dcp.system.annotation.IssueCredentials;
+import org.eclipse.dataspacetck.dcp.system.annotation.MultiVm;
+import org.eclipse.dataspacetck.dcp.system.annotation.NoCapability;
+import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.message.DcpConstants;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
@@ -35,6 +39,8 @@ import java.util.Map;
 import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.MULTI_VM;
+import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.NO_CAPABILITY;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_QUERY_MESSAGE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_QUERY_PATH;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.SCOPE;
@@ -195,6 +201,68 @@ public class PresentationFlowSection4Test extends AbstractPresentationFlowTest {
                 .build();
 
         executeRequest(createRequest(claimSet2, createMessage()), TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("4.3.3 Verify invalid access token - signing key not in capabilityInvocation")
+    @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
+    public void cs_04_03_03_idTokenKidNoCapabilityInvocation(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
+                                                              @NoCapability KeyService noCapabilityKeyService,
+                                                              @Did(NO_CAPABILITY) String noCapabilityDid) {
+        var claimSet = new JWTClaimsSet.Builder()
+                .issuer(noCapabilityDid)
+                .subject(noCapabilityDid)
+                .audience(holderDid)
+                .jwtID(randomUUID().toString())
+                .issueTime(new Date())
+                .expirationTime(Date.from(now().plusSeconds(600)))
+                .claim(TOKEN, authToken)
+                .build();
+
+        var idToken = noCapabilityKeyService.sign(emptyMap(), claimSet);
+
+        try {
+            var endpoint = resolveCredentialServiceEndpoint(holderDid);
+            var request = new Request.Builder()
+                    .url(endpoint + PRESENTATION_QUERY_PATH)
+                    .header(DcpConstants.AUTHORIZATION, "Bearer " + idToken)
+                    .post(RequestBody.create(mapper.writeValueAsString(createMessage()), MediaType.parse(DcpConstants.JSON_CONTENT_TYPE)))
+                    .build();
+            executeRequest(request, TestFixtures::assert4xxCode);
+        } catch (JacksonException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @MandatoryTest
+    @DisplayName("4.3.3 Verify invalid access token - no kid and DID document has multiple verification methods")
+    @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
+    public void cs_04_03_03_idTokenNoKidMultipleVms(@AuthToken(MEMBERSHIP_SCOPE) String authToken,
+                                                     @MultiVm KeyService multiVmKeyService,
+                                                     @Did(MULTI_VM) String multiVmDid) {
+        var claimSet = new JWTClaimsSet.Builder()
+                .issuer(multiVmDid)
+                .subject(multiVmDid)
+                .audience(holderDid)
+                .jwtID(randomUUID().toString())
+                .issueTime(new Date())
+                .expirationTime(Date.from(now().plusSeconds(600)))
+                .claim(TOKEN, authToken)
+                .build();
+
+        var idToken = multiVmKeyService.signWithoutKid(claimSet);
+
+        try {
+            var endpoint = resolveCredentialServiceEndpoint(holderDid);
+            var request = new Request.Builder()
+                    .url(endpoint + PRESENTATION_QUERY_PATH)
+                    .header(DcpConstants.AUTHORIZATION, "Bearer " + idToken)
+                    .post(RequestBody.create(mapper.writeValueAsString(createMessage()), MediaType.parse(DcpConstants.JSON_CONTENT_TYPE)))
+                    .build();
+            executeRequest(request, TestFixtures::assert4xxCode);
+        } catch (JacksonException e) {
+            throw new AssertionError(e);
+        }
     }
 
     @NotNull

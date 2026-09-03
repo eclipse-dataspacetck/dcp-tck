@@ -18,5 +18,5 @@ package org.eclipse.dataspacetck.dcp.system.annotation;
  * A holder, verifier or third-party.
  */
 public enum RoleType {
-    HOLDER, ISSUER, VERIFIER, THIRD_PARTY
+    HOLDER, ISSUER, VERIFIER, THIRD_PARTY, NO_CAPABILITY, MULTI_VM
 }
