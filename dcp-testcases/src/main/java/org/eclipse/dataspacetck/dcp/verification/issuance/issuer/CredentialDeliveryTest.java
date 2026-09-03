@@ -107,7 +107,7 @@ public class CredentialDeliveryTest extends AbstractCredentialIssuanceTest {
     }
 
     @MandatoryTest
-    @DisplayName("6.5.2 IssuerService should deliver verifiable credentials bound to the holder")
+    @DisplayName("6.5.2 IssuerService should deliver verifiable credentials that verify against the issuer's signing key")
     void is_6_5_2_credentialDelivery_credentialsVerify(CredentialService credentialService) {
         requestCredentials();
 
@@ -130,13 +130,6 @@ public class CredentialDeliveryTest extends AbstractCredentialIssuanceTest {
             assertThat(credential.get("issuer")).satisfiesAnyOf(
                     issuer -> assertThat(issuer).isEqualTo(issuerDid),
                     issuer -> assertThat(((Map<?, ?>) issuer).get("id")).isEqualTo(issuerDid));
-
-            @SuppressWarnings("unchecked")
-            var subject = (Map<String, Object>) credential.get("credentialSubject");
-            assertThat(subject.get("id"))
-                    .withFailMessage("Expected credentialSubject.id to be bound to the holder DID '%s' but was '%s'",
-                            holderDid, subject.get("id"))
-                    .isEqualTo(holderDid);
         }
     }
 

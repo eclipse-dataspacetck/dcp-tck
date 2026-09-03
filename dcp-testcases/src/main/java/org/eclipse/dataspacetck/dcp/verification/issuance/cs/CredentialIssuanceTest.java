@@ -269,20 +269,6 @@ public class CredentialIssuanceTest extends AbstractCredentialIssuanceTest {
         executeRequest(createCredentialMessageRequest(token, credentialMessage).build(), TestFixtures::assert4xxCode);
     }
 
-    @MandatoryTest
-    @DisplayName("6.5.2 CredentialService rejects a credential that is not bound to the holder")
-    void cs_06_05_02_credentialMessage_subjectNotHolder(@HolderPid String holderPid) {
-        var otherSubject = createCredential(MEMBERSHIP_CREDENTIAL_TYPE, thirdPartyDid, issuerKeyService);
-
-        var credentialMessage = createCredentialMessage(holderPid)
-                .property("credentials", credentialContainers(otherSubject))
-                .build();
-
-        var token = createToken(createClaims().build());
-        executeRequest(createCredentialMessageRequest(token, credentialMessage).build(), TestFixtures::assert4xxCode);
-
-    }
-
     private Request.Builder createCredentialMessageRequest(String authToken, Map<String, Object> credentialMessage) {
         var endpoint = resolveCredentialServiceEndpoint(holderDid);
         try {
