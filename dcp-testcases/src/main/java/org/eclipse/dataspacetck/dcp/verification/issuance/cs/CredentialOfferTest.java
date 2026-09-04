@@ -229,6 +229,52 @@ public class CredentialOfferTest extends AbstractCredentialIssuanceTest {
         executeRequest(request, TestFixtures::assert4xxCode);
     }
 
+    @MandatoryTest
+    @DisplayName("4.3.3 CredentialService rejects an invalid auth token - kid resolves to no verification method")
+    void cs_06_06_01_credentialOfferMessage_unknownKid() {
+        var msg = createCredentialOfferMessage().build();
+        var token = createTokenWithUnknownKid(createClaims().build());
+
+        executeRequest(createCredentialOfferMessageRequest(token, msg).build(), TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("4.3.3 CredentialService rejects an invalid auth token - sub DID is not resolvable")
+    void cs_06_06_01_credentialOfferMessage_unresolvableSubject() {
+        var msg = createCredentialOfferMessage().build();
+        var token = createTokenWithUnresolvableSubject(createClaims());
+
+        executeRequest(createCredentialOfferMessageRequest(token, msg).build(), TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("6.6.1 CredentialService rejects a CredentialOfferMessage with an empty credentials array")
+    void cs_06_06_01_credentialOfferMessage_emptyCredentials() {
+        var msg = createCredentialOfferMessage()
+                .property("credentials", List.of())
+                .build();
+
+        var token = createToken(createClaims().build());
+        var request = createCredentialOfferMessageRequest(token, msg).build();
+        executeRequest(request, TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("6.6.1 CredentialService should handle a repeated CredentialOfferMessage idempotently")
+    void cs_06_06_01_credentialOfferMessage_repeatedOffer() {
+        var msg = createCredentialOfferMessage().build();
+
+        var request = createCredentialOfferMessageRequest(createToken(createClaims().build()), msg).build();
+        executeRequest(request, TestFixtures::assert2xxCode);
+
+        // the same logical offer delivered again, with a fresh jti so this is not a replay
+        var retry = createCredentialOfferMessageRequest(createToken(createClaims().build()), msg).build();
+        executeRequest(retry, response -> assertThat(response.code())
+                .withFailMessage("A repeated CredentialOfferMessage must not cause a server error, but got %s",
+                        response.code())
+                .isBetween(200, 499));
+    }
+
     private Request.Builder createCredentialOfferMessageRequest(String authToken, Map<String, Object> credentialOfferMessage) {
         var endpoint = resolveCredentialServiceEndpoint(holderDid);
         try {

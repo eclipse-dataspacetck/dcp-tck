@@ -39,6 +39,11 @@ public class Delegates {
         }
 
         @Override
+        default Collection<ReceivedCredentialMessage> getReceivedCredentialMessages() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         default Result<Void> offerCredentials(String idTokenJwt, InputStream body) {
             throw new UnsupportedOperationException();
         }

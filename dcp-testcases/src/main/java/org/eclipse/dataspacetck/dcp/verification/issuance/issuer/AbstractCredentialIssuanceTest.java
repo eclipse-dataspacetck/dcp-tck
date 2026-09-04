@@ -28,6 +28,7 @@ import org.eclipse.dataspacetck.dcp.system.annotation.RoleType;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.cs.CredentialObject;
 import org.eclipse.dataspacetck.dcp.system.message.DcpMessageBuilder;
+import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DeserializationFeature;
@@ -123,6 +124,22 @@ public abstract class AbstractCredentialIssuanceTest {
 
     protected String createToken(JWTClaimsSet claims) {
         return holderKeyService.sign(emptyMap(), claims);
+    }
+
+    /**
+     * Signs a token with the holder's key but under a key id that resolves to no verification method.
+     */
+    protected String createTokenWithUnknownKid(JWTClaimsSet claims) {
+        return holderKeyService.sign(Map.of("kid", holderDid + "#unresolvable-" + randomUUID()), claims);
+    }
+
+    /**
+     * Signs a token whose iss/sub is a DID that cannot be resolved, so the receiver cannot obtain a key at all.
+     */
+    protected String createTokenWithUnresolvableSubject(JWTClaimsSet.Builder claims) {
+        var unresolvable = TestFixtures.unresolvableDid(holderDid);
+        var built = claims.issuer(unresolvable).subject(unresolvable).build();
+        return holderKeyService.sign(Map.of("kid", unresolvable + "#" + holderKeyService.getPublicKey().getKeyID()), built);
     }
 
     private static class IssuerMetadataMessage {

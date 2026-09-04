@@ -122,6 +122,27 @@ class CredentialServiceImplTest {
     }
 
     @Test
+    void writeCredentials_retainsEnvelopeAndToken() {
+        var service = createService(DEFAULT_SCOPE_PATTERN);
+        seedMembershipCredential(service);
+
+        assertThat(service.getReceivedCredentialMessages()).singleElement().satisfies(received -> {
+            assertThat(received.idToken()).isEqualTo("token");
+            assertThat(received.message()).containsEntry("status", "ISSUED")
+                    .containsKeys("issuerPid", "holderPid", "credentials");
+        });
+    }
+
+    @Test
+    void writeCredentials_doesNotRetainMessageWhenTokenInvalid() {
+        when(secureTokenServer.validateWrite(any(), any())).thenReturn(Result.failure("invalid"));
+        var service = createService(DEFAULT_SCOPE_PATTERN);
+
+        assertThat(service.writeCredentials("token", Map.of()).failed()).isTrue();
+        assertThat(service.getReceivedCredentialMessages()).isEmpty();
+    }
+
+    @Test
     void createService_whenPatternHasNoTypeGroup() {
         assertThatThrownBy(() -> createService(Pattern.compile("my.scope:(.*):(.*)")))
                 .isInstanceOf(IllegalArgumentException.class)

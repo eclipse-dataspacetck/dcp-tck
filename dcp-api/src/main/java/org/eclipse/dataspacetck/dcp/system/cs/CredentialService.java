@@ -49,6 +49,27 @@ public interface CredentialService {
     Collection<VcContainer> getCredentials();
 
     /**
+     * Retrieves the {@code CredentialMessages} received on the Storage API, in the order they were received.
+     * <p>
+     * Unlike {@link #getCredentials()}, which only exposes the credentials that were successfully stored, this retains
+     * the delivery envelope and the self-issued token it arrived with. Tests verifying issuer-side delivery behaviour
+     * need both, for example to assert {@code issuerPid}/{@code holderPid} correlation, the delivery status, or that
+     * the access token was echoed in the token's {@code token} claim.
+     *
+     * @return A collection of {@link ReceivedCredentialMessage} objects.
+     */
+    Collection<ReceivedCredentialMessage> getReceivedCredentialMessages();
+
+    /**
+     * A {@code CredentialMessage} as it was received on the Storage API.
+     *
+     * @param message the deserialized message body.
+     * @param idToken the self-issued token the message was delivered with, without the {@code Bearer} prefix.
+     */
+    record ReceivedCredentialMessage(Map<String, Object> message, String idToken) {
+    }
+
+    /**
      * Sets a delegate, which could be a mock, and which is used in place of the real credential service until set to null
      *
      * @param delegate a delegate
