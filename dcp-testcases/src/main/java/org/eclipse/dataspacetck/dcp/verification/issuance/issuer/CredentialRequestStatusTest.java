@@ -227,20 +227,21 @@ public class CredentialRequestStatusTest extends AbstractCredentialIssuanceTest 
     @DisplayName("6.8.1 IssuerService should only report RECEIVED, then ISSUED or REJECTED")
     void is_6_8_1_credentialStatusRequest_statusProgression() {
         var id = requestCredentials();
-        var rq = createStatusRequest(id);
-
         var observed = new ArrayList<String>();
         try {
             await().atMost(Duration.ofSeconds(10))
                     .pollInterval(Duration.ofMillis(500))
-                    .untilAsserted(() -> executeRequest(rq.build(), response -> {
-                        assert2xxCode(response);
-                        var status = bodyAs(response, CredentialStatus.class, mapper).getStatus();
-                        if (observed.isEmpty() || !observed.get(observed.size() - 1).equals(status)) {
-                            observed.add(status);
-                        }
-                        assertThat(status).isIn("ISSUED", "REJECTED");
-                    }));
+                    .untilAsserted(() -> {
+                        var rq = createStatusRequest(id);
+                        executeRequest(rq.build(), response -> {
+                            assert2xxCode(response);
+                            var status = bodyAs(response, CredentialStatus.class, mapper).getStatus();
+                            if (observed.isEmpty() || !observed.get(observed.size() - 1).equals(status)) {
+                                observed.add(status);
+                            }
+                            assertThat(status).isIn("ISSUED", "REJECTED");
+                        });
+                    });
         } catch (ConditionTimeoutException e) {
             throw new AssertionError("The request never reached a terminal status, observed: " + observed, e);
         }
