@@ -22,22 +22,28 @@ import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import com.nimbusds.jwt.SignedJWT;
 import okhttp3.Request;
+import org.awaitility.core.ConditionTimeoutException;
 import org.eclipse.dataspacetck.api.system.MandatoryTest;
 import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.dcp.system.annotation.Did;
 import org.eclipse.dataspacetck.dcp.system.annotation.HolderPid;
 import org.eclipse.dataspacetck.dcp.system.annotation.RoleType;
+import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
+import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
 import org.eclipse.dataspacetck.dcp.system.issuer.CredentialStatus;
 import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static com.nimbusds.jose.JOSEObjectType.JWT;
 import static com.nimbusds.jose.JWSAlgorithm.ES256;
 import static java.time.Instant.now;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.CREDENTIAL_STATUS_PATH;
@@ -157,7 +163,7 @@ public class CredentialRequestStatusTest extends AbstractCredentialIssuanceTest 
 
     @MandatoryTest
     @DisplayName("6.8.9 IssuerService should reject a CredentialRequest with an invalid token - incorrect aud")
-    void is_6_8_8_credentialStatusRequest_invalidAud(@Did(RoleType.THIRD_PARTY) String thirdPartyDid) {
+    void is_6_8_9_credentialStatusRequest_invalidAud(@Did(RoleType.THIRD_PARTY) String thirdPartyDid) {
         var id = requestCredentials();
 
         var token = createToken(createClaims()
@@ -197,6 +203,72 @@ public class CredentialRequestStatusTest extends AbstractCredentialIssuanceTest 
         var token = createToken(createClaims().build());
         var request = createStatusRequest("not-exist", token).build();
         executeRequest(request, TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("4.3.3 IssuerService should reject a status request - kid resolves to no verification method")
+    void is_4_3_3_credentialStatusRequest_unknownKid() {
+        var id = requestCredentials();
+        var token = createTokenWithUnknownKid(createClaims().build());
+
+        executeRequest(createStatusRequest(id, token).build(), TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("4.3.3 IssuerService should reject a status request - sub DID is not resolvable")
+    void is_4_3_3_credentialStatusRequest_unresolvableSubject() {
+        var id = requestCredentials();
+        var token = createTokenWithUnresolvableSubject(createClaims());
+
+        executeRequest(createStatusRequest(id, token).build(), TestFixtures::assert4xxCode);
+    }
+
+    @MandatoryTest
+    @DisplayName("6.8.1 IssuerService should only report RECEIVED, then ISSUED or REJECTED")
+    void is_6_8_1_credentialStatusRequest_statusProgression() {
+        var id = requestCredentials();
+        var rq = createStatusRequest(id);
+
+        var observed = new ArrayList<String>();
+        try {
+            await().atMost(Duration.ofSeconds(10))
+                    .pollInterval(Duration.ofMillis(500))
+                    .untilAsserted(() -> executeRequest(rq.build(), response -> {
+                        assert2xxCode(response);
+                        var status = bodyAs(response, CredentialStatus.class, mapper).getStatus();
+                        if (observed.isEmpty() || !observed.get(observed.size() - 1).equals(status)) {
+                            observed.add(status);
+                        }
+                        assertThat(status).isIn("ISSUED", "REJECTED");
+                    }));
+        } catch (ConditionTimeoutException e) {
+            throw new AssertionError("The request never reached a terminal status, observed: " + observed, e);
+        }
+
+        // RECEIVED may be missed if the issuer is fast, but a terminal status must never revert
+        assertThat(observed)
+                .withFailMessage("Status must progress RECEIVED -> ISSUED|REJECTED, but observed: %s", observed)
+                .containsAnyOf("ISSUED", "REJECTED")
+                .allMatch(status -> List.of("RECEIVED", "ISSUED", "REJECTED").contains(status));
+        assertThat(observed.subList(0, observed.size() - 1))
+                .withFailMessage("A terminal status must not be followed by another status, observed: %s", observed)
+                .doesNotContain("ISSUED", "REJECTED");
+    }
+
+    @MandatoryTest
+    @DisplayName("6.8 IssuerService should not disclose a request status to a different holder")
+    void is_6_8_credentialStatusRequest_otherHolder(@Did(RoleType.THIRD_PARTY) String thirdPartyDid,
+                                                    @ThirdParty KeyService thirdPartyKeyService) {
+        var id = requestCredentials();
+
+        // a well-formed, correctly signed token - but issued by a holder that did not make the request
+        var claims = createClaims()
+                .issuer(thirdPartyDid)
+                .subject(thirdPartyDid)
+                .build();
+        var token = thirdPartyKeyService.sign(emptyMap(), claims);
+
+        executeRequest(createStatusRequest(id, token).build(), TestFixtures::assert4xxCode);
     }
 
     @NotNull

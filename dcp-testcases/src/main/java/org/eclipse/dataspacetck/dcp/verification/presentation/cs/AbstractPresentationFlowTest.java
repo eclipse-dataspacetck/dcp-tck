@@ -20,10 +20,7 @@ import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.dialect.Dialects;
-import com.nimbusds.jwt.JWTClaimsSet;
-import okhttp3.MediaType;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.eclipse.dataspacetck.core.api.system.Inject;
 import org.eclipse.dataspacetck.core.system.SystemBootstrapExtension;
@@ -32,34 +29,26 @@ import org.eclipse.dataspacetck.dcp.system.annotation.PresentationFlow;
 import org.eclipse.dataspacetck.dcp.system.annotation.ThirdParty;
 import org.eclipse.dataspacetck.dcp.system.annotation.Verifier;
 import org.eclipse.dataspacetck.dcp.system.crypto.KeyService;
-import org.eclipse.dataspacetck.dcp.system.message.DcpConstants;
 import org.eclipse.dataspacetck.dcp.system.profile.ScopeConfiguration;
+import org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.time.Instant.now;
-import static java.util.Collections.emptyMap;
-import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.HOLDER;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.THIRD_PARTY;
 import static org.eclipse.dataspacetck.dcp.system.annotation.RoleType.VERIFIER;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.DCP_NAMESPACE;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_QUERY_PATH;
-import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.TOKEN;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.parseAndVerifyPresentation;
-import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveCredentialServiceEndpoint;
 
 /**
  * Base test class.
@@ -118,32 +107,14 @@ public class AbstractPresentationFlowTest {
      * Creates a DCP presentation request.
      */
     protected Request createPresentationRequest(String authToken, Map<String, Object> message) {
-        var endpoint = resolveCredentialServiceEndpoint(holderDid);
-        try {
-            return new Request.Builder()
-                    .url(endpoint + PRESENTATION_QUERY_PATH)
-                    .header(DcpConstants.AUTHORIZATION, "Bearer " + createIdToken(authToken))
-                    .post(RequestBody.create(mapper.writeValueAsString(message), MediaType.parse(DcpConstants.JSON_CONTENT_TYPE)))
-                    .build();
-        } catch (JacksonException e) {
-            throw new AssertionError(e);
-        }
+        return TestFixtures.createPresentationRequest(holderDid, createIdToken(authToken), message, mapper);
     }
 
     /**
      * Creates a signed self-issued ID token per the DCP spec.
      */
     protected String createIdToken(String authToken) {
-        var claimSet = new JWTClaimsSet.Builder()
-                .issuer(verifierDid)
-                .audience(holderDid)
-                .subject(verifierDid)
-                .jwtID(randomUUID().toString())
-                .issueTime(new Date())
-                .expirationTime(Date.from(now().plusSeconds(600)))
-                .claim(TOKEN, authToken)
-                .build();
-        return verifierKeyService.sign(emptyMap(), claimSet);
+        return TestFixtures.createIdToken(verifierKeyService, verifierDid, holderDid, authToken);
     }
 
 
@@ -161,7 +132,7 @@ public class AbstractPresentationFlowTest {
 
             @SuppressWarnings("unchecked")
             var presentations = (List<String>) responseMessage.get(PRESENTATION);
-            var credentialTypes = parseAndVerifyPresentation(presentations, verifierDid);
+            var credentialTypes = parseAndVerifyPresentation(presentations, verifierDid, holderDid);
 
             assertThat(credentialTypes).containsOnly(Stream.concat(Stream.of("VerifiableCredential"), Arrays.stream(expectedTypes))
                     .distinct().toArray(String[]::new));

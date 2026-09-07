@@ -50,6 +50,7 @@ import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTAT
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.PRESENTATION_RESPONSE_MESSAGE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.MEMBERSHIP_SCOPE;
+import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_CREDENTIAL_TYPE;
 import static org.eclipse.dataspacetck.dcp.system.profile.TestProfile.SENSITIVE_DATA_SCOPE;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
 
@@ -66,7 +67,7 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
 
     @DisplayName("Verifier should resolve the DID from the prover's ID token")
     @MandatoryTest
-    @IssueCredentials(MEMBERSHIP_SCOPE)
+    @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
     void presentationResponse_endpointDiscovery() {
         var didClient = new DidClient(false);
         var didDocument = didClient.resolveDocument(verifierDid);
@@ -76,7 +77,7 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
 
     @DisplayName("5.1 Verifier should accept a valid PresentationResponseMessage")
     @MandatoryTest
-    @IssueCredentials({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE})
+    @IssueCredentials({MEMBERSHIP_CREDENTIAL_TYPE, SENSITIVE_DATA_CREDENTIAL_TYPE})
     void verifier_05_01_presentationResponse_success(@AuthToken(MEMBERSHIP_SCOPE) String authToken) {
         var triggerMessage = createTriggerMessage();
 
@@ -87,14 +88,14 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
 
     @DisplayName("5.4.2.1 Verifier should reject a presentation response message that contains a different credential than requested")
     @MandatoryTest
-    @IssueCredentials({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE})
+    @IssueCredentials({MEMBERSHIP_CREDENTIAL_TYPE, SENSITIVE_DATA_CREDENTIAL_TYPE})
     void verifier_05_04_02_01_presentationResponse_tooFewCredentials(@AuthToken("org.eclipse.dspace.dcp.vc.type:SomeOtherCredential") String authToken) {
         executeRequest(createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage()), TestFixtures::assert4xxCode);
     }
 
     @DisplayName("5.4.2.2 Verifier should accept a presentation response message that contains more credentials than requested")
     @MandatoryTest
-    @IssueCredentials({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE})
+    @IssueCredentials({MEMBERSHIP_CREDENTIAL_TYPE, SENSITIVE_DATA_CREDENTIAL_TYPE})
     void verifier_05_04_02_02_presentationResponse_tooManyCredentials(@AuthToken({MEMBERSHIP_SCOPE, SENSITIVE_DATA_SCOPE}) String authToken) {
         executeRequest(createRequest(triggerEndpoint, "Bearer " + createIdToken(authToken), createTriggerMessage()), TestFixtures::assert2xxCode);
     }

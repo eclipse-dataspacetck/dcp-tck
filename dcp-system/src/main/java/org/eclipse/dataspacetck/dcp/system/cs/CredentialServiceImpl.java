@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 import static java.util.Optional.ofNullable;
@@ -67,6 +68,7 @@ public class CredentialServiceImpl implements CredentialService {
     private final String holderDid;
     private final Map<PresentationGenerator.PresentationFormat, PresentationGenerator> generators;
     private final Map<String, List<VcContainer>> credentialsByType = new ConcurrentHashMap<>();
+    private final List<ReceivedCredentialMessage> receivedCredentialMessages = new CopyOnWriteArrayList<>();
     private final TokenValidationService tokenService;
     private final ObjectMapper mapper;
     private final Pattern scopePattern;
@@ -130,6 +132,8 @@ public class CredentialServiceImpl implements CredentialService {
         if (validationResult.failed()) {
             return failure(validationResult.getFailure(), UNAUTHORIZED);
         }
+
+        receivedCredentialMessages.add(new ReceivedCredentialMessage(credentialMessage, idTokenJwt));
 
         return storeCredentials(credentialMessage);
     }
@@ -203,6 +207,14 @@ public class CredentialServiceImpl implements CredentialService {
             return delegate.getCredentials();
         }
         return credentialsByType.values().stream().flatMap(Collection::stream).toList();
+    }
+
+    @Override
+    public Collection<ReceivedCredentialMessage> getReceivedCredentialMessages() {
+        if (delegate != null) {
+            return delegate.getReceivedCredentialMessages();
+        }
+        return List.copyOf(receivedCredentialMessages);
     }
 
     @Override

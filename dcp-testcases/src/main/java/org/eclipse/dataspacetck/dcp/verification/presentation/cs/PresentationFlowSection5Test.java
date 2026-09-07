@@ -81,6 +81,27 @@ public class PresentationFlowSection5Test extends AbstractPresentationFlowTest {
     }
 
     @MandatoryTest
+    @DisplayName("5.3.1 Verify Resolution API rejects a request with no Authorization header")
+    public void cs_05_03_01_noAuthHeader() {
+        var message = DcpMessageBuilder.newInstance()
+                .type(PRESENTATION_QUERY_MESSAGE)
+                .property(SCOPE, List.of(scopeFor(MEMBERSHIP_CREDENTIAL_TYPE)))
+                .build();
+
+        var endpoint = resolveCredentialServiceEndpoint(holderDid);
+        try {
+            var request = new Request.Builder()
+                    .url(endpoint + PRESENTATION_QUERY_PATH)
+                    .post(RequestBody.create(mapper.writeValueAsString(message),
+                            MediaType.parse(DcpConstants.JSON_CONTENT_TYPE)))
+                    .build();
+            executeRequest(request, TestFixtures::assert4xxCode);
+        } catch (JacksonException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @MandatoryTest
     @DisplayName("5.4 Verify Resolution API invalid token not authorized")
     @IssueCredentials(MEMBERSHIP_CREDENTIAL_TYPE)
     public void cs_05_04_invalidTokenNotAuthorized() {

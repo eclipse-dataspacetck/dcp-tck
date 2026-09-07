@@ -20,12 +20,14 @@ import org.eclipse.dataspacetck.dcp.system.cs.CredentialObject;
 import org.junit.jupiter.api.DisplayName;
 
 import java.util.Collection;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.dataspacetck.dcp.system.message.DcpConstants.ISSUER_METADATA_PATH;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.assert2xxCode;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.bodyAs;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequest;
+import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.executeRequestAndGet;
 import static org.eclipse.dataspacetck.dcp.verification.fixtures.TestFixtures.resolveIssuerServiceEndpoint;
 
 public class IssuerMetadataTest extends AbstractCredentialIssuanceTest {
@@ -47,6 +49,52 @@ public class IssuerMetadataTest extends AbstractCredentialIssuanceTest {
             assertThat(metadata.type()).isEqualTo("IssuerMetadata");
             assertThat(metadata.issuer()).isEqualTo(issuerDid);
             assertThat(metadata.credentialsSupported()).isNotEmpty();
+        });
+    }
+
+    @MandatoryTest
+    @DisplayName("6.7.1 Verify each CredentialObject is fully populated")
+    void is_6_7_1_issuerMetadata_credentialObjectProperties() {
+        var metadata = fetchMetadata();
+
+        assertThat(metadata.credentialsSupported()).allSatisfy(credentialObject -> {
+            assertThat(credentialObject.getId()).isNotBlank();
+            assertThat(credentialObject.getType()).isEqualTo("CredentialObject");
+            assertThat(credentialObject.getCredentialType()).isNotBlank();
+            assertThat(credentialObject.getProfile())
+                    .withFailMessage("CredentialObject '%s' must declare a profile", credentialObject.getId())
+                    .isNotBlank();
+            assertThat(credentialObject.getBindingMethods())
+                    .withFailMessage("CredentialObject '%s' must declare at least one binding method",
+                            credentialObject.getId())
+                    .isNotEmpty();
+        });
+    }
+
+    @MandatoryTest
+    @DisplayName("6.7 Verify CredentialObject ids are stable across metadata requests")
+    void is_6_7_issuerMetadata_stableIds() {
+        var first = credentialObjectIds(fetchMetadata());
+        var second = credentialObjectIds(fetchMetadata());
+
+        assertThat(second)
+                .withFailMessage("CredentialObject ids must be stable so that offers and requests can reference them")
+                .containsExactlyInAnyOrderElementsOf(first);
+    }
+
+    private List<String> credentialObjectIds(IssuerMetadata metadata) {
+        return metadata.credentialsSupported().stream().map(CredentialObject::getId).sorted().toList();
+    }
+
+    private IssuerMetadata fetchMetadata() {
+        var request = new Request.Builder()
+                .url(resolveIssuerServiceEndpoint(issuerDid) + ISSUER_METADATA_PATH)
+                .get()
+                .build();
+
+        return executeRequestAndGet(request, r -> {
+            assert2xxCode(r);
+            return bodyAs(r, IssuerMetadata.class, mapper);
         });
     }
 
