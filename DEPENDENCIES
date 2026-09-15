@@ -77,7 +77,7 @@ maven/mavencentral/org.ow2.asm/asm-tree/9.9, BSD-3-Clause, approved, #23950
 maven/mavencentral/org.ow2.asm/asm/9.9, BSD-3-Clause, approved, #23946
 maven/mavencentral/org.reflections/reflections/0.10.2, Apache-2.0 AND WTFPL, approved, clearlydefined
 maven/mavencentral/org.xmlresolver/xmlresolver/5.2.2, Apache-2.0, approved, #19677
-maven/mavencentral/tools.jackson.core/jackson-core/3.2.2, BSD-2-Clause AND MIT AND (BSD-2-Clause AND BSL-1.0 AND MIT) AND Apache-2.0 AND (Apache-2.0 AND LicenseRef-scancode-free-unknown AND MIT) AND MIT AND LicenseRef-scancode-proprietary-license, restricted, #30552
+maven/mavencentral/tools.jackson.core/jackson-core/3.2.2, BSD-2-Clause AND MIT AND BSL-1.0 AND Apache-2.0, approved, #30552
 maven/mavencentral/tools.jackson.core/jackson-databind/3.2.2, Apache-2.0, approved, #30563
 maven/mavencentral/tools.jackson.datatype/jackson-datatype-jakarta-jsonp/3.2.2, Apache-2.0, approved, #30565
 maven/mavencentral/tools.jackson/jackson-bom/3.2.2, Apache-2.0, approved, #29716
