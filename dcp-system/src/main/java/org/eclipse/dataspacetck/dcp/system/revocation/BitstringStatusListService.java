@@ -24,7 +24,7 @@ import java.util.UUID;
 
 public class BitstringStatusListService implements CredentialRevocationService {
     public static final String REVOCATION = "revocation";
-    private static final int LENGTH = 16 * 1024; // 16k bits
+    private static final int LENGTH = 16 * 1024 * 8; // 16KB (131,072 entries), the minimum size of a status list
     private final BitString bitstring = BitString.Builder.newInstance().size(LENGTH).build();
     private final String credentialId = "urn:uuid:" + UUID.randomUUID();
     private final String issuerDid;
@@ -73,7 +73,7 @@ public class BitstringStatusListService implements CredentialRevocationService {
 
 
     /**
-     * Generates the Base64-encoded, GZIP-compressed bitstring
+     * Generates the multibase-encoded (base64url), GZIP-compressed bitstring
      */
     public String generateEncodedStatusList() {
         return "u" + BitString.Writer.newInstance().encoder(Base64.getUrlEncoder().withoutPadding()).write(bitstring).getContent();

@@ -116,7 +116,7 @@ public class BaseAssembly {
         multiVmSecondaryKeyService = new KeyServiceImpl(Keys.generateEcKey());
         multiVmDidService = new DidServiceImpl(multiVmDid, address, List.of(multiVmKeyService, multiVmSecondaryKeyService), true);
 
-        revocationListType = configuration.getPropertyAsString(TCK_PREFIX + ".revocation.type", "bitstringstatuslist");
+        revocationListType = configuration.getPropertyAsString(TCK_PREFIX + ".revocation.type", "statuslist2021");
     }
 
     public String getVerifierTriggerEndpoint() {

@@ -24,7 +24,7 @@ import java.util.UUID;
 
 public class StatusList2021Service implements CredentialRevocationService {
     public static final String REVOCATION = "revocation";
-    private static final int LENGTH = 16 * 1024; // 16k bits
+    private static final int LENGTH = 16 * 1024 * 8; // 16KB (131,072 entries), the minimum size of a status list
     private final BitString bitstring = BitString.Builder.newInstance().size(LENGTH).build();
     private final String credentialId = "urn:uuid:" + UUID.randomUUID();
     private final String issuerDid;
@@ -73,10 +73,13 @@ public class StatusList2021Service implements CredentialRevocationService {
 
 
     /**
-     * Generates the Base64-encoded, GZIP-compressed bitstring
+     * Generates the Base64-encoded, GZIP-compressed bitstring.
+     * <p>
+     * StatusList2021 only says "base-64 encoded [RFC4648]". Its example uses the URL-safe alphabet, and as it does not
+     * waive padding, RFC 4648 requires it. Unlike a BitstringStatusList, there is no multibase prefix.
      */
     public String generateEncodedStatusList() {
-        return "u" + BitString.Writer.newInstance().encoder(Base64.getUrlEncoder().withoutPadding()).write(bitstring).getContent();
+        return BitString.Writer.newInstance().encoder(Base64.getUrlEncoder()).write(bitstring).getContent();
     }
 
     @Override
