@@ -25,7 +25,6 @@ import java.util.Map;
 
 import static java.lang.String.format;
 import static java.time.Instant.now;
-import static java.util.UUID.randomUUID;
 import static org.eclipse.dataspacetck.dcp.system.model.vc.CredentialFormat.VC1_0_JWT;
 
 /**
@@ -58,7 +57,8 @@ public class JwtCredentialGenerator implements CredentialGenerator {
         var claims = new JWTClaimsSet.Builder()
                 .issuer(issuerDid)
                 .subject(credentialSubjectId)
-                .claim("jti", randomUUID())
+                // VC Data Model 1.1, section 6.3.1: jti must represent the id of the credential
+                .jwtID(credential.getId())
                 .notBeforeTime(now)
                 .issueTime(now)
                 .expirationTime(Date.from(now().plusSeconds(300)))

@@ -193,7 +193,7 @@ public class PresentationFlowSection5Test extends AbstractVerifierPresentationFl
                 var cred = createCredential()
                         .credentialStatus(MetadataReference.Builder.newInstance()
                                 .id(UUID.randomUUID().toString())
-                                .type("BitstringStatusListEntry")
+                                .type(credentialRevocationService.getStatusEntryType())
                                 .setExtensibleProperty("statusPurpose", "revocation")
                                 .setExtensibleProperty("statusListIndex", String.valueOf(index))
                                 .setExtensibleProperty("statusListCredential", "%s/statuslist/%s".formatted(credentialRevocationService.getAddress(), credentialRevocationService.getCredentialId()))

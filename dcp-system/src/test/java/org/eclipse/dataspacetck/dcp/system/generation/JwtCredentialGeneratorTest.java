@@ -64,6 +64,26 @@ class JwtCredentialGeneratorTest {
         assertThat(parsed.verify(verifier)).isTrue();
     }
 
+    /**
+     * VC Data Model 1.1, section 6.3.1: "jti MUST represent the id property of the verifiable credential".
+     */
+    @Test
+    void verifyGeneration_jtiRepresentsCredentialId() throws ParseException {
+        var credentialId = "urn:uuid:" + randomUUID();
+        var credential = VerifiableCredential.Builder.newInstance()
+                .credentialSubject(Map.of("id", SUBJECT_DID, "memberLevel", "gold"))
+                .id(credentialId)
+                .issuanceDate(now().toString())
+                .issuer(ISSUER_DID)
+                .type(List.of("VerifiableCredential"))
+                .build();
+
+        var claims = SignedJWT.parse(generator.generateCredential(credential).getContent()).getJWTClaimsSet();
+
+        assertThat(claims.getJWTID()).isEqualTo(credentialId);
+        assertThat(claims.getJSONObjectClaim("vc")).containsEntry("id", credentialId);
+    }
+
     @Test
     void verifyGeneration_noSubjectId_throwsException() {
         var credential = VerifiableCredential.Builder.newInstance()
